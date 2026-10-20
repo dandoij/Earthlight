@@ -1,0 +1,35 @@
+version = 1
+revision = 5
+requires-python = ">=3.12"
+
+[manifest]
+members = [
+    "earthlight",
+    "earthlight-pipeline",
+    "earthlight-workspace",
+]
+
+[[package]]
+name = "earthlight"
+version = "0.0.0"
+source = { editable = "packages/earthlight" }
+
+[[package]]
+name = "earthlight-pipeline"
+version = "0.0.0"
+source = { editable = "pipeline" }
+
+[[package]]
+name = "earthlight-workspace"
+version = "0.0.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "earthlight" },
+    { name = "earthlight-pipeline" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "earthlight", editable = "packages/earthlight" },
+    { name = "earthlight-pipeline", editable = "pipeline" },
+]

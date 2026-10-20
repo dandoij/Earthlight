@@ -53,7 +53,7 @@ earthlight/
 - [x] **0.1 Environment smoke test and name check**
   - **Build:** Confirm Python 3.12 ARM64, uv, Node ARM64, and git. In a throwaway environment, install astropy, astroquery, pandas, numpy, pydantic, typer, rich, fastapi and import each. Check whether `earthlight` is free on PyPI and TestPyPI. Record results in `docs/dev-setup.md`.
   - **Done when:** All imports succeed, or Ian has been told exactly what failed. Ian has confirmed the package name (or picked another).
-- [ ] **0.2 Monorepo skeleton**
+- [x] **0.2 Monorepo skeleton**
   - **Build:** uv workspace root, empty `packages/earthlight` and `pipeline` members (src layout), `apps/` placeholders, `.gitignore` (including `pipeline/.cache/`), `.editorconfig`, MIT `LICENSE`.
   - **Done when:** `uv sync` works and `uv run python -c "import earthlight"` succeeds.
 - [ ] **0.3 Python tooling**
