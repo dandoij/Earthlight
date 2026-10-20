@@ -79,7 +79,7 @@ No database yet. Pure, heavily tested functions.
 - [x] **1.2 Input parser**
   - **Build:** `parse.py`: turns text into either a moment or an event-name query. Supports `1492`, `500 BCE`, `500 BC`, `2004-06-15`, `66 million years ago`, `66 mya`, `4.5 gya`, `3 days ago`. Bare numbers are calendar years. Clear error types for unparseable input. Hand-written, no date libraries.
   - **Done when:** Table-driven tests cover every format and the ambiguous cases.
-- [ ] **1.3 Lookback math**
+- [x] **1.3 Lookback math**
   - **Build:** `lookback.py`: moment to lookback and back, interval overlap helpers, and parallax/distance to lookback range conversions (for pipeline reuse and tests).
   - **Done when:** Tests including Hypothesis properties (round-trips, interval invariants min <= best <= max).
 - [ ] **1.4 Solar system**
