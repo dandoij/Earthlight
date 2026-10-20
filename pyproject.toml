@@ -27,6 +27,7 @@ dev = [
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+src = ["packages/earthlight/src", "pipeline/src"]
 extend-exclude = [".venv"]
 
 [tool.ruff.lint]

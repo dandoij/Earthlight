@@ -73,7 +73,7 @@ earthlight/
 
 No database yet. Pure, heavily tested functions.
 
-- [ ] **1.1 Time model**
+- [x] **1.1 Time model**
   - **Build:** `time.py`: decimal year type, conversions from dates and astronomical years, `now()` as a decimal year, and human formatting ("1492 CE", "500 BCE", "66 million years ago", "3 hours ago").
   - **Done when:** Unit tests plus Hypothesis round-trip tests (date to decimal year to date) pass, including BCE and year 0 edges.
 - [ ] **1.2 Input parser**
