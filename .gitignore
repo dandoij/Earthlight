@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+.pyright/
+.hypothesis/
+.coverage
+htmlcov/
+
+# Pipeline downloads (large, reproducible)
+pipeline/.cache/
+
+# Node / web
+node_modules/
+apps/web/dist/
+.vite/
+*.tsbuildinfo
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Claude Code local settings
+.claude/settings.local.json

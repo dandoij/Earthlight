@@ -50,16 +50,16 @@ earthlight/
 
 ## Phase 0: Setup (branch `phase-0-setup`)
 
-- [ ] **0.1 Environment smoke test and name check**
+- [x] **0.1 Environment smoke test and name check**
   - **Build:** Confirm Python 3.12 ARM64, uv, Node ARM64, and git. In a throwaway environment, install astropy, astroquery, pandas, numpy, pydantic, typer, rich, fastapi and import each. Check whether `earthlight` is free on PyPI and TestPyPI. Record results in `docs/dev-setup.md`.
   - **Done when:** All imports succeed, or Ian has been told exactly what failed. Ian has confirmed the package name (or picked another).
-- [ ] **0.2 Monorepo skeleton**
+- [x] **0.2 Monorepo skeleton**
   - **Build:** uv workspace root, empty `packages/earthlight` and `pipeline` members (src layout), `apps/` placeholders, `.gitignore` (including `pipeline/.cache/`), `.editorconfig`, MIT `LICENSE`.
   - **Done when:** `uv sync` works and `uv run python -c "import earthlight"` succeeds.
-- [ ] **0.3 Python tooling**
+- [x] **0.3 Python tooling**
   - **Build:** ruff (lint + format), pyright (strict for `packages/earthlight`), pytest with one placeholder test, pre-commit running ruff on commit.
   - **Done when:** `uv run ruff check`, `uv run pyright`, `uv run pytest` all pass and pre-commit is installed.
-- [ ] **0.4 CI**
+- [x] **0.4 CI**
   - **Build:** GitHub Actions workflow: Python job on `ubuntu-latest` and `windows-latest` (ruff, pyright, pytest). Dependabot for pip and GitHub Actions.
   - **Done when:** Workflow file is valid (Ian confirms it runs green after pushing).
 - [ ] **0.5 README v0**
@@ -96,7 +96,7 @@ No database yet. Pure, heavily tested functions.
 ## Phase 2: Data pipeline (branch `phase-2-data`)
 
 - [ ] **2.1 Pipeline scaffolding**
-  - **Build:** `pipeline` workspace member with astropy, astroquery, pandas, pyyaml. A `earthlight-build` command with subcommands per source. Downloads cached in `pipeline/.cache/` (gitignored).
+  - **Build:** `pipeline` workspace member with astropy, astroquery, scipy (needed by astropy cosmology), pandas, pyyaml. A `earthlight-build` command with subcommands per source. Downloads cached in `pipeline/.cache/` (gitignored).
   - **Done when:** `uv run earthlight-build --help` works.
 - [ ] **2.2 Source verification**
   - **Build:** Investigate and document in `docs/data-sources.md`: HYG current version and columns; Gaia DR3 tables for the bright-star query; Hipparcos cross-match table; Bailer-Jones distance table name and columns; Exoplanet Archive table and distance columns; licenses and attribution text for each.
