@@ -82,7 +82,7 @@ No database yet. Pure, heavily tested functions.
 - [x] **1.3 Lookback math**
   - **Build:** `lookback.py`: moment to lookback and back, interval overlap helpers, and parallax/distance to lookback range conversions (for pipeline reuse and tests).
   - **Done when:** Tests including Hypothesis properties (round-trips, interval invariants min <= best <= max).
-- [ ] **1.4 Solar system**
+- [x] **1.4 Solar system**
   - **Build:** `solar_system.py`: Earth-to-planet distance at a given date using JPL's published approximate Keplerian elements; Voyager 1 approximate distance; zone definitions (heliopause, inner and outer Oort Cloud, interstellar space) with light-travel times.
   - **Done when:** Planet distances match reference values within a documented tolerance, and tests cite where reference values came from.
 - [ ] **1.5 Shared models**
