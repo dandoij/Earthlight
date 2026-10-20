@@ -1,0 +1,5 @@
+# Store text as LF in the repo and in checkouts, matching .editorconfig.
+* text=auto eol=lf
+
+# The bundled SQLite database must never be modified by line-ending conversion.
+*.db binary
