@@ -5,13 +5,13 @@ Light travels exactly one light-year per year, so every star, planet, and galaxy
 ## The two modes
 
 1. **Moment to place:** "Where in the universe is the light from this moment arriving right now?"
-   Example: the light from 1492 is passing stars that are about 530 light-years away.
+   Example: light that left Earth 500 years ago is now passing stars about 500 light-years away.
 2. **Place to moment:** "If I stood on this star, planet, or galaxy, what would Earth look like in the light arriving there now?"
    Example: from a star 66 light-years away, you would be watching Earth as it was 66 years ago.
 
 ## Status
 
-**In development.** Phase 0 (project setup) is in progress. The repository currently contains the project skeleton, tooling, and CI only. There is no working engine, CLI, API, or web app yet. The full plan is in [`docs/PLAN.md`](docs/PLAN.md).
+**In development.** Phase 0 (project setup) is complete. The repository currently contains the project skeleton, tooling, and CI only. There is no working engine, CLI, API, or web app yet. The full plan is in [`docs/PLAN.md`](docs/PLAN.md).
 
 ## Planned tech stack
 

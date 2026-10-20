@@ -65,7 +65,7 @@ earthlight/
 - [x] **0.5 README v0**
   - **Build:** Project pitch (2 to 3 sentences), the two modes, status ("in development"), tech stack list, dev setup for Windows ARM64.
   - **Done when:** README is accurate to the repo state.
-- [ ] **0.6 Phase review** (per `CLAUDE.md`)
+- [x] **0.6 Phase review** (per `CLAUDE.md`)
 
 ---
 
