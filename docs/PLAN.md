@@ -56,7 +56,7 @@ earthlight/
 - [x] **0.2 Monorepo skeleton**
   - **Build:** uv workspace root, empty `packages/earthlight` and `pipeline` members (src layout), `apps/` placeholders, `.gitignore` (including `pipeline/.cache/`), `.editorconfig`, MIT `LICENSE`.
   - **Done when:** `uv sync` works and `uv run python -c "import earthlight"` succeeds.
-- [ ] **0.3 Python tooling**
+- [x] **0.3 Python tooling**
   - **Build:** ruff (lint + format), pyright (strict for `packages/earthlight`), pytest with one placeholder test, pre-commit running ruff on commit.
   - **Done when:** `uv run ruff check`, `uv run pyright`, `uv run pytest` all pass and pre-commit is installed.
 - [ ] **0.4 CI**
