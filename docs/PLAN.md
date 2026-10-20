@@ -62,7 +62,7 @@ earthlight/
 - [x] **0.4 CI**
   - **Build:** GitHub Actions workflow: Python job on `ubuntu-latest` and `windows-latest` (ruff, pyright, pytest). Dependabot for pip and GitHub Actions.
   - **Done when:** Workflow file is valid (Ian confirms it runs green after pushing).
-- [ ] **0.5 README v0**
+- [x] **0.5 README v0**
   - **Build:** Project pitch (2 to 3 sentences), the two modes, status ("in development"), tech stack list, dev setup for Windows ARM64.
   - **Done when:** README is accurate to the repo state.
 - [ ] **0.6 Phase review** (per `CLAUDE.md`)
