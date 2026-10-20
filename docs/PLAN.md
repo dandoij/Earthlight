@@ -59,7 +59,7 @@ earthlight/
 - [x] **0.3 Python tooling**
   - **Build:** ruff (lint + format), pyright (strict for `packages/earthlight`), pytest with one placeholder test, pre-commit running ruff on commit.
   - **Done when:** `uv run ruff check`, `uv run pyright`, `uv run pytest` all pass and pre-commit is installed.
-- [ ] **0.4 CI**
+- [x] **0.4 CI**
   - **Build:** GitHub Actions workflow: Python job on `ubuntu-latest` and `windows-latest` (ruff, pyright, pytest). Dependabot for pip and GitHub Actions.
   - **Done when:** Workflow file is valid (Ian confirms it runs green after pushing).
 - [ ] **0.5 README v0**

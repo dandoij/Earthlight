@@ -1,0 +1,13 @@
+version: 2
+updates:
+  # Python dependencies (uv.lock is supported by the "uv" ecosystem)
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # Versions of the actions used in .github/workflows
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
