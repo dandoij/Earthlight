@@ -50,7 +50,7 @@ earthlight/
 
 ## Phase 0: Setup (branch `phase-0-setup`)
 
-- [ ] **0.1 Environment smoke test and name check**
+- [x] **0.1 Environment smoke test and name check**
   - **Build:** Confirm Python 3.12 ARM64, uv, Node ARM64, and git. In a throwaway environment, install astropy, astroquery, pandas, numpy, pydantic, typer, rich, fastapi and import each. Check whether `earthlight` is free on PyPI and TestPyPI. Record results in `docs/dev-setup.md`.
   - **Done when:** All imports succeed, or Ian has been told exactly what failed. Ian has confirmed the package name (or picked another).
 - [ ] **0.2 Monorepo skeleton**
@@ -96,7 +96,7 @@ No database yet. Pure, heavily tested functions.
 ## Phase 2: Data pipeline (branch `phase-2-data`)
 
 - [ ] **2.1 Pipeline scaffolding**
-  - **Build:** `pipeline` workspace member with astropy, astroquery, pandas, pyyaml. A `earthlight-build` command with subcommands per source. Downloads cached in `pipeline/.cache/` (gitignored).
+  - **Build:** `pipeline` workspace member with astropy, astroquery, scipy (needed by astropy cosmology), pandas, pyyaml. A `earthlight-build` command with subcommands per source. Downloads cached in `pipeline/.cache/` (gitignored).
   - **Done when:** `uv run earthlight-build --help` works.
 - [ ] **2.2 Source verification**
   - **Build:** Investigate and document in `docs/data-sources.md`: HYG current version and columns; Gaia DR3 tables for the bright-star query; Hipparcos cross-match table; Bailer-Jones distance table name and columns; Exoplanet Archive table and distance columns; licenses and attribution text for each.
