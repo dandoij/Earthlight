@@ -171,6 +171,12 @@ def test_duplicates_are_rejected(tmp_path: Path) -> None:
     assert "duplicate simbad identifier: ngc 1275" in text
 
 
+def test_a_key_written_twice_in_one_entry_is_rejected(tmp_path: Path) -> None:
+    text = "objects:\n  - id: a\n    name: A\n    kind: galaxy\n    fame: 2\n    fame: 3\n"
+    with pytest.raises(CuratedError, match="found the key 'fame' twice"):
+        load_curated(write(tmp_path, text + "    simbad: NGC 1275\n"))
+
+
 @pytest.mark.parametrize(
     "text", ["", "[]", "objects: 5", "objects: []\nextra: 1", "- id: x", "other: []"]
 )

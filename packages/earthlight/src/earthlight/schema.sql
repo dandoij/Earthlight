@@ -124,7 +124,8 @@ CREATE TABLE events (
 CREATE INDEX idx_events_year ON events (year);
 
 -- An age, era, or dynasty that lasted a span of time (HistoryPeriod). "start" and "end" are
--- SQL keywords or close to it, so the columns are start_year and end_year.
+-- SQL keywords or close to it, so the columns are start_year and end_year. An ongoing period has
+-- ongoing = 1 and no end_year; consumers treat its end as "now".
 CREATE TABLE periods (
     id          TEXT PRIMARY KEY CHECK (
         length(id) BETWEEN 1 AND 100
@@ -153,8 +154,11 @@ CREATE TABLE periods (
         AND source NOT GLOB ('*[ ' || char(9) || char(10) || char(13) || ']*')
     ),
     start_year  REAL NOT NULL CHECK (abs(start_year) < 1e15),
-    end_year    REAL NOT NULL CHECK (abs(end_year) < 1e15),
-    CHECK (start_year <= end_year)
+    -- NULL exactly when the period is ongoing (it has not ended yet, like the Holocene).
+    end_year    REAL CHECK (end_year IS NULL OR abs(end_year) < 1e15),
+    ongoing     INTEGER NOT NULL DEFAULT 0 CHECK (ongoing IN (0, 1)),
+    CHECK ((ongoing = 1) = (end_year IS NULL)),
+    CHECK (end_year IS NULL OR start_year <= end_year)
 ) STRICT;
 
 CREATE INDEX idx_periods_span ON periods (start_year, end_year);

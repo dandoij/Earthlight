@@ -495,11 +495,10 @@ def test_replacing_history_leaves_vantage_points_alone(database: sqlite3.Connect
 def test_a_failed_history_replacement_changes_nothing(database: sqlite3.Connection) -> None:
     data = load_curated_history(HISTORY_SAMPLE)
     replace_history(database, data)
-    twice = type(data)(data.events, data.periods, data.landmarks)
     bad = type(data)(data.events + data.events[:1], (), ())  # the same id twice
     with pytest.raises(RuntimeError, match="could not store the history"):
         replace_history(database, bad)
-    assert load_history(database).events == tuple(sorted(twice.events, key=lambda e: e.year))
+    assert load_history(database).events == tuple(sorted(data.events, key=lambda e: e.year))
     assert len(load_history(database).landmarks) == 1
 
 
@@ -525,3 +524,20 @@ def test_replacing_history_shrinks_the_file(tmp_path: Path) -> None:
         assert path.stat().st_size < before
     finally:
         connection.close()
+
+
+def test_an_ongoing_period_is_stored_without_an_end_year(database: sqlite3.Connection) -> None:
+    data = load_curated_history(HISTORY_SAMPLE)
+    holocene = data.periods[0].model_copy(
+        update={"id": "holocene-epoch", "name": "Holocene Epoch", "end": None, "ongoing": True}
+    )
+    replace_history(database, type(data)(data.events, (*data.periods, holocene), data.landmarks))
+    assert database.execute(
+        "SELECT ongoing, end_year FROM periods WHERE id = 'holocene-epoch'"
+    ).fetchone() == (1, None)
+    assert database.execute(
+        "SELECT ongoing, end_year IS NULL FROM periods WHERE id = 'cambrian'"
+    ).fetchone() == (0, 0)
+    stored = {p.id: p for p in load_history(database).periods}
+    assert stored["holocene-epoch"] == holocene
+    assert stored["cambrian"].ongoing is False and stored["cambrian"].end is not None

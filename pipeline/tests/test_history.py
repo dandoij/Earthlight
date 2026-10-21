@@ -4,12 +4,14 @@ from pathlib import Path
 
 import pytest
 
+from earthlight.time import from_calendar
 from earthlight_pipeline.history import (
     CATEGORIES,
-    ONGOING_END_YEAR,
+    DESCRIPTION_REFERENCE_YEAR,
     HistoryData,
     HistoryError,
     category_counts,
+    has_ongoing_period,
     load_curated_history,
     search_entries,
     years_covered,
@@ -107,11 +109,28 @@ def test_every_problem_in_every_file_is_reported_together(tmp_path: Path) -> Non
     assert "duplicate id: x" not in text  # the first file's entry is invalid, so not counted
 
 
-def test_a_repeated_id_or_name_is_refused(tmp_path: Path) -> None:
+def test_a_repeated_id_or_name_is_refused_naming_both_files(tmp_path: Path) -> None:
     write(tmp_path, EVENT, "a.yaml")
     write(tmp_path, EVENT, "b.yaml")
     text = problems(tmp_path)
-    assert "duplicate id: x" in text and "duplicate name in events: x" in text
+    assert "duplicate id: x (in a.yaml, b.yaml)" in text
+    assert "duplicate name in events: x (in a.yaml, b.yaml)" in text
+
+
+def test_a_bad_category_names_its_file(tmp_path: Path) -> None:
+    write(tmp_path, EVENT.replace("category: science", "category: sports"), "late.yaml")
+    assert "late.yaml (x): category 'sports' is not one of" in problems(tmp_path)
+
+
+def test_a_key_written_twice_in_one_entry_is_refused(tmp_path: Path) -> None:
+    text = problems(write(tmp_path, EVENT.replace("year: 1492", "year: 1492\n    year: 1493")))
+    assert "era.yaml: cannot be read" in text and "found the key 'year' twice" in text
+
+
+def test_files_with_only_empty_lists_have_no_entries(tmp_path: Path) -> None:
+    write(tmp_path, "events: []\nperiods: []\n", "a.yaml")
+    write(tmp_path, "landmarks: []\n", "b.yaml")
+    assert "no history entries" in problems(tmp_path)
 
 
 def test_an_id_cannot_be_reused_across_types(tmp_path: Path) -> None:
@@ -151,14 +170,29 @@ def test_search_entries_tell_the_hits_apart() -> None:
     assert (
         entries["cambrian"].description == "Period, 539 million years ago to 485 million years ago"
     )
-    assert entries["great-pyramid-of-giza"].description == "Landmark, built 2541 BCE"
+    assert entries["great-pyramid-of-giza"].description == "Landmark, built 2560 BCE"
     assert entries["formation-of-earth"].description == "Event, 4.54 billion years ago"
     assert all(e.aliases == "" for e in entries.values())
+
+
+def test_a_recent_event_is_described_by_its_year_not_as_days_ago(tmp_path: Path) -> None:
+    late_2025 = from_calendar(2025, 12, 14)  # 18 days before the reference year starts
+    assert DESCRIPTION_REFERENCE_YEAR - late_2025 < 1
+    write(tmp_path, EVENT.replace("year: 1492", f"year: {late_2025!r}"))
+    (entry,) = search_entries(load_curated_history(tmp_path))
+    assert entry.description == "Event, 2025 CE"
+
+
+def test_a_year_after_the_reference_year_is_a_calendar_year(tmp_path: Path) -> None:
+    write(tmp_path, EVENT.replace("year: 1492", "year: 2026.9"))
+    (entry,) = search_entries(load_curated_history(tmp_path))
+    assert entry.description == "Event, 2026 CE"
 
 
 def test_the_years_and_categories_covered() -> None:
     data = load_curated_history(SAMPLE)
     assert years_covered(data) == (-4.54e9, 1969.5)
+    assert not has_ongoing_period(data)
     assert category_counts(data) == {"geological": 2, "civilization": 1, "technology": 1}
 
 
@@ -177,28 +211,39 @@ periods:
     importance: 3
     source: https://example.org/era
     start: -66000000
-    end: present
+    ongoing: true
 """
 
 
 def test_a_period_can_be_ongoing(tmp_path: Path) -> None:
     (period,) = load_curated_history(write(tmp_path, PERIOD)).periods
-    assert period.end == ONGOING_END_YEAR > 2026
+    assert period.ongoing and period.end is None
     (entry,) = search_entries(load_curated_history(tmp_path))
     assert entry.description == "Period, 66 million years ago to present"
 
 
+def test_an_ongoing_period_is_not_counted_as_an_end_year(tmp_path: Path) -> None:
+    write(tmp_path, PERIOD, "a.yaml")
+    write(tmp_path, EVENT, "b.yaml")
+    data = load_curated_history(tmp_path)
+    assert years_covered(data) == (-66_000_000, 1492)
+    assert has_ongoing_period(data)
+
+
 @pytest.mark.parametrize(
-    ("old", "new"),
+    ("old", "new", "message"),
     [
-        ("start: -66000000", "start: present"),  # only an end can be ongoing
-        ("end: present", "end: now"),
-        ("end: present", 'end: "present "'),
+        ("ongoing: true", "ongoing: true\n    end: 2000", "not ongoing"),  # ongoing but ended
+        ("ongoing: true", "ongoing: false", "not ongoing"),  # ended, but no end given
+        ("ongoing: true", 'ongoing: "true"', "ongoing"),  # text is not a bool
+        ("ongoing: true", "ongoing: 1", "ongoing"),  # nor is a number
+        ("ongoing: true", "end: present", "end"),  # the old keyword is gone
     ],
 )
-def test_present_is_only_allowed_as_the_end_of_a_period(tmp_path: Path, old: str, new: str) -> None:
-    assert "periods 1 (era)" in problems(write(tmp_path, PERIOD.replace(old, new)))
+def test_ongoing_must_agree_with_end(tmp_path: Path, old: str, new: str, message: str) -> None:
+    assert message in problems(write(tmp_path, PERIOD.replace(old, new)))
 
 
-def test_present_is_not_allowed_for_an_event(tmp_path: Path) -> None:
-    assert "year" in problems(write(tmp_path, EVENT.replace("year: 1492", "year: present")))
+def test_ongoing_is_not_allowed_on_an_event(tmp_path: Path) -> None:
+    text = EVENT.replace("year: 1492", "year: 1492\n    ongoing: true")
+    assert "ongoing" in problems(write(tmp_path, text))

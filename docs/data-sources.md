@@ -260,16 +260,19 @@ History is hand-curated, so the work is in the rules, not a download. `pipeline/
 ### Rules chosen in step 2.7
 
 - **Categories are a fixed list** in `history.py` (`CATEGORIES`): cosmic, geological, life, human_origins, civilization, science, war_politics, culture, technology. The model accepts any text; the loader enforces the list so the files stay consistent.
-- **Ids are unique across events, periods, and landmarks**, and names are unique within each type.
-- **Every problem in every file is reported at once**, and a bad file stops the build before the database is touched.
-- **A period that has not ended** (the Cenozoic, the Holocene) says `end: present` in the YAML. The loader turns it into `ONGOING_END_YEAR` (2100), and search text shows "present". Only a period's `end` may use it.
-- **Years in the files:** N BCE is written as -(N-1). A date given as "N years ago" is 2026 minus N; BP dates are 1950 minus N. At deep-time scale (millions of years) plain -N is fine.
-- **Search descriptions** read like "Event, 1492 CE" or "Period, 539 million years ago to 485 million years ago". "N years ago" counts back from a fixed year (`DESCRIPTION_REFERENCE_YEAR`) so a rebuild gives identical text.
+- **Ids are unique across events, periods, and landmarks**, and names are unique within each type. A problem that involves several entries (a repeated id, a bad category) names the file each entry came from.
+- **A key may appear only once in a YAML mapping.** Plain PyYAML keeps the last of two `year:` lines without a word; our loader (`curated_yaml.py`, shared with the deep-sky list) reports it as a problem instead.
+- **Every problem in every file is reported at once**, and a bad file stops the build before the database is touched. Files that hold no entries at all (every list empty) are reported as "no history entries", also before the database is touched.
+- **A period that has not ended** (the Cenozoic, the Holocene, the Space Age) says `ongoing: true` in the YAML and has no `end`. The model, the database (`ongoing = 1`, `end_year` empty) and the search text ("... to present") all carry the flag, so nothing stores a made-up end year.
+- **Years in the files:** N BCE is written as -(N-1) (so 2560 BCE is -2559, and 1 BCE is 0). A date given as "N years ago" is 2026 minus N; BP dates are 1950 minus N. At deep-time scale (millions of years) plain -N is fine.
+- **Write years as plain integers** (`-4540000000`) or with a signed exponent (`-4.54e+9`). PyYAML follows YAML 1.1, which reads `-4.54e9` (no `+` or `-` after the `e`) as text, and strict mode then refuses it.
+- **Search descriptions** read like "Event, 1492 CE" or "Period, 539 million years ago to 485 million years ago". "N years ago" counts back from a fixed year (`DESCRIPTION_REFERENCE_YEAR`) so a rebuild gives identical text. Recent dates are always calendar years ("2025 CE"), never "18 days ago", because the text is frozen into the database.
+- **The build report** gives the latest year as "present" when a period is ongoing, rather than printing the 2100 stand-in.
 
 ### How dates are sourced
 
-- **Deep time (2.8, 2.9):** boundary ages follow the International Chronostratigraphic Chart (Gradstein et al. 2020 ages) from stratigraphy.org. The chart is copyrighted by the ICS; we cite dates (facts) and write our own summaries. CSIRO republished the 2017 to 2019 editions as CC BY 4.0 RDF.
-- **Everything else:** every date is checked against two independent pages (such as Wikipedia plus Britannica, NASA, or the Smithsonian). Wikidata (CC0) is a third check for borderline dates. An entry whose date cannot be confirmed is dropped rather than guessed, and a date that is a best estimate gets a `year_uncertainty`.
+- **Deep time (2.8, 2.9):** eon, era, and period boundary ages come from a single source, the International Chronostratigraphic Chart (2023 and later editions) at stratigraphy.org/chart, and were not cross-checked against a second one. The chart is copyrighted by the ICS; we cite dates (facts) and write our own summaries. CSIRO republished the 2017 to 2019 editions as CC BY 4.0 RDF.
+- **Everything else:** each date was read from a cited page (mostly Wikipedia, which itself cites the primary sources). Where possible a second independent page (Britannica, NASA, the Smithsonian, or a code reviewer's own knowledge) was used to check it, but not every entry has a second check; the unchecked ones are listed in the maintainer's review notes. An entry whose date could not be found is dropped rather than guessed, and a date that is a best estimate or a middle of a range gets a `year_uncertainty`.
 - **Not used:** Seshat (CC BY-NC-SA, codes societies, not events) and bulk event dumps with unclear licenses.
 
 ## Licenses and attribution

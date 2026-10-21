@@ -10,9 +10,9 @@ events:
     category: life
     region: Global oceans
     summary: >-
-      Within a few tens of millions of years, most of the major animal body plans appeared in
-      the fossil record, many with shells, eyes, and limbs. The start is the base of the
-      Cambrian; the burst is thought to have run for roughly 20 million years.
+      Over roughly 20 million years, most of the major animal body plans appeared in the
+      fossil record, many with shells, eyes, and limbs. The burst began near the base of the
+      Cambrian.
     importance: 4
     wikipedia: Cambrian explosion
     source: https://en.wikipedia.org/wiki/Cambrian_explosion
@@ -25,13 +25,12 @@ events:
     region: Ellesmere Island, Canada
     summary: >-
       A fossil fish with a neck, ribs, and sturdy fins shows how animals with backbones may
-      have begun the move from water onto land. The three specimens were dated to between
-      375 and 383 million years ago.
+      have begun the move from water onto land. It lived about 375 million years ago.
     importance: 3
     wikipedia: Tiktaalik
     source: https://en.wikipedia.org/wiki/Tiktaalik
-    year: -379000000
-    year_uncertainty: 4000000
+    year: -375000000
+    year_uncertainty: 5000000
 
   - id: permian-triassic-extinction
     name: The Permian-Triassic extinction (the Great Dying)
@@ -67,8 +66,8 @@ events:
     region: Global
     summary: >-
       Small, shrew-like animals appeared in the shadow of the dinosaurs. The date depends on
-      where you draw the line between mammals and their close relatives, but the earliest
-      mammal-like forms are about 205 million years old.
+      where you draw the line between mammals and their close relatives. Counting early mammal
+      relatives such as Morganucodon, the first mammals are about 205 million years old.
     importance: 3
     wikipedia: Evolution of mammals
     source: https://en.wikipedia.org/wiki/Evolution_of_mammals
@@ -80,8 +79,9 @@ events:
     category: life
     region: Global
     summary: >-
-      Plants with true flowers and fruit show up in the fossil record in the Early Cretaceous
-      and spread quickly, changing the world's forests, insects, and food chains.
+      The oldest clear fossil records of flowering plants are pollen grains from the Early
+      Cretaceous, with fossil flowers a little later. They then spread quickly, changing the
+      world's forests, insects, and food chains.
     importance: 3
     wikipedia: Flowering plant
     source: https://en.wikipedia.org/wiki/Flowering_plant
@@ -167,7 +167,7 @@ events:
     importance: 4
     wikipedia: Homo erectus
     source: https://en.wikipedia.org/wiki/Homo_erectus
-    year: -2040000
+    year: -2000000
     year_uncertainty: 50000
 
   - id: early-controlled-fire
@@ -176,13 +176,13 @@ events:
     region: Wonderwerk Cave, South Africa
     summary: >-
       Burned bone and ash in a South African cave are the earliest widely accepted signs that
-      human ancestors controlled fire. Estimates run from about 1 to 1.8 million years ago,
-      and older claims elsewhere are disputed.
+      human ancestors controlled fire, about 1 million years ago. Older claims elsewhere are
+      disputed.
     importance: 4
     wikipedia: Control of fire by early humans
     source: https://en.wikipedia.org/wiki/Control_of_fire_by_early_humans
-    year: -1400000
-    year_uncertainty: 400000
+    year: -1000000
+    year_uncertainty: 200000
 
 periods:
   - id: paleozoic-era
@@ -222,7 +222,7 @@ periods:
     wikipedia: Cenozoic
     source: https://stratigraphy.org/chart
     start: -66000000
-    end: present
+    ongoing: true
 
   - id: pleistocene-epoch
     name: Pleistocene Epoch

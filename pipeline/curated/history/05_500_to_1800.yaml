@@ -1,9 +1,10 @@
 # 500 CE to 1800 CE.
 # Years are astronomical decimal years (the same as the calendar year from 1 CE on). A date known
 # to the day is converted with earthlight.time.from_calendar, which counts in the Gregorian
-# calendar; dates before 1582 were recorded in the Julian calendar, which differs by up to ten
-# days, so those carry a year_uncertainty of 0.03 or more. A date known only to the year is the
-# middle of that year, plus or minus 0.5.
+# calendar. Dates before 1582 were recorded in the Julian calendar, which differs by up to ten
+# days, so those carry a year_uncertainty of 0.03 or more. Britain and its colonies kept the
+# Julian calendar until 1752, so dates recorded there before then can differ by up to 11 days.
+# A date known only to the year is the middle of that year, plus or minus 0.5.
 events:
   - id: hijra
     name: The Hijra, the start of the Islamic calendar
@@ -17,7 +18,7 @@ events:
     wikipedia: Hijra (Islam)
     source: https://en.wikipedia.org/wiki/Hijra_(Islam)
     year: 622.537
-    year_uncertainty: 0.05
+    year_uncertainty: 0.25
 
   - id: lindisfarne-raid
     name: The Viking raid on Lindisfarne
@@ -66,8 +67,8 @@ events:
     region: Newfoundland, Canada
     summary: >-
       Tree rings in wood cut with metal tools show Norse presence in Newfoundland in the year
-      1021, almost five centuries before Columbus. It is the only certain calendar date for
-      Europeans in the Americas before him.
+      1021, almost five centuries before Columbus. It is the earliest securely dated European
+      presence in the Americas.
     importance: 4
     wikipedia: L'Anse aux Meadows
     source: https://en.wikipedia.org/wiki/L%27Anse_aux_Meadows
@@ -107,7 +108,8 @@ events:
     region: Mongolia
     summary: >-
       A council of Mongol leaders named Temujin their supreme ruler, with the title Genghis
-      Khan. His armies went on to build the largest land empire in history.
+      Khan. His armies, and mostly his heirs, went on to build the largest contiguous land
+      empire in history.
     importance: 5
     wikipedia: Genghis Khan
     source: https://en.wikipedia.org/wiki/Genghis_Khan
@@ -120,7 +122,8 @@ events:
     region: Runnymede, England
     summary: >-
       Rebel barons forced King John of England to agree to a charter that limited the king's
-      power. Its clause that no one is above the law became a foundation of later constitutions.
+      power: no free man could be punished except by lawful judgement or the law of the land.
+      The pope annulled it within months, but it was reissued and shaped later constitutions.
     importance: 4
     wikipedia: Magna Carta
     source: https://en.wikipedia.org/wiki/Magna_Carta
@@ -174,8 +177,7 @@ events:
     region: Constantinople, Turkey
     summary: >-
       Sultan Mehmed II captured the capital of the Byzantine Empire after a siege of about
-      seven weeks, ending the last remnant of the Roman Empire. The city became the Ottoman
-      capital.
+      seven weeks, ending the Byzantine Empire. The city became the Ottoman capital.
     importance: 5
     wikipedia: Fall of Constantinople
     source: https://en.wikipedia.org/wiki/Fall_of_Constantinople
@@ -192,7 +194,7 @@ events:
     importance: 5
     wikipedia: Gutenberg Bible
     source: https://en.wikipedia.org/wiki/Gutenberg_Bible
-    year: 1455
+    year: 1454.5
     year_uncertainty: 1
 
   - id: columbus-reaches-the-americas
@@ -433,7 +435,7 @@ periods:
     wikipedia: Ottoman Empire
     source: https://en.wikipedia.org/wiki/Ottoman_Empire
     start: 1299
-    end: 1922.836
+    end: 1922.833
 
   - id: mughal-empire
     name: Mughal Empire

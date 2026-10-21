@@ -97,8 +97,17 @@
       "type": "string"
      },
      "end": {
-      "title": "End",
-      "type": "number"
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "When the period ended. Missing exactly when it is ongoing.",
+      "title": "End"
      },
      "id": {
       "maxLength": 100,
@@ -117,6 +126,12 @@
       "minLength": 1,
       "title": "Name",
       "type": "string"
+     },
+     "ongoing": {
+      "default": false,
+      "description": "True for a period that has not ended yet, such as the Holocene.",
+      "title": "Ongoing",
+      "type": "boolean"
      },
      "region": {
       "maxLength": 200,
@@ -163,8 +178,7 @@
      "summary",
      "importance",
      "source",
-     "start",
-     "end"
+     "start"
     ],
     "title": "HistoryPeriod",
     "type": "object"

@@ -7,7 +7,8 @@ entries that match ``HistoryEvent``, ``HistoryPeriod``, and ``Landmark`` from
 
 Entries are validated in strict mode, so a value of the wrong type is an error rather than a
 silent conversion: ``year: "1492"`` (text) and ``importance: true`` are both refused. The
-loader collects every problem in every file and reports them together.
+loader collects every problem in every file and reports them together, including a key that
+appears twice in one entry (see ``curated_yaml.py``).
 """
 
 from collections import Counter
@@ -21,6 +22,7 @@ from pydantic import BaseModel, ValidationError
 
 from earthlight.models import HistoryEvent, HistoryPeriod, Landmark
 from earthlight.time import format_year
+from earthlight_pipeline.curated_yaml import load_yaml
 from earthlight_pipeline.stars import SearchEntry
 
 CATEGORIES = (
@@ -36,11 +38,6 @@ CATEGORIES = (
 )
 """The allowed values of ``category``. The model accepts any text; this fixed list keeps the
 curated files consistent, so the web app can offer a filter for each."""
-
-ONGOING_END_YEAR = 2100.0
-"""What ``end: present`` becomes. A period that has not ended (the Cenozoic, the Holocene) needs
-an end year that stays after "now" for as long as a built database is likely to be used, so
-the files say ``present`` instead of a year that would go stale. Search text shows "present"."""
 
 DESCRIPTION_REFERENCE_YEAR = 2026.0
 """The year that "N years ago" in search descriptions counts back from. It is fixed so that
@@ -84,11 +81,15 @@ def load_curated_history(directory: Path) -> HistoryData:
         raise HistoryError(f"{directory} has no .yaml files")
 
     found: dict[str, list[Any]] = {section: [] for section in _SECTIONS}
+    origin: dict[int, str] = {}  # id() of each entry -> the name of the file it came from
     problems: list[str] = []
     for path in files:
         for section, entries in _read_file(path, problems).items():
             found[section] += entries
-    problems += _entry_problems(found)
+            origin.update((id(entry), path.name) for entry in entries)
+    problems += _entry_problems(found, origin)
+    if not problems and not any(found.values()):
+        problems.append(f"{directory} has no history entries (every list is empty)")
     if problems:
         raise HistoryError("\n".join(problems))
     return HistoryData(
@@ -101,7 +102,7 @@ def load_curated_history(directory: Path) -> HistoryData:
 def _read_file(path: Path, problems: list[str]) -> dict[str, list[Any]]:
     """The valid entries of one file by section. Problems are appended to ``problems``."""
     try:
-        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        data = load_yaml(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, yaml.YAMLError) as error:
         problems.append(f"{path.name}: cannot be read ({error})")
         return {}
@@ -119,8 +120,6 @@ def _read_file(path: Path, problems: list[str]) -> dict[str, list[Any]]:
         entries = result.setdefault(section, [])
         for position, item in enumerate(items, start=1):
             label = item.get("id", "?") if isinstance(item, dict) else "?"
-            if section == "periods" and isinstance(item, dict) and item.get("end") == "present":
-                item = {**item, "end": ONGOING_END_YEAR}
             try:
                 entries.append(model.model_validate(item, strict=True))
             except ValidationError as error:
@@ -132,32 +131,48 @@ def _read_file(path: Path, problems: list[str]) -> dict[str, list[Any]]:
     return result
 
 
-def _entry_problems(found: dict[str, list[Any]]) -> list[str]:
-    """Problems that need a look at all the entries together."""
+def _entry_problems(found: dict[str, list[Any]], origin: dict[int, str]) -> list[str]:
+    """Problems that need a look at all the entries together.
+
+    ``origin`` maps ``id(entry)`` to its file name, so each problem says where to look.
+    """
     problems: list[str] = []
     everything = [entry for entries in found.values() for entry in entries]
     for entry in everything:
         if entry.category not in CATEGORIES:
             problems.append(
-                f"{entry.id}: category '{entry.category}' is not one of {', '.join(CATEGORIES)}"
+                f"{origin[id(entry)]} ({entry.id}): category '{entry.category}' "
+                f"is not one of {', '.join(CATEGORIES)}"
             )
-    ids = Counter(entry.id for entry in everything)
-    problems += [f"duplicate id: {value}" for value, count in ids.items() if count > 1]
+    problems += _repeats("duplicate id", [(entry.id, entry) for entry in everything], origin)
     for section, entries in found.items():
-        names = Counter(entry.name.lower() for entry in entries)
-        problems += [
-            f"duplicate name in {section}: {value}" for value, count in names.items() if count > 1
-        ]
+        problems += _repeats(
+            f"duplicate name in {section}",
+            [(entry.name.lower(), entry) for entry in entries],
+            origin,
+        )
     return problems
+
+
+def _repeats(label: str, keyed: list[tuple[str, Any]], origin: dict[int, str]) -> list[str]:
+    """One problem for each key that more than one entry has, naming their files."""
+    files: dict[str, list[str]] = {}
+    for key, entry in keyed:
+        files.setdefault(key, []).append(origin[id(entry)])
+    return [
+        f"{label}: {key} (in {', '.join(names)})" for key, names in files.items() if len(names) > 1
+    ]
 
 
 # --- search ----------------------------------------------------------------------------------
 
 
 def _when(year: float) -> str:
-    if year == ONGOING_END_YEAR:
-        return "present"
-    return format_year(year, now_year=DESCRIPTION_REFERENCE_YEAR)
+    # format_year writes moments less than a year before its reference as "18 days ago", which
+    # would be frozen into the database and go stale. Counting from at least a year later makes
+    # every such moment a calendar year ("2025 CE"); deep-time text still counts from the fixed
+    # reference year, because only years after it move the reference.
+    return format_year(year, now_year=max(DESCRIPTION_REFERENCE_YEAR, year + 1))
 
 
 def search_entries(data: HistoryData) -> list[SearchEntry]:
@@ -170,7 +185,13 @@ def search_entries(data: HistoryData) -> list[SearchEntry]:
         SearchEntry("event", e.id, e.name, "", f"Event, {_when(e.year)}") for e in data.events
     ]
     entries += [
-        SearchEntry("period", p.id, p.name, "", f"Period, {_when(p.start)} to {_when(p.end)}")
+        SearchEntry(
+            "period",
+            p.id,
+            p.name,
+            "",
+            f"Period, {_when(p.start)} to {'present' if p.end is None else _when(p.end)}",
+        )
         for p in data.periods
     ]
     entries += [
@@ -181,17 +202,26 @@ def search_entries(data: HistoryData) -> list[SearchEntry]:
 
 
 def years_covered(data: HistoryData) -> tuple[float, float]:
-    """The earliest and latest year that any entry mentions. Raises ValueError if there are none."""
+    """The earliest and latest year that any entry mentions. Raises ValueError if there are none.
+
+    An ongoing period has no end year, so only its start counts; ``has_ongoing_period`` tells
+    whether the history reaches the present.
+    """
     years: list[float] = []
     years += [e.year for e in data.events]
     for p in data.periods:
-        years += [p.start, p.end]
+        years += [p.start] if p.end is None else [p.start, p.end]
     for m in data.landmarks:
         years += [m.built_start, m.built_end]
         years += [] if m.destroyed is None else [m.destroyed]
     if not years:
         raise ValueError("there are no history entries")
     return min(years), max(years)
+
+
+def has_ongoing_period(data: HistoryData) -> bool:
+    """Whether any period is marked ``ongoing: true``."""
+    return any(p.ongoing for p in data.periods)
 
 
 def category_counts(data: HistoryData) -> dict[str, int]:

@@ -378,6 +378,28 @@ def test_period_must_not_end_before_it_starts() -> None:
     assert HistoryPeriod.model_validate(values | {"start": 1500.0, "end": 1500.0}).start == 1500.0
 
 
+def test_an_ongoing_period_has_no_end() -> None:
+    values: dict[str, Any] = {
+        "id": "holocene-epoch",
+        "name": "Holocene Epoch",
+        "category": "geological",
+        "region": "Earth",
+        "summary": "The warm time since the last ice age.",
+        "importance": 4,
+        "source": SOURCE,
+        "start": -9700.0,
+        "ongoing": True,
+    }
+    period = HistoryPeriod.model_validate(values)
+    assert period.ongoing and period.end is None
+    assert HistoryPeriod.model_validate(values | {"ongoing": False, "end": 100.0}).end == 100.0
+    with pytest.raises(ValidationError, match="exactly when it is not ongoing"):
+        HistoryPeriod.model_validate(values | {"end": 100.0})  # ongoing yet ended
+    with pytest.raises(ValidationError, match="exactly when it is not ongoing"):
+        HistoryPeriod.model_validate(values | {"ongoing": False})  # ended but no end
+    assert HistoryPeriod.model_validate_json(period.model_dump_json()) == period
+
+
 def test_landmark_rules() -> None:
     assert landmark().destroyed is None
     assert landmark(destroyed=1301.0).destroyed == 1301.0

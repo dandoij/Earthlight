@@ -1,17 +1,16 @@
 # Deep time: the Big Bang to the end of the Ediacaran (about 539 million years ago).
 # Years are astronomical decimal years, so an event N years ago is about -N (the 2,000-odd
 # years between year 0 and today are far inside every uncertainty here).
-# Eon and period boundaries follow the International Chronostratigraphic Chart (ICS, 2023 and
-# later editions), cross-checked against Britannica. Other dates are cross-checked against
-# two independent pages; see docs/data-sources.md for the rules.
+# Eon and period boundaries come from one source, the International Chronostratigraphic Chart
+# (ICS, 2023 and later editions, stratigraphy.org/chart); they were not cross-checked elsewhere.
+# Other dates come from the page in each entry's source; see docs/data-sources.md for the rules.
 events:
   - id: big-bang
     name: The Big Bang
     category: cosmic
     region: Universe
     summary: >-
-      Space, time, and all the matter in the universe began expanding from an extremely hot,
-      dense state. Measurements of the cosmic microwave background put this about 13.8 billion
+      The universe began expanding from an extremely hot, dense state. Measurements of the cosmic microwave background put this about 13.8 billion
       years ago.
     importance: 5
     wikipedia: Big Bang
@@ -43,7 +42,7 @@ events:
       when it began.
     importance: 5
     wikipedia: Formation and evolution of the Solar System
-    source: https://en.wikipedia.org/wiki/Hadean
+    source: https://stratigraphy.org/chart
     year: -4567300000
     year_uncertainty: 160000
 
@@ -107,8 +106,8 @@ periods:
     category: geological
     region: Earth
     summary: >-
-      Earth cooled enough for continents and oceans to settle, and the first microbial life
-      appeared. There was almost no free oxygen in the air.
+      Continents grew and the oceans held stable, and the oldest clear evidence of life dates
+      from this eon. There was almost no free oxygen.
     importance: 3
     wikipedia: Archean
     source: https://stratigraphy.org/chart
@@ -121,7 +120,8 @@ periods:
     region: Earth
     summary: >-
       A long stretch of Earth's history in which oxygen built up in the air and complex cells
-      appeared. It ends where the fossil record of animals begins.
+      appeared. It ends at the start of the Cambrian, when animals with shells and skeletons,
+      and their burrows, become common.
     importance: 3
     wikipedia: Proterozoic
     source: https://stratigraphy.org/chart
@@ -151,6 +151,6 @@ periods:
       first large, complex life, such as soft-bodied frond and disc shapes on the sea floor.
     importance: 3
     wikipedia: Ediacaran
-    source: https://en.wikipedia.org/wiki/Ediacaran
+    source: https://stratigraphy.org/chart
     start: -635000000
     end: -538800000

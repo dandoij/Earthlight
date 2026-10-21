@@ -37,12 +37,12 @@ events:
     region: Mesopotamia
     summary: >-
       Sargon of Akkad united the Sumerian city-states and built what is often called the first
-      empire. His dates depend on the chronology used and are uncertain by a few decades.
+      empire. His dates depend on the chronology used and are uncertain by up to a century.
     importance: 3
     wikipedia: Sargon of Akkad
     source: https://en.wikipedia.org/wiki/Sargon_of_Akkad
     year: -2333
-    year_uncertainty: 20
+    year_uncertainty: 60
 
   - id: code-of-hammurabi
     name: The Code of Hammurabi
@@ -55,7 +55,7 @@ events:
     importance: 4
     wikipedia: Code of Hammurabi
     source: https://en.wikipedia.org/wiki/Code_of_Hammurabi
-    year: -1752
+    year: -1753
     year_uncertainty: 60
 
   - id: late-bronze-age-collapse
@@ -123,7 +123,7 @@ events:
     importance: 3
     wikipedia: Lydia
     source: https://en.wikipedia.org/wiki/Lydia
-    year: -599
+    year: -624
     year_uncertainty: 75
 
   - id: birth-of-confucius
@@ -136,7 +136,7 @@ events:
     importance: 4
     wikipedia: Confucius
     source: https://en.wikipedia.org/wiki/Confucius
-    year: -549.26
+    year: -549.5
     year_uncertainty: 2
 
   - id: battle-of-marathon

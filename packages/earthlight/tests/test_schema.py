@@ -419,6 +419,26 @@ def test_a_period_may_start_and_end_together(db: sqlite3.Connection) -> None:
     assert not rejected(db, "periods", PERIOD | {"start_year": 1500.0, "end_year": 1500.0})
 
 
+ONGOING_PERIOD = PERIOD | {"end_year": None, "ongoing": 1}
+
+
+def test_an_ongoing_period_has_no_end_year(db: sqlite3.Connection) -> None:
+    assert not rejected(db, "periods", ONGOING_PERIOD)
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        {"end_year": 2000.0},  # ongoing but it has an end
+        {"ongoing": 0},  # not ongoing but no end
+        {"ongoing": 2},
+        {"ongoing": "yes"},
+    ],
+)
+def test_ongoing_and_end_year_must_agree(db: sqlite3.Connection, bad: dict[str, Any]) -> None:
+    assert rejected(db, "periods", ONGOING_PERIOD | bad)
+
+
 @pytest.mark.parametrize(
     "bad",
     [
@@ -654,6 +674,23 @@ def test_history_models_survive_a_round_trip(db: sqlite3.Connection) -> None:
     stored = dict(db.execute("SELECT * FROM periods").fetchone())
     stored["start"], stored["end"] = stored.pop("start_year"), stored.pop("end_year")
     assert HistoryPeriod.model_validate(stored) == period
+    ongoing = HistoryPeriod.model_validate(
+        {k: v for k, v in PERIOD.items() if k not in ("start_year", "end_year", "id")}
+        | {"id": "holocene-epoch", "start": -9700.0, "ongoing": True}
+    )
+    insert(
+        db,
+        "periods",
+        ongoing.model_dump(exclude={"start", "end"})
+        | {"start_year": ongoing.start, "end_year": ongoing.end},
+    )
+    stored_ongoing = dict(
+        db.execute("SELECT * FROM periods WHERE id = 'holocene-epoch'").fetchone()
+    )
+    stored_ongoing["start"] = stored_ongoing.pop("start_year")
+    stored_ongoing["end"] = stored_ongoing.pop("end_year")
+    assert stored_ongoing["end"] is None
+    assert HistoryPeriod.model_validate(stored_ongoing) == ongoing
     assert (
         Landmark.model_validate(dict(db.execute("SELECT * FROM landmarks").fetchone())) == landmark
     )

@@ -5,6 +5,7 @@ from pathlib import Path
 
 from earthlight_pipeline.history import (
     category_counts,
+    has_ongoing_period,
     load_curated_history,
     years_covered,
 )
@@ -27,6 +28,8 @@ class HistoryReport:
     latest_year: float
     database: Path
     database_bytes: int
+    reaches_present: bool = False
+    """True when a period is ongoing; the report then ends at "present", not a year."""
 
 
 def run_history(
@@ -35,13 +38,13 @@ def run_history(
     """Store every curated event, period, and landmark in ``database``, replacing any there."""
     data = load_curated_history(history_dir)
     progress(f"Read {data.total} history entries from {history_dir.name}/")
+    earliest, latest = years_covered(data)  # before the database is opened, in case it raises
     connection = open_database(database)
     try:
         progress(f"Writing {data.total:,} history entries to {database}")
         replace_history(connection, data)
     finally:
         connection.close()
-    earliest, latest = years_covered(data)
     return HistoryReport(
         events=len(data.events),
         periods=len(data.periods),
@@ -51,12 +54,14 @@ def run_history(
         latest_year=latest,
         database=database,
         database_bytes=database.stat().st_size,
+        reaches_present=has_ongoing_period(data),
     )
 
 
 def format_history_report(report: HistoryReport) -> str:
     """A plain-text summary of a history build."""
     total = report.events + report.periods + report.landmarks
+    latest = "present" if report.reaches_present else f"{report.latest_year:,.0f}"
     return "\n".join(
         [
             f"History entries built: {total:,} "
@@ -64,7 +69,7 @@ def format_history_report(report: HistoryReport) -> str:
             f"{report.landmarks:,} landmarks)",
             "By category: "
             + ", ".join(f"{name} {count:,}" for name, count in report.by_category.items()),
-            f"Years covered: {report.earliest_year:,.0f} to {report.latest_year:,.0f} "
+            f"Years covered: {report.earliest_year:,.0f} to {latest} "
             "(astronomical numbering, 1 BCE is 0)",
             f"Database: {report.database} ({report.database_bytes / 1_000_000:.1f} MB)",
         ]

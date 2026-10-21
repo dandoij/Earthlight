@@ -3,16 +3,16 @@
 # Dates given as "N years ago" are converted as 2026 minus N and rounded to the precision of the
 # source; dates given as BP (before 1950) as 1950 minus N; the ICS Holocene start is 11,700 years
 # before 2000 CE. Where sources disagree the year is the middle of the range and year_uncertainty
-# covers it. A period that has not ended says `end: present`.
+# covers it. A period that has not ended says `ongoing: true` and has no `end`.
 events:
   - id: first-homo-sapiens
     name: The oldest known Homo sapiens
     category: human_origins
     region: Jebel Irhoud, Morocco
     summary: >-
-      Skulls and tools from a cave in Morocco belong to people who already looked much like
-      us. Heated flints put their age at about 315,000 years, far earlier than the
-      long-held East African date.
+      Skulls and tools from a cave in Morocco belong to early members of our species, with
+      faces much like ours but longer, lower braincases. Heated flints put their age at about
+      315,000 years, far earlier than the long-held East African date.
     importance: 5
     wikipedia: Jebel Irhoud
     source: https://en.wikipedia.org/wiki/Jebel_Irhoud
@@ -82,8 +82,8 @@ events:
       Fired clay vessels were made by hunter-gatherers in southern China long before farming
       began. Pieces from Xianrendong Cave are the oldest dated so far.
     importance: 3
-    wikipedia: Pottery
-    source: https://en.wikipedia.org/wiki/Pottery
+    wikipedia: Xianrendong Cave
+    source: https://en.wikipedia.org/wiki/Xianrendong_Cave
     year: -18000
     year_uncertainty: 1000
 
@@ -92,8 +92,9 @@ events:
     category: human_origins
     region: North America
     summary: >-
-      When people first arrived in the Americas is still argued. Fossil footprints in New
-      Mexico suggest they were there at least 15,000 years ago, and perhaps much earlier.
+      When people first arrived in the Americas is still argued. Other sites show they were
+      there by about 15,000 years ago, and fossil footprints in New Mexico may be far older,
+      though their dating is disputed.
     importance: 4
     wikipedia: White Sands fossil footprints
     source: https://en.wikipedia.org/wiki/White_Sands_fossil_footprints
@@ -150,8 +151,8 @@ events:
     importance: 3
     wikipedia: Ötzi
     source: https://en.wikipedia.org/wiki/%C3%96tzi
-    year: -3229
-    year_uncertainty: 100
+    year: -3227
+    year_uncertainty: 125
 
 periods:
   - id: last-glacial-maximum
@@ -191,7 +192,7 @@ periods:
     wikipedia: Holocene
     source: https://stratigraphy.org/chart
     start: -9700
-    end: present
+    ongoing: true
 
 landmarks:
   - id: gobekli-tepe

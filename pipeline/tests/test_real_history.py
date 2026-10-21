@@ -4,13 +4,32 @@ from pathlib import Path
 
 import pytest
 
-from earthlight_pipeline.build_history import HISTORY_DIR, run_history
-from earthlight_pipeline.history import ONGOING_END_YEAR, HistoryData, load_curated_history
+from earthlight.models import HistoryPeriod
+from earthlight.time import from_calendar
+from earthlight_pipeline.build_history import HISTORY_DIR, format_history_report, run_history
+from earthlight_pipeline.history import (
+    DESCRIPTION_REFERENCE_YEAR,
+    HistoryData,
+    has_ongoing_period,
+    load_curated_history,
+    years_covered,
+)
 
 
 @pytest.fixture(scope="module")
 def shipped() -> HistoryData:
     return load_curated_history(HISTORY_DIR)
+
+
+def end_or_now(period: HistoryPeriod) -> float:
+    """The end year of a period, or infinity for one that is still going."""
+    return float("inf") if period.ongoing else finite_end(period)
+
+
+def finite_end(period: HistoryPeriod) -> float:
+    """The end year of a period that has ended."""
+    assert period.end is not None and not period.ongoing, period.id
+    return period.end
 
 
 def test_the_shipped_folder_exists_and_has_files() -> None:
@@ -23,6 +42,8 @@ def test_the_shipped_files_load_and_build_a_database(shipped: HistoryData, tmp_p
     assert report.periods == len(shipped.periods)
     assert report.landmarks == len(shipped.landmarks)
     assert report.database_bytes > 0
+    text = format_history_report(report)
+    assert " to present " in text and "2,100" not in text
 
 
 def test_every_entry_has_a_web_source_and_a_summary_in_a_sensible_length(
@@ -43,9 +64,9 @@ def test_no_text_uses_a_dash_that_the_project_forbids(shipped: HistoryData) -> N
 
 def test_the_eons_follow_each_other_without_gaps(shipped: HistoryData) -> None:
     periods = {p.id: p for p in shipped.periods}
-    assert periods["hadean-eon"].end == periods["archean-eon"].start
-    assert periods["archean-eon"].end == periods["proterozoic-eon"].start
-    assert periods["ediacaran-period"].end == periods["proterozoic-eon"].end
+    assert finite_end(periods["hadean-eon"]) == periods["archean-eon"].start
+    assert finite_end(periods["archean-eon"]) == periods["proterozoic-eon"].start
+    assert finite_end(periods["ediacaran-period"]) == finite_end(periods["proterozoic-eon"])
 
 
 def test_the_universe_is_older_than_the_solar_system_which_is_older_than_earth(
@@ -65,18 +86,18 @@ def test_the_eras_follow_each_other_and_the_ice_ages_sit_inside_the_cenozoic(
     shipped: HistoryData,
 ) -> None:
     periods = {p.id: p for p in shipped.periods}
-    assert periods["proterozoic-eon"].end == periods["paleozoic-era"].start
-    assert periods["paleozoic-era"].end == periods["mesozoic-era"].start
-    assert periods["mesozoic-era"].end == periods["cenozoic-era"].start
+    assert finite_end(periods["proterozoic-eon"]) == periods["paleozoic-era"].start
+    assert finite_end(periods["paleozoic-era"]) == periods["mesozoic-era"].start
+    assert finite_end(periods["mesozoic-era"]) == periods["cenozoic-era"].start
     pleistocene, cenozoic = periods["pleistocene-epoch"], periods["cenozoic-era"]
-    assert cenozoic.start < pleistocene.start < pleistocene.end < cenozoic.end
+    assert cenozoic.ongoing and cenozoic.start < pleistocene.start < finite_end(pleistocene)
 
 
 def test_the_extinctions_mark_the_edges_of_the_eras(shipped: HistoryData) -> None:
     events = {e.id: e for e in shipped.events}
     periods = {p.id: p for p in shipped.periods}
     assert events["permian-triassic-extinction"].year == periods["mesozoic-era"].start
-    assert events["end-cretaceous-extinction"].year == periods["mesozoic-era"].end
+    assert events["end-cretaceous-extinction"].year == finite_end(periods["mesozoic-era"])
 
 
 def test_the_human_story_is_in_time_order(shipped: HistoryData) -> None:
@@ -92,18 +113,29 @@ def test_the_human_story_is_in_time_order(shipped: HistoryData) -> None:
     assert [years[i] for i in order] == sorted(years[i] for i in order)
 
 
-def test_no_event_is_dated_after_its_own_era_ends(shipped: HistoryData) -> None:
-    events = {e.id: e for e in shipped.events}
-    assert events["first-dinosaurs"].year < events["end-cretaceous-extinction"].year
-    assert events["first-mammals"].year < events["end-cretaceous-extinction"].year
-    assert events["tiktaalik"].year < events["permian-triassic-extinction"].year
+def test_each_event_falls_inside_its_own_era(shipped: HistoryData) -> None:
+    years = {e.id: e.year for e in shipped.events}
+    periods = {p.id: p for p in shipped.periods}
+    by_era = {
+        "paleozoic-era": ["cambrian-explosion", "tiktaalik"],
+        "mesozoic-era": ["first-dinosaurs", "first-mammals", "first-flowering-plants"],
+        "cenozoic-era": ["sahelanthropus", "lucy", "lomekwi-stone-tools", "earliest-homo"],
+        "pleistocene-epoch": ["homo-erectus", "early-controlled-fire", "first-homo-sapiens"],
+    }
+    for era, event_ids in by_era.items():
+        for event_id in event_ids:
+            assert periods[era].start < years[event_id] < end_or_now(periods[era]), (era, event_id)
+    pleistocene = periods["pleistocene-epoch"]
+    for event_id in ("sahelanthropus", "lucy", "lomekwi-stone-tools", "earliest-homo"):
+        assert years[event_id] < pleistocene.start, event_id  # before the ice ages began
 
 
 def test_the_ongoing_periods_are_still_going(shipped: HistoryData) -> None:
     periods = {p.id: p for p in shipped.periods}
-    assert periods["cenozoic-era"].end == periods["holocene-epoch"].end == ONGOING_END_YEAR
-    assert periods["pleistocene-epoch"].end == periods["holocene-epoch"].start
-    assert periods["younger-dryas"].end == periods["holocene-epoch"].start
+    assert periods["cenozoic-era"].ongoing and periods["holocene-epoch"].ongoing
+    assert periods["cenozoic-era"].end is None and periods["holocene-epoch"].end is None
+    assert finite_end(periods["pleistocene-epoch"]) == periods["holocene-epoch"].start
+    assert finite_end(periods["younger-dryas"]) == periods["holocene-epoch"].start
 
 
 def test_the_prehistory_events_are_in_a_sensible_order(shipped: HistoryData) -> None:
@@ -162,14 +194,20 @@ def test_the_day_known_dates_land_in_the_right_season(shipped: HistoryData) -> N
 
 def test_the_ancient_states_follow_the_expected_order(shipped: HistoryData) -> None:
     periods = {p.id: p for p in shipped.periods}
-    assert periods["roman-republic"].end == periods["roman-empire-west"].start  # 27 BCE
-    assert periods["achaemenid-empire"].end > periods["classical-greece"].start  # Persian Wars
-    assert periods["classical-greece"].end > periods["achaemenid-empire"].end  # to Alexander
-    assert periods["old-kingdom-of-egypt"].end < periods["new-kingdom-of-egypt"].start
-    assert periods["han-dynasty"].start < 0 < periods["han-dynasty"].end
+    assert finite_end(periods["roman-republic"]) == periods["roman-empire-west"].start  # 27 BCE
+    assert (
+        finite_end(periods["achaemenid-empire"]) > periods["classical-greece"].start
+    )  # Persian Wars
+    assert finite_end(periods["classical-greece"]) > finite_end(
+        periods["achaemenid-empire"]
+    )  # to Alexander
+    assert finite_end(periods["old-kingdom-of-egypt"]) < periods["new-kingdom-of-egypt"].start
+    assert periods["han-dynasty"].start < 0 < finite_end(periods["han-dynasty"])
     events = {e.id: e.year for e in shipped.events}
     assert events["battle-of-actium"] > events["assassination-of-caesar"]
-    assert events["fall-of-the-western-roman-empire"] == periods["roman-empire-west"].end + 0.5
+    assert (
+        events["fall-of-the-western-roman-empire"] == finite_end(periods["roman-empire-west"]) + 0.5
+    )
 
 
 def test_the_landmarks_stand_where_they_should(shipped: HistoryData) -> None:
@@ -182,8 +220,12 @@ def test_the_landmarks_stand_where_they_should(shipped: HistoryData) -> None:
     assert 41 < sites["colosseum"].lat < 42 and 12 < sites["colosseum"].lon < 13
     colossus = sites["colossus-of-rhodes"]
     assert colossus.destroyed is not None and colossus.destroyed > colossus.built_end
-    for landmark_id in ("great-pyramid-of-giza", "parthenon", "terracotta-army", "colosseum"):
-        assert sites[landmark_id].destroyed is None, landmark_id
+
+
+def test_only_the_known_lost_landmarks_have_a_destruction_date(shipped: HistoryData) -> None:
+    lost = {"colossus-of-rhodes"}
+    for site in shipped.landmarks:
+        assert (site.destroyed is not None) == (site.id in lost), site.id
 
 
 def test_the_middle_ages_and_early_modern_dates_use_the_calendar_year(
@@ -204,7 +246,7 @@ def test_the_middle_ages_and_early_modern_dates_use_the_calendar_year(
         "mansa-musa-hajj": 1324,
         "black-death-reaches-europe": 1347,
         "fall-of-constantinople": 1453,
-        "gutenberg-bible": 1455,
+        "gutenberg-bible": 1454,  # "1454 or 1455", so the middle of the two years
         "columbus-reaches-the-americas": 1492,
         "da-gama-reaches-india": 1498,
         "luther-ninety-five-theses": 1517,
@@ -219,7 +261,7 @@ def test_the_middle_ages_and_early_modern_dates_use_the_calendar_year(
         "jenner-smallpox-vaccination": 1796,
     }
     for event_id, year in expected_year.items():
-        assert int(events[event_id] // 1) == year, event_id
+        assert int(events[event_id]) == year, event_id  # positive years, so int() is the floor
 
 
 def test_famous_days_fall_in_the_right_season(shipped: HistoryData) -> None:
@@ -234,20 +276,22 @@ def test_famous_days_fall_in_the_right_season(shipped: HistoryData) -> None:
 def test_the_empires_in_this_era_start_and_end_in_order(shipped: HistoryData) -> None:
     periods = {p.id: p for p in shipped.periods}
     events = {e.id: e.year for e in shipped.events}
-    assert periods["byzantine-empire"].end == events["fall-of-constantinople"]
-    assert periods["mongol-empire"].end == periods["ming-dynasty"].start
+    assert finite_end(periods["byzantine-empire"]) == events["fall-of-constantinople"]
+    assert finite_end(periods["mongol-empire"]) == periods["ming-dynasty"].start
     assert periods["ottoman-empire"].start < events["fall-of-constantinople"]
-    assert periods["ottoman-empire"].end > events["storming-of-the-bastille"]
-    assert periods["tang-dynasty"].end < periods["song-dynasty"].start
+    assert finite_end(periods["ottoman-empire"]) > events["storming-of-the-bastille"]
+    assert finite_end(periods["tang-dynasty"]) < periods["song-dynasty"].start
 
 
 def test_the_middle_age_landmarks_stand_where_they_should(shipped: HistoryData) -> None:
     sites = {m.id: m for m in shipped.landmarks}
     assert 41 < sites["hagia-sophia"].lat < 41.1 and 28.9 < sites["hagia-sophia"].lon < 29
     assert sites["borobudur"].lat < 0 and 110 < sites["borobudur"].lon < 111
-    assert sites["machu-picchu"].lat < 0 and sites["machu-picchu"].lon < 0
+    assert -13.2 < sites["machu-picchu"].lat < -13.1 and -72.6 < sites["machu-picchu"].lon < -72.5
     assert 13 < sites["angkor-wat"].lat < 14 and 103 < sites["angkor-wat"].lon < 104
-    assert sites["alhambra"].lon < 0
+    assert 37.1 < sites["alhambra"].lat < 37.2 and -3.7 < sites["alhambra"].lon < -3.5
+    assert 39.9 < sites["forbidden-city"].lat < 40 and 116.3 < sites["forbidden-city"].lon < 116.5
+    assert 27.1 < sites["taj-mahal"].lat < 27.2 and 78 < sites["taj-mahal"].lon < 78.1
     assert (
         sites["hagia-sophia"].built_end
         < sites["borobudur"].built_end
@@ -288,28 +332,44 @@ def test_the_modern_dates_use_the_calendar_year(shipped: HistoryData) -> None:
         "james-webb-space-telescope-launch": 2021,
     }
     for event_id, year in expected_year.items():
-        assert int(events[event_id] // 1) == year, event_id
+        assert int(events[event_id]) == year, event_id  # positive years, so int() is the floor
+
+
+def test_the_best_known_modern_days_match_the_calendar(shipped: HistoryData) -> None:
+    events = {e.id: e.year for e in shipped.events}
+    anchors = {
+        "sputnik-launch": from_calendar(1957, 10, 4),
+        "apollo-11-moon-landing": from_calendar(1969, 7, 20),
+        "september-11-attacks": from_calendar(2001, 9, 11),
+        "special-relativity": from_calendar(1905, 9, 26),  # published, not received
+    }
+    for event_id, expected in anchors.items():
+        assert abs(events[event_id] - expected) < 0.001, event_id
 
 
 def test_the_wars_and_ages_line_up_with_their_events(shipped: HistoryData) -> None:
     periods = {p.id: p for p in shipped.periods}
     events = {e.id: e.year for e in shipped.events}
     assert periods["space-age"].start == events["sputnik-launch"]
-    assert periods["space-age"].end == ONGOING_END_YEAR
-    assert periods["cold-war"].end == events["dissolution-of-the-soviet-union"]
+    assert periods["space-age"].ongoing and periods["space-age"].end is None
+    assert finite_end(periods["cold-war"]) == events["dissolution-of-the-soviet-union"]
     assert (
         periods["napoleonic-wars"].start
         < events["battle-of-waterloo"]
-        < periods["napoleonic-wars"].end
+        < finite_end(periods["napoleonic-wars"])
     )
-    assert periods["world-war-i"].end < periods["great-depression"].start
+    assert finite_end(periods["world-war-i"]) < periods["great-depression"].start
     assert (
         periods["great-depression"].start
         < events["wall-street-crash"]
         < periods["world-war-ii"].start
     )
-    assert periods["world-war-ii"].start < events["hiroshima-bombing"] < periods["world-war-ii"].end
-    assert periods["world-war-ii"].end < periods["cold-war"].start
+    assert (
+        periods["world-war-ii"].start
+        < events["hiroshima-bombing"]
+        < finite_end(periods["world-war-ii"])
+    )
+    assert finite_end(periods["world-war-ii"]) < periods["cold-war"].start
 
 
 def test_the_space_firsts_come_in_order(shipped: HistoryData) -> None:
@@ -337,13 +397,14 @@ def test_the_modern_landmarks_are_in_the_right_hemispheres(shipped: HistoryData)
     assert 25 < sites["burj-khalifa"].lat < 26 and 55 < sites["burj-khalifa"].lon < 56
     assert 9 < sites["panama-canal"].lat < 10 and -80 < sites["panama-canal"].lon < -79
     assert sites["eiffel-tower"].built_end < sites["empire-state-building"].built_start
-    assert sites["burj-khalifa"].built_end > 2009
+    assert abs(sites["eiffel-tower"].built_end - from_calendar(1889, 3, 31)) < 0.001
+    assert abs(sites["statue-of-liberty"].built_end - from_calendar(1886, 10, 28)) < 0.001
+    assert abs(sites["burj-khalifa"].built_end - from_calendar(2010, 1, 4)) < 0.005
 
 
 def test_the_history_reaches_from_the_big_bang_to_the_modern_day(shipped: HistoryData) -> None:
-    from earthlight_pipeline.history import years_covered
-
     earliest, latest = years_covered(shipped)
     assert earliest < -13.7e9
-    assert 2021 < latest <= ONGOING_END_YEAR
+    assert 2021 < latest < DESCRIPTION_REFERENCE_YEAR  # the 2100 stand-in is not counted
+    assert has_ongoing_period(shipped)
     assert 150 <= shipped.total <= 190

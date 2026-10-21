@@ -208,7 +208,7 @@ _ENTRY_COLUMNS = (
 )
 _HISTORY_TABLES = {
     "event": ("events", (*_ENTRY_COLUMNS, "year", "year_uncertainty")),
-    "period": ("periods", (*_ENTRY_COLUMNS, "start_year", "end_year")),
+    "period": ("periods", (*_ENTRY_COLUMNS, "start_year", "end_year", "ongoing")),
     "landmark": (
         "landmarks",
         (*_ENTRY_COLUMNS, "built_start", "built_end", "destroyed", "lat", "lon"),
@@ -225,7 +225,7 @@ def _history_values(data: HistoryData) -> dict[str, list[tuple[object, ...]]]:
 
     return {
         "event": [(*shared(e), e.year, e.year_uncertainty) for e in data.events],
-        "period": [(*shared(p), p.start, p.end) for p in data.periods],
+        "period": [(*shared(p), p.start, p.end, int(p.ongoing)) for p in data.periods],
         "landmark": [
             (*shared(m), m.built_start, m.built_end, m.destroyed, m.lat, m.lon)
             for m in data.landmarks
@@ -279,7 +279,12 @@ def load_history(connection: sqlite3.Connection) -> HistoryData:
                 for row in events
             ),
             periods=tuple(
-                HistoryPeriod(**_entry_fields(row), start=row["start_year"], end=row["end_year"])
+                HistoryPeriod(
+                    **_entry_fields(row),
+                    start=row["start_year"],
+                    end=row["end_year"],
+                    ongoing=bool(row["ongoing"]),
+                )
                 for row in periods
             ),
             landmarks=tuple(

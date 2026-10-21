@@ -36,6 +36,7 @@ from earthlight.models import (
     VantageKind,
     VantagePoint,
 )
+from earthlight_pipeline.curated_yaml import load_yaml
 from earthlight_pipeline.parsing import number as _number
 from earthlight_pipeline.parsing import positive as _positive
 from earthlight_pipeline.parsing import words as _words
@@ -106,7 +107,10 @@ class CuratedObject(EarthlightModel):
 
 def load_curated(path: Path) -> list[CuratedObject]:
     """Read and validate the curated file. Raises CuratedError listing every problem."""
-    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    try:
+        data = load_yaml(path.read_text(encoding="utf-8"))
+    except yaml.YAMLError as error:  # broken YAML, or a key repeated inside one entry
+        raise CuratedError(f"{path} cannot be read ({error})") from error
     if (
         not isinstance(data, dict)
         or set(data) != {"objects"}

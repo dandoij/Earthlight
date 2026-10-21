@@ -105,3 +105,28 @@ def test_the_report_text_is_readable() -> None:
     assert "By category: cosmic 4, science 11" in text
     assert "Years covered: -13,800,000,000 to 2,025" in text
     assert "(0.3 MB)" in text
+
+
+def test_the_report_says_present_when_a_period_is_ongoing() -> None:
+    report = HistoryReport(
+        events=1,
+        periods=1,
+        landmarks=0,
+        by_category={"geological": 2},
+        earliest_year=-66_000_000.0,
+        latest_year=1969.5,
+        database=Path("earthlight.db"),
+        database_bytes=300_000,
+        reaches_present=True,
+    )
+    text = format_history_report(report)
+    assert "Years covered: -66,000,000 to present" in text and "2,100" not in text
+
+
+def test_files_with_no_entries_stop_the_build_and_write_nothing(tmp_path: Path) -> None:
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    (empty / "era.yaml").write_text("events: []\n", encoding="utf-8")
+    with pytest.raises(HistoryError, match="no history entries"):
+        run(tmp_path, empty)
+    assert not (tmp_path / "earthlight.db").exists()
