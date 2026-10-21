@@ -5,7 +5,9 @@ description = "Where in the universe is the light from a given moment arriving r
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "pydantic>=2.11",
+]
 
 [build-system]
 requires = ["hatchling"]

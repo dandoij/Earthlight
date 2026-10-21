@@ -1,0 +1,1334 @@
+{
+ "EarthSnapshot": {
+  "$defs": {
+   "HistoryEvent": {
+    "additionalProperties": false,
+    "description": "Something that happened at a point in time.",
+    "properties": {
+     "category": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Category",
+      "type": "string"
+     },
+     "id": {
+      "maxLength": 100,
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "title": "Id",
+      "type": "string"
+     },
+     "importance": {
+      "maximum": 5,
+      "minimum": 1,
+      "title": "Importance",
+      "type": "integer"
+     },
+     "name": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+     },
+     "region": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Region",
+      "type": "string"
+     },
+     "source": {
+      "maxLength": 500,
+      "pattern": "^https?://\\S+$",
+      "title": "Source",
+      "type": "string"
+     },
+     "summary": {
+      "maxLength": 1000,
+      "minLength": 1,
+      "title": "Summary",
+      "type": "string"
+     },
+     "wikipedia": {
+      "anyOf": [
+       {
+        "maxLength": 200,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Wikipedia"
+     },
+     "year": {
+      "title": "Year",
+      "type": "number"
+     },
+     "year_uncertainty": {
+      "default": 0.0,
+      "description": "Plus or minus, in years.",
+      "minimum": 0,
+      "title": "Year Uncertainty",
+      "type": "number"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "category",
+     "region",
+     "summary",
+     "importance",
+     "source",
+     "year"
+    ],
+    "title": "HistoryEvent",
+    "type": "object"
+   },
+   "HistoryPeriod": {
+    "additionalProperties": false,
+    "description": "An age, era, or dynasty that lasted for a span of time.",
+    "properties": {
+     "category": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Category",
+      "type": "string"
+     },
+     "end": {
+      "title": "End",
+      "type": "number"
+     },
+     "id": {
+      "maxLength": 100,
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "title": "Id",
+      "type": "string"
+     },
+     "importance": {
+      "maximum": 5,
+      "minimum": 1,
+      "title": "Importance",
+      "type": "integer"
+     },
+     "name": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+     },
+     "region": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Region",
+      "type": "string"
+     },
+     "source": {
+      "maxLength": 500,
+      "pattern": "^https?://\\S+$",
+      "title": "Source",
+      "type": "string"
+     },
+     "start": {
+      "title": "Start",
+      "type": "number"
+     },
+     "summary": {
+      "maxLength": 1000,
+      "minLength": 1,
+      "title": "Summary",
+      "type": "string"
+     },
+     "wikipedia": {
+      "anyOf": [
+       {
+        "maxLength": 200,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Wikipedia"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "category",
+     "region",
+     "summary",
+     "importance",
+     "source",
+     "start",
+     "end"
+    ],
+    "title": "HistoryPeriod",
+    "type": "object"
+   },
+   "LandmarkStatus": {
+    "description": "Where a landmark stood in its life during the viewed span (never built yet is omitted).",
+    "enum": [
+     "under_construction",
+     "standing",
+     "destroyed"
+    ],
+    "title": "LandmarkStatus",
+    "type": "string"
+   },
+   "LookbackRange": {
+    "additionalProperties": false,
+    "description": "A lookback in years as a low, best, and high estimate (``minimum <= best <= maximum``).",
+    "properties": {
+     "best": {
+      "title": "Best",
+      "type": "number"
+     },
+     "maximum": {
+      "title": "Maximum",
+      "type": "number"
+     },
+     "minimum": {
+      "title": "Minimum",
+      "type": "number"
+     }
+    },
+    "required": [
+     "minimum",
+     "best",
+     "maximum"
+    ],
+    "title": "LookbackRange",
+    "type": "object"
+   },
+   "MomentRange": {
+    "additionalProperties": false,
+    "description": "A span of moments as ``earliest <= best <= latest`` (decimal years).",
+    "properties": {
+     "best": {
+      "title": "Best",
+      "type": "number"
+     },
+     "earliest": {
+      "title": "Earliest",
+      "type": "number"
+     },
+     "latest": {
+      "title": "Latest",
+      "type": "number"
+     }
+    },
+    "required": [
+     "earliest",
+     "best",
+     "latest"
+    ],
+    "title": "MomentRange",
+    "type": "object"
+   },
+   "PopulationEstimate": {
+    "additionalProperties": false,
+    "description": "A world population estimate.",
+    "properties": {
+     "people": {
+      "minimum": 0,
+      "title": "People",
+      "type": "integer"
+     },
+     "source": {
+      "anyOf": [
+       {
+        "maxLength": 500,
+        "pattern": "^https?://\\S+$",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Source"
+     },
+     "year": {
+      "title": "Year",
+      "type": "number"
+     }
+    },
+    "required": [
+     "year",
+     "people"
+    ],
+    "title": "PopulationEstimate",
+    "type": "object"
+   },
+   "SnapshotLandmark": {
+    "additionalProperties": false,
+    "description": "A landmark together with its status during the viewed span.",
+    "properties": {
+     "built_end": {
+      "title": "Built End",
+      "type": "number"
+     },
+     "built_start": {
+      "title": "Built Start",
+      "type": "number"
+     },
+     "category": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Category",
+      "type": "string"
+     },
+     "destroyed": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Destroyed"
+     },
+     "id": {
+      "maxLength": 100,
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "title": "Id",
+      "type": "string"
+     },
+     "importance": {
+      "maximum": 5,
+      "minimum": 1,
+      "title": "Importance",
+      "type": "integer"
+     },
+     "lat": {
+      "maximum": 90,
+      "minimum": -90,
+      "title": "Lat",
+      "type": "number"
+     },
+     "lon": {
+      "maximum": 180,
+      "minimum": -180,
+      "title": "Lon",
+      "type": "number"
+     },
+     "name": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+     },
+     "region": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Region",
+      "type": "string"
+     },
+     "source": {
+      "maxLength": 500,
+      "pattern": "^https?://\\S+$",
+      "title": "Source",
+      "type": "string"
+     },
+     "status": {
+      "$ref": "#/$defs/LandmarkStatus"
+     },
+     "summary": {
+      "maxLength": 1000,
+      "minLength": 1,
+      "title": "Summary",
+      "type": "string"
+     },
+     "wikipedia": {
+      "anyOf": [
+       {
+        "maxLength": 200,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Wikipedia"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "category",
+     "region",
+     "summary",
+     "importance",
+     "source",
+     "built_start",
+     "built_end",
+     "lat",
+     "lon",
+     "status"
+    ],
+    "title": "SnapshotLandmark",
+    "type": "object"
+   },
+   "VantageKind": {
+    "description": "What a vantage point is. The values are part of the JSON contract.",
+    "enum": [
+     "planet",
+     "spacecraft",
+     "zone",
+     "star",
+     "exoplanet",
+     "star_cluster",
+     "galaxy",
+     "galaxy_cluster",
+     "quasar",
+     "cosmic_background"
+    ],
+    "title": "VantageKind",
+    "type": "string"
+   },
+   "VantagePoint": {
+    "additionalProperties": false,
+    "description": "A place you can stand on and look back at Earth from.",
+    "properties": {
+     "constellation": {
+      "anyOf": [
+       {
+        "maxLength": 200,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Full constellation name, for objects with a sky position.",
+      "title": "Constellation"
+     },
+     "dec_deg": {
+      "anyOf": [
+       {
+        "maximum": 90,
+        "minimum": -90,
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Declination in degrees (equatorial, about J2000). Set with ra_deg.",
+      "title": "Dec Deg"
+     },
+     "facts": {
+      "additionalProperties": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "integer"
+        },
+        {
+         "type": "number"
+        },
+        {
+         "type": "boolean"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "description": "Extra facts shown on the object's page.",
+      "title": "Facts",
+      "type": "object"
+     },
+     "fame": {
+      "default": 0,
+      "description": "How well known the object is: 0 means not curated, 5 means a household name.",
+      "maximum": 5,
+      "minimum": 0,
+      "title": "Fame",
+      "type": "integer"
+     },
+     "host_id": {
+      "anyOf": [
+       {
+        "maxLength": 100,
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "For an exoplanet, the id of its host star's vantage point.",
+      "title": "Host Id"
+     },
+     "id": {
+      "maxLength": 100,
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "title": "Id",
+      "type": "string"
+     },
+     "kind": {
+      "$ref": "#/$defs/VantageKind"
+     },
+     "lookback": {
+      "$ref": "#/$defs/LookbackRange",
+      "description": "Years of lookback: light from Earth that left this long ago is arriving here."
+     },
+     "magnitude": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Apparent visual magnitude as seen from Earth (smaller is brighter).",
+      "title": "Magnitude"
+     },
+     "name": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+     },
+     "ra_deg": {
+      "anyOf": [
+       {
+        "exclusiveMaximum": 360,
+        "minimum": 0,
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Right ascension in degrees (equatorial, about J2000). Set with dec_deg.",
+      "title": "Ra Deg"
+     },
+     "wikipedia": {
+      "anyOf": [
+       {
+        "maxLength": 200,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Wikipedia article title, used to fetch an image.",
+      "title": "Wikipedia"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "kind",
+     "lookback"
+    ],
+    "title": "VantagePoint",
+    "type": "object"
+   }
+  },
+  "additionalProperties": false,
+  "description": "The answer to \"what does Earth look like in the light arriving at this place?\".",
+  "properties": {
+   "earth_exists": {
+    "default": true,
+    "description": "False when the light is older than Earth itself.",
+    "title": "Earth Exists",
+    "type": "boolean"
+   },
+   "events": {
+    "default": [],
+    "items": {
+     "$ref": "#/$defs/HistoryEvent"
+    },
+    "title": "Events",
+    "type": "array"
+   },
+   "landmarks": {
+    "default": [],
+    "items": {
+     "$ref": "#/$defs/SnapshotLandmark"
+    },
+    "title": "Landmarks",
+    "type": "array"
+   },
+   "moments": {
+    "$ref": "#/$defs/MomentRange",
+    "description": "The span of Earth's history whose light is arriving."
+   },
+   "moments_label": {
+    "description": "The span for people, such as \"1960 CE to 1980 CE\".",
+    "maxLength": 200,
+    "minLength": 1,
+    "title": "Moments Label",
+    "type": "string"
+   },
+   "notes": {
+    "default": [],
+    "description": "Plain-language remarks, such as a very wide span.",
+    "items": {
+     "type": "string"
+    },
+    "title": "Notes",
+    "type": "array"
+   },
+   "periods": {
+    "default": [],
+    "items": {
+     "$ref": "#/$defs/HistoryPeriod"
+    },
+    "title": "Periods",
+    "type": "array"
+   },
+   "population": {
+    "anyOf": [
+     {
+      "$ref": "#/$defs/PopulationEstimate"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null
+   },
+   "vantage_point": {
+    "$ref": "#/$defs/VantagePoint"
+   }
+  },
+  "required": [
+   "vantage_point",
+   "moments",
+   "moments_label"
+  ],
+  "title": "EarthSnapshot",
+  "type": "object"
+ },
+ "MomentResult": {
+  "$defs": {
+   "LookbackRange": {
+    "additionalProperties": false,
+    "description": "A lookback in years as a low, best, and high estimate (``minimum <= best <= maximum``).",
+    "properties": {
+     "best": {
+      "title": "Best",
+      "type": "number"
+     },
+     "maximum": {
+      "title": "Maximum",
+      "type": "number"
+     },
+     "minimum": {
+      "title": "Minimum",
+      "type": "number"
+     }
+    },
+    "required": [
+     "minimum",
+     "best",
+     "maximum"
+    ],
+    "title": "LookbackRange",
+    "type": "object"
+   },
+   "Match": {
+    "additionalProperties": false,
+    "description": "A vantage point picked for a result, with how well it fits the chosen moment.",
+    "properties": {
+     "offset_years": {
+      "description": "Best lookback estimate minus the chosen lookback. Negative means nearer.",
+      "title": "Offset Years",
+      "type": "number"
+     },
+     "vantage_point": {
+      "$ref": "#/$defs/VantagePoint"
+     }
+    },
+    "required": [
+     "vantage_point",
+     "offset_years"
+    ],
+    "title": "Match",
+    "type": "object"
+   },
+   "VantageKind": {
+    "description": "What a vantage point is. The values are part of the JSON contract.",
+    "enum": [
+     "planet",
+     "spacecraft",
+     "zone",
+     "star",
+     "exoplanet",
+     "star_cluster",
+     "galaxy",
+     "galaxy_cluster",
+     "quasar",
+     "cosmic_background"
+    ],
+    "title": "VantageKind",
+    "type": "string"
+   },
+   "VantagePoint": {
+    "additionalProperties": false,
+    "description": "A place you can stand on and look back at Earth from.",
+    "properties": {
+     "constellation": {
+      "anyOf": [
+       {
+        "maxLength": 200,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Full constellation name, for objects with a sky position.",
+      "title": "Constellation"
+     },
+     "dec_deg": {
+      "anyOf": [
+       {
+        "maximum": 90,
+        "minimum": -90,
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Declination in degrees (equatorial, about J2000). Set with ra_deg.",
+      "title": "Dec Deg"
+     },
+     "facts": {
+      "additionalProperties": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "integer"
+        },
+        {
+         "type": "number"
+        },
+        {
+         "type": "boolean"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "description": "Extra facts shown on the object's page.",
+      "title": "Facts",
+      "type": "object"
+     },
+     "fame": {
+      "default": 0,
+      "description": "How well known the object is: 0 means not curated, 5 means a household name.",
+      "maximum": 5,
+      "minimum": 0,
+      "title": "Fame",
+      "type": "integer"
+     },
+     "host_id": {
+      "anyOf": [
+       {
+        "maxLength": 100,
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "For an exoplanet, the id of its host star's vantage point.",
+      "title": "Host Id"
+     },
+     "id": {
+      "maxLength": 100,
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "title": "Id",
+      "type": "string"
+     },
+     "kind": {
+      "$ref": "#/$defs/VantageKind"
+     },
+     "lookback": {
+      "$ref": "#/$defs/LookbackRange",
+      "description": "Years of lookback: light from Earth that left this long ago is arriving here."
+     },
+     "magnitude": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Apparent visual magnitude as seen from Earth (smaller is brighter).",
+      "title": "Magnitude"
+     },
+     "name": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+     },
+     "ra_deg": {
+      "anyOf": [
+       {
+        "exclusiveMaximum": 360,
+        "minimum": 0,
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Right ascension in degrees (equatorial, about J2000). Set with dec_deg.",
+      "title": "Ra Deg"
+     },
+     "wikipedia": {
+      "anyOf": [
+       {
+        "maxLength": 200,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Wikipedia article title, used to fetch an image.",
+      "title": "Wikipedia"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "kind",
+     "lookback"
+    ],
+    "title": "VantagePoint",
+    "type": "object"
+   },
+   "ZoneInfo": {
+    "additionalProperties": false,
+    "description": "The zone of space that light from the chosen moment is crossing right now.",
+    "properties": {
+     "description": {
+      "maxLength": 1000,
+      "minLength": 1,
+      "title": "Description",
+      "type": "string"
+     },
+     "id": {
+      "maxLength": 100,
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "title": "Id",
+      "type": "string"
+     },
+     "inner_au": {
+      "description": "Distance from the Sun to the zone's inner edge.",
+      "minimum": 0,
+      "title": "Inner Au",
+      "type": "number"
+     },
+     "lookback": {
+      "$ref": "#/$defs/LookbackRange"
+     },
+     "name": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+     },
+     "outer_au": {
+      "description": "Distance from the Sun to the zone's outer edge.",
+      "exclusiveMinimum": 0,
+      "title": "Outer Au",
+      "type": "number"
+     },
+     "percent_to_proxima": {
+      "anyOf": [
+       {
+        "maximum": 100,
+        "minimum": 0,
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Progress of the light towards Proxima Centauri, when that is meaningful.",
+      "title": "Percent To Proxima"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "description",
+     "inner_au",
+     "outer_au",
+     "lookback"
+    ],
+    "title": "ZoneInfo",
+    "type": "object"
+   }
+  },
+  "additionalProperties": false,
+  "description": "The answer to \"where is the light from this moment arriving right now?\".",
+  "properties": {
+   "exoplanet": {
+    "anyOf": [
+     {
+      "$ref": "#/$defs/Match"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null
+   },
+   "famous": {
+    "anyOf": [
+     {
+      "$ref": "#/$defs/Match"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null
+   },
+   "lookback_years": {
+    "description": "Years between the moment and now.",
+    "minimum": 0,
+    "title": "Lookback Years",
+    "type": "number"
+   },
+   "moment": {
+    "title": "Moment",
+    "type": "number"
+   },
+   "moment_label": {
+    "description": "The moment for people, such as \"1492 CE\".",
+    "maxLength": 200,
+    "minLength": 1,
+    "title": "Moment Label",
+    "type": "string"
+   },
+   "most_precise": {
+    "anyOf": [
+     {
+      "$ref": "#/$defs/Match"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null
+   },
+   "notes": {
+    "default": [],
+    "description": "Plain-language remarks, such as why a category is empty.",
+    "items": {
+     "type": "string"
+    },
+    "title": "Notes",
+    "type": "array"
+   },
+   "visible_tonight": {
+    "anyOf": [
+     {
+      "$ref": "#/$defs/Match"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null
+   },
+   "zone": {
+    "anyOf": [
+     {
+      "$ref": "#/$defs/ZoneInfo"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "description": "Set when the light is still inside or near the solar system."
+   }
+  },
+  "required": [
+   "moment",
+   "moment_label",
+   "lookback_years"
+  ],
+  "title": "MomentResult",
+  "type": "object"
+ },
+ "SearchResult": {
+  "$defs": {
+   "SearchType": {
+    "description": "What kind of thing a search result or suggestion points at.",
+    "enum": [
+     "vantage_point",
+     "event",
+     "period",
+     "landmark"
+    ],
+    "title": "SearchType",
+    "type": "string"
+   },
+   "VantageKind": {
+    "description": "What a vantage point is. The values are part of the JSON contract.",
+    "enum": [
+     "planet",
+     "spacecraft",
+     "zone",
+     "star",
+     "exoplanet",
+     "star_cluster",
+     "galaxy",
+     "galaxy_cluster",
+     "quasar",
+     "cosmic_background"
+    ],
+    "title": "VantageKind",
+    "type": "string"
+   }
+  },
+  "additionalProperties": false,
+  "description": "One hit from a search. Results are ordered best first.",
+  "properties": {
+   "description": {
+    "anyOf": [
+     {
+      "maxLength": 1000,
+      "minLength": 1,
+      "type": "string"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "description": "A short line to tell hits apart.",
+    "title": "Description"
+   },
+   "id": {
+    "maxLength": 100,
+    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+    "title": "Id",
+    "type": "string"
+   },
+   "kind": {
+    "anyOf": [
+     {
+      "$ref": "#/$defs/VantageKind"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "description": "Set for vantage points only: what kind of object it is."
+   },
+   "name": {
+    "maxLength": 200,
+    "minLength": 1,
+    "title": "Name",
+    "type": "string"
+   },
+   "type": {
+    "$ref": "#/$defs/SearchType"
+   }
+  },
+  "required": [
+   "type",
+   "id",
+   "name"
+  ],
+  "title": "SearchResult",
+  "type": "object"
+ },
+ "Suggestion": {
+  "$defs": {
+   "SearchType": {
+    "description": "What kind of thing a search result or suggestion points at.",
+    "enum": [
+     "vantage_point",
+     "event",
+     "period",
+     "landmark"
+    ],
+    "title": "SearchType",
+    "type": "string"
+   }
+  },
+  "additionalProperties": false,
+  "description": "A did-you-mean guess for text that matched nothing.",
+  "properties": {
+   "id": {
+    "maxLength": 100,
+    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+    "title": "Id",
+    "type": "string"
+   },
+   "name": {
+    "maxLength": 200,
+    "minLength": 1,
+    "title": "Name",
+    "type": "string"
+   },
+   "similarity": {
+    "description": "1 means identical text.",
+    "maximum": 1,
+    "minimum": 0,
+    "title": "Similarity",
+    "type": "number"
+   },
+   "type": {
+    "$ref": "#/$defs/SearchType"
+   }
+  },
+  "required": [
+   "type",
+   "id",
+   "name",
+   "similarity"
+  ],
+  "title": "Suggestion",
+  "type": "object"
+ },
+ "VantagePoint": {
+  "$defs": {
+   "LookbackRange": {
+    "additionalProperties": false,
+    "description": "A lookback in years as a low, best, and high estimate (``minimum <= best <= maximum``).",
+    "properties": {
+     "best": {
+      "title": "Best",
+      "type": "number"
+     },
+     "maximum": {
+      "title": "Maximum",
+      "type": "number"
+     },
+     "minimum": {
+      "title": "Minimum",
+      "type": "number"
+     }
+    },
+    "required": [
+     "minimum",
+     "best",
+     "maximum"
+    ],
+    "title": "LookbackRange",
+    "type": "object"
+   },
+   "VantageKind": {
+    "description": "What a vantage point is. The values are part of the JSON contract.",
+    "enum": [
+     "planet",
+     "spacecraft",
+     "zone",
+     "star",
+     "exoplanet",
+     "star_cluster",
+     "galaxy",
+     "galaxy_cluster",
+     "quasar",
+     "cosmic_background"
+    ],
+    "title": "VantageKind",
+    "type": "string"
+   }
+  },
+  "additionalProperties": false,
+  "description": "A place you can stand on and look back at Earth from.",
+  "properties": {
+   "constellation": {
+    "anyOf": [
+     {
+      "maxLength": 200,
+      "minLength": 1,
+      "type": "string"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "description": "Full constellation name, for objects with a sky position.",
+    "title": "Constellation"
+   },
+   "dec_deg": {
+    "anyOf": [
+     {
+      "maximum": 90,
+      "minimum": -90,
+      "type": "number"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "description": "Declination in degrees (equatorial, about J2000). Set with ra_deg.",
+    "title": "Dec Deg"
+   },
+   "facts": {
+    "additionalProperties": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "integer"
+      },
+      {
+       "type": "number"
+      },
+      {
+       "type": "boolean"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "description": "Extra facts shown on the object's page.",
+    "title": "Facts",
+    "type": "object"
+   },
+   "fame": {
+    "default": 0,
+    "description": "How well known the object is: 0 means not curated, 5 means a household name.",
+    "maximum": 5,
+    "minimum": 0,
+    "title": "Fame",
+    "type": "integer"
+   },
+   "host_id": {
+    "anyOf": [
+     {
+      "maxLength": 100,
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "type": "string"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "description": "For an exoplanet, the id of its host star's vantage point.",
+    "title": "Host Id"
+   },
+   "id": {
+    "maxLength": 100,
+    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+    "title": "Id",
+    "type": "string"
+   },
+   "kind": {
+    "$ref": "#/$defs/VantageKind"
+   },
+   "lookback": {
+    "$ref": "#/$defs/LookbackRange",
+    "description": "Years of lookback: light from Earth that left this long ago is arriving here."
+   },
+   "magnitude": {
+    "anyOf": [
+     {
+      "type": "number"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "description": "Apparent visual magnitude as seen from Earth (smaller is brighter).",
+    "title": "Magnitude"
+   },
+   "name": {
+    "maxLength": 200,
+    "minLength": 1,
+    "title": "Name",
+    "type": "string"
+   },
+   "ra_deg": {
+    "anyOf": [
+     {
+      "exclusiveMaximum": 360,
+      "minimum": 0,
+      "type": "number"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "description": "Right ascension in degrees (equatorial, about J2000). Set with dec_deg.",
+    "title": "Ra Deg"
+   },
+   "wikipedia": {
+    "anyOf": [
+     {
+      "maxLength": 200,
+      "minLength": 1,
+      "type": "string"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "description": "Wikipedia article title, used to fetch an image.",
+    "title": "Wikipedia"
+   }
+  },
+  "required": [
+   "id",
+   "name",
+   "kind",
+   "lookback"
+  ],
+  "title": "VantagePoint",
+  "type": "object"
+ }
+}
