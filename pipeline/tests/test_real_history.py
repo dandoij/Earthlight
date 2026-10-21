@@ -59,3 +59,41 @@ def test_the_universe_is_older_than_the_solar_system_which_is_older_than_earth(
         < years["earth-forms"]
     )
     assert years["earth-forms"] < years["moon-forming-impact"] < years["oldest-fossil-life"]
+
+
+def test_the_eras_follow_each_other_and_the_ice_ages_sit_inside_the_cenozoic(
+    shipped: HistoryData,
+) -> None:
+    periods = {p.id: p for p in shipped.periods}
+    assert periods["proterozoic-eon"].end == periods["paleozoic-era"].start
+    assert periods["paleozoic-era"].end == periods["mesozoic-era"].start
+    assert periods["mesozoic-era"].end == periods["cenozoic-era"].start
+    pleistocene, cenozoic = periods["pleistocene-epoch"], periods["cenozoic-era"]
+    assert cenozoic.start < pleistocene.start < pleistocene.end < cenozoic.end
+
+
+def test_the_extinctions_mark_the_edges_of_the_eras(shipped: HistoryData) -> None:
+    events = {e.id: e for e in shipped.events}
+    periods = {p.id: p for p in shipped.periods}
+    assert events["permian-triassic-extinction"].year == periods["mesozoic-era"].start
+    assert events["end-cretaceous-extinction"].year == periods["mesozoic-era"].end
+
+
+def test_the_human_story_is_in_time_order(shipped: HistoryData) -> None:
+    years = {e.id: e.year for e in shipped.events}
+    order = [
+        "sahelanthropus",
+        "lomekwi-stone-tools",
+        "lucy",
+        "earliest-homo",
+        "homo-erectus",
+        "early-controlled-fire",
+    ]
+    assert [years[i] for i in order] == sorted(years[i] for i in order)
+
+
+def test_no_event_is_dated_after_its_own_era_ends(shipped: HistoryData) -> None:
+    events = {e.id: e for e in shipped.events}
+    assert events["first-dinosaurs"].year < events["end-cretaceous-extinction"].year
+    assert events["first-mammals"].year < events["end-cretaceous-extinction"].year
+    assert events["tiktaalik"].year < events["permian-triassic-extinction"].year
