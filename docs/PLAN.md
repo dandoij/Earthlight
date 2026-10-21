@@ -88,7 +88,7 @@ No database yet. Pure, heavily tested functions.
 - [x] **1.5 Shared models**
   - **Build:** `models.py`: Pydantic models for `VantagePoint` (id, name, kind, lookback range, facts), `MomentResult` (four category winners, zone info, notes), `EarthSnapshot` (events, periods, landmarks with status, population, notes), `SearchResult`, `Suggestion`.
   - **Done when:** Models validate, have docstrings, and serialize to stable JSON.
-- [ ] **1.6 README update** (core concepts section)
+- [x] **1.6 README update** (core concepts section)
 - [ ] **1.7 Phase review**
 
 ---
