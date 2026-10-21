@@ -10,6 +10,7 @@ import pytest
 from earthlight.lookback import LookbackRange
 from earthlight.models import VantageKind, VantagePoint
 from earthlight.schema import SCHEMA_VERSION, create_empty_database
+from earthlight_pipeline.deep_sky import CuratedObject, DeepSkyRecord, build_deep_sky
 from earthlight_pipeline.exoplanets import (
     ArchivePlanet,
     ExoplanetRecord,
@@ -18,9 +19,11 @@ from earthlight_pipeline.exoplanets import (
 )
 from earthlight_pipeline.stars import HipparcosStar, SearchEntry, build_stars, search_entry
 from earthlight_pipeline.store import (
+    load_deep_sky,
     load_exoplanets,
     load_stars,
     open_database,
+    replace_deep_sky,
     replace_exoplanets,
     replace_stars,
     set_meta,
@@ -367,3 +370,79 @@ def test_stars_are_replaced_only_if_no_planet_depends_on_them(database: sqlite3.
     with pytest.raises(RuntimeError, match="rebuild the whole database"):
         replace_stars(database, stars, entries_for(stars))
     assert len(load_exoplanets(database)) == 2
+
+
+# --- deep-sky objects ------------------------------------------------------------------------
+
+
+def make_deep_sky_records(count: int = 3) -> list[DeepSkyRecord]:
+    objects = [
+        CuratedObject.model_validate(
+            {
+                "id": f"object-{n}",
+                "name": f"Object {n}",
+                "kind": ("galaxy", "quasar", "galaxy_cluster")[n % 3],
+                "fame": 2,
+                "aliases": [f"Alias {n}"],
+                "inline": {"redshift": 1.0 + n / 1000, "error": 0.01, "source": "https://a.org/x"},
+            }
+        )
+        for n in range(count)
+    ]
+    return build_deep_sky(objects, {}).records
+
+
+def test_deep_sky_objects_are_stored_and_searchable(database: sqlite3.Connection) -> None:
+    records = make_deep_sky_records()
+    replace_deep_sky(database, records)
+    loaded = load_deep_sky(database)
+    assert [p.id for p in loaded] == ["object-0", "object-1", "object-2"]
+    assert loaded[1] == records[1].point
+    found = database.execute(
+        "SELECT e.id FROM search_fts JOIN search_entries e ON e.entry_id = search_fts.rowid "
+        "WHERE search_fts MATCH 'alias' ORDER BY e.id"
+    ).fetchall()
+    assert found == [("object-0",), ("object-1",), ("object-2",)]
+
+
+def test_replacing_deep_sky_twice_gives_the_same_result(database: sqlite3.Connection) -> None:
+    records = make_deep_sky_records()
+    replace_deep_sky(database, records)
+    replace_deep_sky(database, records)
+    assert database.execute("SELECT count(*) FROM vantage_points").fetchone() == (3,)
+    assert database.execute("SELECT count(*) FROM search_entries").fetchone() == (3,)
+
+
+def test_replacing_deep_sky_leaves_stars_and_planets_alone(database: sqlite3.Connection) -> None:
+    stars = make_stars()
+    replace_stars(database, stars, entries_for(stars))
+    replace_exoplanets(database, make_planet_records(host_id="hip-27989"))
+    replace_deep_sky(database, make_deep_sky_records())
+    replace_deep_sky(database, [])
+    assert load_deep_sky(database) == []
+    assert [s.id for s in load_stars(database)] == sorted(s.id for s in stars)
+    assert [p.id for p in load_exoplanets(database)] == ["test-b", "test-c"]
+    assert database.execute("SELECT count(*) FROM search_entries").fetchone() == (3,)
+
+
+def test_replacing_stars_or_planets_leaves_deep_sky_alone(database: sqlite3.Connection) -> None:
+    replace_deep_sky(database, make_deep_sky_records())
+    stars = make_stars()
+    replace_stars(database, stars, entries_for(stars))
+    replace_exoplanets(database, make_planet_records())
+    replace_exoplanets(database, [])
+    assert len(load_deep_sky(database)) == 3
+
+
+def test_the_file_shrinks_when_fewer_deep_sky_objects_are_stored(tmp_path: Path) -> None:
+    many = make_deep_sky_records(3000)
+    path = tmp_path / "earthlight.db"
+    connection = open_database(path)
+    try:
+        replace_deep_sky(connection, many)
+        big = path.stat().st_size
+        replace_deep_sky(connection, many[:10])
+        small = path.stat().st_size
+    finally:
+        connection.close()
+    assert big > 5 * small  # without VACUUM the file would stay as large as it was

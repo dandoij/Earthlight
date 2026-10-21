@@ -250,15 +250,27 @@ def fame_for(*, has_iau_name: bool, vmag: float | None, light_years: float) -> i
     return score
 
 
+_ASTROPY_SPELLING_FIXES = {
+    "Chamaleon": "Chamaeleon",
+    "Ophiucus": "Ophiuchus",
+    "Pisces Austrinus": "Piscis Austrinus",
+}
+"""Names that astropy's constellation table spells differently from the IAU."""
+
+
 def constellation_names(ra_deg: Sequence[float], dec_deg: Sequence[float]) -> list[str]:
-    """Full constellation names for positions in degrees, using astropy (no download)."""
+    """Full IAU constellation names for positions in degrees, using astropy (no download).
+
+    astropy misspells three of the 88 names and pads one with a space; those are corrected.
+    """
     if not ra_deg:
         return []
     import astropy.units as u
     from astropy.coordinates import SkyCoord, get_constellation
 
     coordinates = SkyCoord(ra=list(ra_deg) * u.deg, dec=list(dec_deg) * u.deg, frame="icrs")
-    return [str(name) for name in get_constellation(coordinates)]
+    names = (str(name).strip() for name in get_constellation(coordinates))
+    return [_ASTROPY_SPELLING_FIXES.get(name, name) for name in names]
 
 
 # --- building --------------------------------------------------------------------------------

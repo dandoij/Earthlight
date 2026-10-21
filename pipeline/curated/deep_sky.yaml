@@ -1,0 +1,373 @@
+# Curated deep-sky objects: the far ones, whose distance comes from a redshift.
+#
+# This file holds names and editorial choices only. It never holds a lookback or a distance:
+#   simbad:  the object's identifier in SIMBAD, which supplies position and redshift.
+#   inline:  a redshift typed here for an object SIMBAD does not hold, with the URL of the
+#            paper it came from. `error` is one standard deviation, in redshift.
+# Give exactly one of the two. fame is 1 (known to enthusiasts) to 5 (a household name).
+# wikipedia is the exact article title, used to fetch an image.
+#
+# Objects nearer than redshift 0.01 (about 130 million light-years) are not here: their
+# redshift is mostly their own motion, so they need measured distances (step 2.6b).
+
+objects:
+  # --- galaxies ---------------------------------------------------------------------------
+  - id: ngc-1275
+    name: NGC 1275 (Perseus A)
+    kind: galaxy
+    fame: 3
+    simbad: NGC 1275
+    wikipedia: NGC 1275
+    aliases: [Perseus A]
+  - id: ngc-4889
+    name: NGC 4889
+    kind: galaxy
+    fame: 2
+    simbad: NGC 4889
+    wikipedia: NGC 4889
+  - id: ic-1101
+    name: IC 1101
+    kind: galaxy
+    fame: 3
+    simbad: IC 1101
+    wikipedia: IC 1101
+  - id: ngc-6240
+    name: NGC 6240
+    kind: galaxy
+    fame: 2
+    simbad: NGC 6240
+    wikipedia: NGC 6240
+  - id: markarian-231
+    name: Markarian 231
+    kind: galaxy
+    fame: 3
+    simbad: Mrk 231
+    wikipedia: Markarian 231
+    aliases: [Mrk 231]
+  - id: atoms-for-peace-galaxy
+    name: Atoms for Peace Galaxy (NGC 7252)
+    kind: galaxy
+    fame: 2
+    simbad: NAME Atoms for Peace Galaxy
+    wikipedia: NGC 7252
+  - id: mice-galaxies
+    name: The Mice (NGC 4676)
+    kind: galaxy
+    fame: 3
+    simbad: NAME Mice Galaxy
+    wikipedia: Mice Galaxies
+  - id: cartwheel-galaxy
+    name: Cartwheel Galaxy
+    kind: galaxy
+    fame: 4
+    simbad: NAME Cartwheel Galaxy
+    wikipedia: Cartwheel Galaxy
+  - id: hoags-object
+    name: Hoag's Object
+    kind: galaxy
+    fame: 3
+    simbad: NAME Hoag Object
+    wikipedia: Hoag's Object
+  - id: cygnus-a
+    name: Cygnus A
+    kind: galaxy
+    fame: 4
+    simbad: NAME Cygnus A
+    wikipedia: Cygnus A
+  - id: hercules-a
+    name: Hercules A
+    kind: galaxy
+    fame: 2
+    simbad: 3C 348
+    wikipedia: Hercules A
+    aliases: [3C 348]
+  - id: pictor-a
+    name: Pictor A
+    kind: galaxy
+    fame: 2
+    simbad: NAME Pictor A
+    wikipedia: Pictor A
+  - id: arp-220
+    name: Arp 220
+    kind: galaxy
+    fame: 3
+    simbad: IC 4553
+    wikipedia: Arp 220
+    aliases: [IC 4553]
+  - id: arp-273
+    name: Arp 273
+    kind: galaxy
+    fame: 3
+    simbad: UGC 1810
+    wikipedia: Arp 273
+  - id: ngc-6872
+    name: NGC 6872 (Condor Galaxy)
+    kind: galaxy
+    fame: 2
+    simbad: NGC 6872
+    wikipedia: NGC 6872
+    aliases: [Condor Galaxy]
+  - id: 3c-295
+    name: 3C 295
+    kind: galaxy
+    fame: 2
+    simbad: 3C 295
+    wikipedia: 3C 295
+  - id: markarian-421
+    name: Markarian 421
+    kind: galaxy
+    fame: 3
+    simbad: Mrk 421
+    wikipedia: Markarian 421
+    aliases: [Mrk 421]
+  - id: markarian-501
+    name: Markarian 501
+    kind: galaxy
+    fame: 3
+    simbad: Mrk 501
+    wikipedia: Markarian 501
+    aliases: [Mrk 501]
+  - id: bl-lacertae
+    name: BL Lacertae
+    kind: galaxy
+    fame: 3
+    simbad: NAME BL Lac
+    wikipedia: BL Lacertae
+    aliases: [BL Lac]
+
+  # --- quasars ----------------------------------------------------------------------------
+  - id: 3c-273
+    name: 3C 273
+    kind: quasar
+    fame: 5
+    simbad: 3C 273
+    wikipedia: 3C 273
+  - id: 3c-48
+    name: 3C 48
+    kind: quasar
+    fame: 3
+    simbad: 3C 48
+    wikipedia: 3C 48
+  - id: 3c-279
+    name: 3C 279
+    kind: quasar
+    fame: 3
+    simbad: 3C 279
+    wikipedia: 3C 279
+  - id: ton-618
+    name: TON 618
+    kind: quasar
+    fame: 4
+    simbad: TON 618
+    wikipedia: TON 618
+  - id: apm-08279-5255
+    name: APM 08279+5255
+    kind: quasar
+    fame: 3
+    simbad: NAME APM 08279+5255
+    wikipedia: APM 08279+5255
+  - id: pks-2000-330
+    name: PKS 2000-330
+    kind: quasar
+    fame: 2
+    simbad: PKS 2000-330
+  - id: twin-quasar
+    name: Twin Quasar (Q0957+561)
+    kind: quasar
+    fame: 4
+    simbad: QSO B0957+561
+    wikipedia: Twin Quasar
+    aliases: [Q0957+561]
+  - id: einstein-cross
+    name: Einstein Cross
+    kind: quasar
+    fame: 4
+    simbad: NAME Einstein Cross
+    wikipedia: Einstein Cross
+  - id: cloverleaf-quasar
+    name: Cloverleaf Quasar
+    kind: quasar
+    fame: 3
+    simbad: H 1413+117
+    wikipedia: Cloverleaf quasar
+    aliases: [H 1413+117]
+  - id: pg-1115-080
+    name: PG 1115+080
+    kind: quasar
+    fame: 2
+    simbad: PG 1115+080
+  - id: sdss-j0100-2802
+    name: SDSS J0100+2802
+    kind: quasar
+    fame: 2
+    simbad: SDSS J010013.02+280225.8
+    aliases: [SDSS J010013.02+280225.8]
+  - id: ulas-j1120-0641
+    name: ULAS J1120+0641
+    kind: quasar
+    fame: 3
+    simbad: ULAS J112001.48+064124.3
+    wikipedia: ULAS J1120+0641
+  - id: ulas-j1342-0928
+    name: ULAS J1342+0928
+    kind: quasar
+    fame: 3
+    simbad: ULAS J134208.10+092838.6
+    wikipedia: ULAS J1342+0928
+  - id: j0313-1806
+    name: J0313-1806
+    kind: quasar
+    fame: 3
+    inline:
+      redshift: 7.6423
+      error: 0.0013
+      source: https://arxiv.org/abs/2101.03179  # Wang et al.
+    wikipedia: J0313-1806
+
+  # --- galaxy clusters --------------------------------------------------------------------
+  - id: coma-cluster
+    name: Coma Cluster
+    kind: galaxy_cluster
+    fame: 4
+    simbad: ACO 1656
+    wikipedia: Coma Cluster
+    aliases: [Abell 1656]
+  - id: perseus-cluster
+    name: Perseus Cluster
+    kind: galaxy_cluster
+    fame: 3
+    simbad: ACO 426
+    wikipedia: Perseus Cluster
+    aliases: [Abell 426]
+  - id: hydra-cluster
+    name: Hydra Cluster
+    kind: galaxy_cluster
+    fame: 2
+    simbad: ACO 1060
+    wikipedia: Hydra Cluster
+    aliases: [Abell 1060]
+  - id: abell-2029
+    name: Abell 2029
+    kind: galaxy_cluster
+    fame: 2
+    simbad: ACO 2029
+    wikipedia: Abell 2029
+  - id: abell-2218
+    name: Abell 2218
+    kind: galaxy_cluster
+    fame: 2
+    simbad: ACO 2218
+    wikipedia: Abell 2218
+  - id: abell-1689
+    name: Abell 1689
+    kind: galaxy_cluster
+    fame: 3
+    simbad: ACO 1689
+    wikipedia: Abell 1689
+  - id: bullet-cluster
+    name: Bullet Cluster
+    kind: galaxy_cluster
+    fame: 4
+    simbad: NAME Bullet Cluster
+    wikipedia: Bullet Cluster
+    aliases: [1E 0657-56]
+  - id: pandoras-cluster
+    name: Pandora's Cluster (Abell 2744)
+    kind: galaxy_cluster
+    fame: 3
+    simbad: ACO 2744
+    wikipedia: Abell 2744
+    aliases: [Abell 2744]
+  - id: abell-370
+    name: Abell 370
+    kind: galaxy_cluster
+    fame: 3
+    simbad: ACO 370
+    wikipedia: Abell 370
+  - id: abell-520
+    name: Abell 520
+    kind: galaxy_cluster
+    fame: 2
+    simbad: ACO 520
+    wikipedia: Abell 520
+  - id: abell-s1063
+    name: Abell S1063
+    kind: galaxy_cluster
+    fame: 2
+    simbad: ACO S 1063
+    wikipedia: Abell S1063
+  - id: el-gordo
+    name: El Gordo
+    kind: galaxy_cluster
+    fame: 3
+    simbad: NAME El Gordo
+    wikipedia: El Gordo (galaxy cluster)
+    aliases: [ACT-CL J0102-4915]
+  - id: spt-cl-j2106-5844
+    name: SPT-CL J2106-5844
+    kind: galaxy_cluster
+    fame: 2
+    simbad: SPT-CL J2106-5844
+
+  # --- the earliest galaxies JWST has confirmed -------------------------------------------
+  # Redshifts are from the cited papers. Where a paper gives no error, 0 is used and the
+  # peculiar velocity floor sets the range.
+  - id: gn-z11
+    name: GN-z11
+    kind: galaxy
+    fame: 4
+    inline:
+      redshift: 10.603
+      error: 0.0
+      source: https://arxiv.org/abs/2302.07256  # Bunker et al.
+    wikipedia: GN-z11
+  - id: ghz2
+    name: GHZ2 (GLASS-z12)
+    kind: galaxy
+    fame: 3
+    inline:
+      redshift: 12.34
+      error: 0.0
+      source: https://arxiv.org/abs/2403.10238  # Castellano et al.
+    wikipedia: GHZ2
+    aliases: [GLASS-z12]
+  - id: jades-gs-z13-1-la
+    name: JADES-GS-z13-1-LA
+    kind: galaxy
+    fame: 3
+    inline:
+      redshift: 13.01
+      error: 0.02
+      source: https://arxiv.org/abs/2408.16608  # Witstok et al., Lyman-alpha systemic redshift
+  - id: jades-gs-z14-0
+    name: JADES-GS-z14-0
+    kind: galaxy
+    fame: 4
+    inline:
+      redshift: 14.32
+      error: 0.14
+      source: https://arxiv.org/abs/2405.18485  # Carniani et al., symmetric average of +0.08 and -0.20
+    wikipedia: JADES-GS-z14-0
+  - id: mom-z14
+    name: MoM-z14
+    kind: galaxy
+    fame: 4
+    inline:
+      redshift: 14.44
+      error: 0.02
+      source: https://arxiv.org/abs/2505.11263  # Naidu et al.
+    wikipedia: MoM-z14
+
+  # --- the oldest light -------------------------------------------------------------------
+  - id: cosmic-microwave-background
+    name: Cosmic Microwave Background
+    kind: cosmic_background
+    fame: 5
+    inline:
+      redshift: 1089.80
+      error: 0.21
+      # Redshift of last scattering, z_* in Table 2 (last column, with BAO) of the Planck 2018
+      # cosmological parameters paper (VI).
+      source: https://arxiv.org/abs/1807.06209
+    wikipedia: Cosmic microwave background
+    aliases: [CMB, Big Bang afterglow]

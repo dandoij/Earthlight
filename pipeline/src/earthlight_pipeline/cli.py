@@ -13,6 +13,7 @@ from typing import Annotated
 import typer
 
 from earthlight.schema import create_empty_database
+from earthlight_pipeline.build_deep_sky import format_deep_sky_report, run_deep_sky
 from earthlight_pipeline.build_exoplanets import format_exoplanets_report, run_exoplanets
 from earthlight_pipeline.build_stars import DEFAULT_MAX_VMAG, format_stars_report, run_stars
 from earthlight_pipeline.cache import DEFAULT_CACHE_DIR
@@ -174,7 +175,27 @@ def exoplanets(ctx: typer.Context) -> None:
     _build_exoplanets(get_options(ctx))
 
 
-IMPLEMENTED = frozenset({"stars", "exoplanets"})
+def _build_deep_sky(options: BuildOptions) -> None:
+    report = run_deep_sky(
+        cache_dir=options.cache_dir,
+        refresh=options.refresh,
+        database=options.database,
+        progress=typer.echo,
+    )
+    typer.echo("")
+    typer.echo(format_deep_sky_report(report))
+
+
+@app.command(
+    name="deep-sky",
+    help="Galaxies, clusters, quasars, and the CMB from the curated list. (step 2.6)",
+)
+def deep_sky(ctx: typer.Context) -> None:
+    """Build the deep-sky vantage points from curated/deep_sky.yaml and store them."""
+    _build_deep_sky(get_options(ctx))
+
+
+IMPLEMENTED = frozenset({"stars", "exoplanets", "deep-sky"})
 
 for _source in SOURCES:
     if _source.command not in IMPLEMENTED:
@@ -200,5 +221,7 @@ def build_all(ctx: typer.Context) -> None:
             _build_stars(options, DEFAULT_MAX_VMAG)
         elif source.command == "exoplanets":
             _build_exoplanets(options)
+        elif source.command == "deep-sky":
+            _build_deep_sky(options)
         else:
             _not_implemented(source)

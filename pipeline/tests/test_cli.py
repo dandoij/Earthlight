@@ -8,6 +8,7 @@ from typer.testing import CliRunner
 
 from earthlight.schema import SCHEMA_VERSION
 from earthlight_pipeline import cli
+from earthlight_pipeline.build_deep_sky import DeepSkyReport
 from earthlight_pipeline.build_exoplanets import ExoplanetsReport
 from earthlight_pipeline.build_stars import DEFAULT_MAX_VMAG, StarsReport
 from earthlight_pipeline.cache import DEFAULT_CACHE_DIR
@@ -48,6 +49,18 @@ def fake_exoplanets_report(database: Path) -> ExoplanetsReport:
     )
 
 
+def fake_deep_sky_report(database: Path) -> DeepSkyReport:
+    return DeepSkyReport(
+        built=52,
+        by_kind={"galaxy": 24, "quasar": 14},
+        by_source={"simbad": 45, "inline": 7},
+        nearest_years=184_000_000.0,
+        farthest_years=13_786_000_000.0,
+        database=database,
+        database_bytes=200_000,
+    )
+
+
 @pytest.fixture
 def calls(monkeypatch: pytest.MonkeyPatch) -> list[Call]:
     """Replace the real builds, which use the network, with recorders."""
@@ -67,6 +80,14 @@ def calls(monkeypatch: pytest.MonkeyPatch) -> list[Call]:
         progress("downloading planets...")
         return fake_exoplanets_report(Path(str(kwargs["database"])))
 
+    def fake_run_deep_sky(**kwargs: object) -> DeepSkyReport:
+        recorded.append(("deep-sky", kwargs))
+        progress = kwargs["progress"]
+        assert callable(progress)
+        progress("downloading SIMBAD...")
+        return fake_deep_sky_report(Path(str(kwargs["database"])))
+
+    monkeypatch.setattr(cli, "run_deep_sky", fake_run_deep_sky)
     monkeypatch.setattr(cli, "run_stars", fake_run_stars)
     monkeypatch.setattr(cli, "run_exoplanets", fake_run_exoplanets)
     return recorded
@@ -93,7 +114,7 @@ def test_sources_are_unique_and_match_the_plan() -> None:
     assert len(set(commands)) == len(commands)
     assert commands == ["stars", "exoplanets", "deep-sky", "history", "population"]
     assert [s.step for s in SOURCES] == ["2.4", "2.5", "2.6", "2.8 to 2.13", "2.14"]
-    assert {"stars", "exoplanets"} == cli.IMPLEMENTED
+    assert {"stars", "exoplanets", "deep-sky"} == cli.IMPLEMENTED
 
 
 @pytest.mark.parametrize("source", SOURCES, ids=lambda s: s.command)
@@ -167,28 +188,48 @@ def test_exoplanets_runs_the_build_and_prints_the_report(calls: list[Call], tmp_
     assert "Linked to a host star: 6 (of 8 stars in the database)" in result.output
 
 
+def test_deep_sky_runs_the_build_and_prints_the_report(calls: list[Call], tmp_path: Path) -> None:
+    result = runner.invoke(app, ["--cache-dir", str(tmp_path), "--refresh", "deep-sky"])
+    assert result.exit_code == 0, result.output
+    ((name, kwargs),) = calls
+    assert name == "deep-sky"
+    assert kwargs == {
+        "cache_dir": tmp_path,
+        "refresh": True,
+        "database": tmp_path / "earthlight.db",
+        "progress": kwargs["progress"],
+    }
+    assert "downloading SIMBAD..." in result.output
+    assert "Deep-sky objects built: 52" in result.output
+    assert "Numbers from: inline 7, simbad 45" in result.output
+
+
 def test_the_database_option_overrides_the_default(calls: list[Call], tmp_path: Path) -> None:
     target = tmp_path / "elsewhere" / "my.db"
     runner.invoke(app, ["--database", str(target), "stars"])
     assert calls[0][1]["database"] == target
 
 
-def test_all_builds_stars_then_planets_into_a_fresh_database(
+def test_all_builds_stars_planets_and_deep_sky_into_a_fresh_database(
     calls: list[Call], tmp_path: Path
 ) -> None:
     database = tmp_path / "earthlight.db"
     database.write_text("an old database that must not survive", encoding="utf-8")
     result = runner.invoke(app, ["--database", str(database), "all"])
     assert result.exit_code == 1  # it stops at the first source that is not built yet
-    assert [name for name, _ in calls] == ["stars", "exoplanets"]  # planets link to stars
+    assert [name for name, _ in calls] == [
+        "stars",
+        "exoplanets",
+        "deep-sky",
+    ]  # planets link to stars
     assert calls[0][1]["max_vmag"] == DEFAULT_MAX_VMAG
     out = result.output
-    stars_at, planets_at, deep_at = (
-        out.index(f"Building {s}") for s in ("stars", "exoplanets", "deep-sky")
+    stars_at, planets_at, deep_at, history_at = (
+        out.index(f"Building {s}") for s in ("stars", "exoplanets", "deep-sky", "history")
     )
-    assert stars_at < planets_at < deep_at
-    assert "Building history" not in out
-    assert "'deep-sky' is not implemented yet" in out
+    assert stars_at < planets_at < deep_at < history_at
+    assert "Building population" not in out
+    assert "'history' is not implemented yet" in out
     # The old file was replaced by an empty database with the current schema.
     connection = sqlite3.connect(database)
     try:

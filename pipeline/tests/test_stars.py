@@ -162,6 +162,109 @@ def test_constellation_names_come_from_astropy() -> None:
     assert constellation_names([], []) == []
 
 
+IAU_CONSTELLATIONS = frozenset(
+    [
+        "Andromeda",
+        "Antlia",
+        "Apus",
+        "Aquarius",
+        "Aquila",
+        "Ara",
+        "Aries",
+        "Auriga",
+        "Boötes",
+        "Caelum",
+        "Camelopardalis",
+        "Cancer",
+        "Canes Venatici",
+        "Canis Major",
+        "Canis Minor",
+        "Capricornus",
+        "Carina",
+        "Cassiopeia",
+        "Centaurus",
+        "Cepheus",
+        "Cetus",
+        "Chamaeleon",
+        "Circinus",
+        "Columba",
+        "Coma Berenices",
+        "Corona Australis",
+        "Corona Borealis",
+        "Corvus",
+        "Crater",
+        "Crux",
+        "Cygnus",
+        "Delphinus",
+        "Dorado",
+        "Draco",
+        "Equuleus",
+        "Eridanus",
+        "Fornax",
+        "Gemini",
+        "Grus",
+        "Hercules",
+        "Horologium",
+        "Hydra",
+        "Hydrus",
+        "Indus",
+        "Lacerta",
+        "Leo",
+        "Leo Minor",
+        "Lepus",
+        "Libra",
+        "Lupus",
+        "Lynx",
+        "Lyra",
+        "Mensa",
+        "Microscopium",
+        "Monoceros",
+        "Musca",
+        "Norma",
+        "Octans",
+        "Ophiuchus",
+        "Orion",
+        "Pavo",
+        "Pegasus",
+        "Perseus",
+        "Phoenix",
+        "Pictor",
+        "Pisces",
+        "Piscis Austrinus",
+        "Puppis",
+        "Pyxis",
+        "Reticulum",
+        "Sagitta",
+        "Sagittarius",
+        "Scorpius",
+        "Sculptor",
+        "Scutum",
+        "Serpens",
+        "Sextans",
+        "Taurus",
+        "Telescopium",
+        "Triangulum",
+        "Triangulum Australe",
+        "Tucana",
+        "Ursa Major",
+        "Ursa Minor",
+        "Vela",
+        "Virgo",
+        "Volans",
+        "Vulpecula",
+    ]
+)
+
+
+def test_constellation_names_are_the_88_iau_names_exactly() -> None:
+    # astropy misspells Chamaeleon, Ophiuchus, and Piscis Austrinus and pads Crux with a
+    # space. A one degree grid over the whole sky reaches every constellation.
+    ra = [float(r) for r in range(360) for _ in range(181)]
+    dec = [float(d) for _ in range(360) for d in range(-90, 91)]
+    assert len(IAU_CONSTELLATIONS) == 88
+    assert set(constellation_names(ra, dec)) == IAU_CONSTELLATIONS
+
+
 # --- building --------------------------------------------------------------------------------
 
 

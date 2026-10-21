@@ -221,6 +221,38 @@ Run on the full archive: 6,451 default-parameter planets, of which **6,356** wer
 | TRAPPIST-1 b and e | 40.62 ly | host range |
 | KMT-2024-BLG-0176L b | about 27,201 ly | microlensing, far away |
 
+## Deep-sky build results (step 2.6)
+
+The curated list `pipeline/curated/deep_sky.yaml` holds **52 far objects**: 24 galaxies, 14 quasars, 13 galaxy clusters, and the cosmic microwave background. The YAML holds names, kinds, and fame only. Every number comes from SIMBAD (45 objects) or from a redshift typed next to the URL of its paper (7 objects).
+
+### What SIMBAD can and cannot do
+
+Checked against the live TAP service at https://simbad.cds.unistra.fr/simbad/sim-tap/sync (no account). The `ident` table matches any name, and joins to `basic` for `ra`, `dec`, and the redshift columns `rvz_redshift`, `rvz_err`, `rvz_type` (`z` means the error is in redshift; `v` and `c` mean km/s), `rvz_qual` (grade A best to E worst), and `rvz_bibcode`.
+
+- **Names are padded.** Catalogue numbers are stored with extra spaces ("M  31", "NGC  1300", "ACO  1656"), so the build asks for the one, two, and three space spellings. "NAME ..." identifiers are exact.
+- **Redshift is only a distance far away.** Andromeda's SIMBAD redshift is negative and the Magellanic Clouds' are tiny, because their own motion dominates. The build refuses any redshift below 0.01 (about 130 million light-years).
+- **SIMBAD's stored distances (`mesDistance`) are not usable for near objects.** M13 is listed as "0.008 Mpc" and the LMC as "0.05 Mpc", rounded to one digit, with one to four values since 2000 for each globular cluster checked. Near objects need proper catalogues, which is the new step 2.6b.
+- **Redshift quality varies.** Many values are rounded ("Mrk 421: 0.03", "Ton 618: 2.2"); the build treats a missing error as half a unit of the last digit. Grade E is refused: SMACS 0723 (0.39, grade E) was left out for that reason.
+- **Some famous objects are not in SIMBAD under any name** (the JWST record galaxies). Their redshifts are inline, each verified against the paper's own page.
+
+### Rules chosen in this step
+
+- **Redshift to lookback:** astropy's `Planck18` cosmology (Planck 2018 VI). Range: lookback at z minus and plus one uncertainty, where the uncertainty is the redshift's own error combined in quadrature with a 300 km/s peculiar velocity floor, then widened by 0.145 percent on each side (the Planck age uncertainty, 13.787 plus or minus 0.020 billion years). Without the widening the CMB would get a range of zero width.
+- **Lookback is light-travel time to Earth.** The project treats the trip from Earth to the object as the same length. For high redshift that is a simplification (the universe expanded while the light travelled), noted here and not hidden.
+- **Cosmology is a choice.** Some distance-ladder measurements give a faster expansion rate (H0 near 73 instead of the Planck 67.7). Age scales roughly as 1/H0, so that would shorten the oldest lookbacks by about a billion years. The displayed range reflects only the Planck fit.
+- **Inline values:** JADES-GS-z14-0 z = 14.32 (+0.08, -0.20; the average error 0.14 is used), MoM-z14 z = 14.44 plus or minus 0.02, JADES-GS-z13-1-LA z = 13.01 (systemic, from Lyman-alpha 13.05), GN-z11 z = 10.603 and GHZ2 z = 12.34 (no error stated), J0313-1806 z = 7.6423 plus or minus 0.0013, and the CMB at the redshift of last scattering z* = 1089.80 plus or minus 0.21 (Planck 2018 VI Table 2, last column).
+- **Everything is searchable**, by name and aliases (for example "Abell 1656" finds the Coma Cluster).
+- **Facts stored:** `redshift`, `redshift_uncertainty`, `redshift_source` (a SIMBAD bibcode or the paper's URL), `cosmology`, `simbad_id`, `simbad_type`.
+
+### Results
+
+Lookbacks run from 185 million years (the Hydra Cluster) to 13.79 billion years (the CMB, 13,786.5 million years). Spot checks: Coma Cluster 332 million years, 3C 273 2.04 billion, Bullet Cluster 3.49 billion, TON 618 10.8 billion, JADES-GS-z14-0 13.50 billion. The database with all deep-sky objects added is about 0.2 MB.
+
+### Other findings
+
+- **astropy misspells three constellations and pads one:** "Chamaleon", "Ophiucus", "Pisces Austrinus", and "Crux " with a trailing space. The shared helper now corrects them to the IAU names, and a test checks all 88.
+- **Wikipedia rate-limits bursts** (HTTP 429 after about 30 quick requests). Article titles were checked one request every few seconds; "NGC 4676" and "Pandora's Cluster" are redirects, so the file uses "Mice Galaxies" and "Abell 2744".
+
 ## Licenses and attribution
 
 Verified from the sources' own pages on 2026-10-20. Quotes are exact. This is a project record, not legal advice.
@@ -233,6 +265,8 @@ Verified from the sources' own pages on 2026-10-20. Quotes are exact. This is a 
 | **NASA Exoplanet Archive** | No license or terms statement on its acknowledgement page, only a request for credit. | "This research has made use of the NASA Exoplanet Archive, which is operated by the California Institute of Technology, under contract with the National Aeronautics and Space Administration under the Exoplanet Exploration Program." The page also asks users to cite Christiansen et al. (2025) as the reference paper; the full citation is to be confirmed in step 2.16. |
 | **IAU Catalog of Star Names** | "All IAU-produced products (Images, Videos, Texts) are released under Creative Commons Attribution (i.e. free to use in all perpetuity, world-wide, as long as the source is mentioned)." | Cite the IAU WGSN and https://www.iau.org/public/themes/naming_stars/. |
 | **NASA and JPL material** (planet elements, Horizons values, Voyager facts) | NASA says its content "generally are not subject to copyright in the United States", may be used for educational or informational purposes, and "NASA should be acknowledged as the source". It must not "implicitly convey NASA's endorsement of commercial goods or services" (https://www.nasa.gov/nasa-brand-center/images-and-media/). The JPL Solar System Dynamics site states no data terms of its own. | "NASA/JPL" for the orbital elements and Horizons values. Not an endorsement by NASA. |
+| **SIMBAD** (CDS), deep-sky positions and redshifts | No license statement found; CDS asks for an acknowledgment. Used for a few hundred values under the same non-commercial, credited use as the other CDS services. | "This research has made use of the SIMBAD database, CDS, Strasbourg Astronomical Observatory, France." Cite Wenger et al. 2000, A&AS 143, 9, "The SIMBAD astronomical database" (wording from https://cds.unistra.fr/help/acknowledgement/). |
+| **Papers cited for inline redshifts** (step 2.6) | Published scientific results; only a number is taken from each, and each is cited by its arXiv URL in the curated file. | Bunker et al. (GN-z11), Castellano et al. (GHZ2), Witstok et al. (JADES-GS-z13-1-LA), Carniani et al. (JADES-GS-z14-0), Naidu et al. (MoM-z14), Wang et al. (J0313-1806), and Planck Collaboration 2018 VI (cosmology and the CMB). |
 | **Curated YAML** (deep-sky objects, history; steps 2.6 to 2.13) | Our own work. Summaries are written in our own words, and every entry cites a source URL. Wikipedia is linked, never copied. | Covered by the repository's MIT license. |
 
 **What the non-commercial terms mean for us.** Gaia and Hipparcos are the only source of star distances, so the built database is derived from ESA data under CC BY-NC 3.0 IGO. A combined file follows its most restrictive source, so the **bundled database is CC BY-NC 3.0 IGO**. The code is separate and stays MIT. The CC BY-NC 3.0 IGO legal code (https://creativecommons.org/licenses/by-nc/3.0/igo/legalcode) forbids exercising the licensed rights "in any manner that is primarily intended for or directed toward commercial advantage or private monetary compensation". The project owner's reading is that a free, ad-free, educational portfolio project is not that. The site must have no ads, no revenue, and no paid features. The share-alike license on HYG cannot be combined with non-commercial terms in one database, which is why HYG is not used.

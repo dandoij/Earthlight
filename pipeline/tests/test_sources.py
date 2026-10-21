@@ -226,3 +226,34 @@ def test_host_distances_are_fetched_in_batches_with_names_that_depend_on_the_ids
 def test_no_hosts_means_no_downloads(recorder: Recorder, tmp_path: Path) -> None:
     assert sources.fetch_host_distances([], tmp_path, False) == []
     assert recorder.calls == []
+
+
+def test_the_simbad_query_asks_for_exact_identifiers_and_doubles_quotes() -> None:
+    query = sources.simbad_query(["M  31", "NAME Hoag's Object"])
+    assert query.endswith("WHERE i.id IN ('M  31', 'NAME Hoag''s Object')")
+    assert "rvz_redshift" in query and "AS asked" in query
+
+
+def test_the_simbad_query_needs_something_to_ask() -> None:
+    with pytest.raises(ValueError):
+        sources.simbad_query([])
+
+
+def test_simbad_is_fetched_in_batches_with_names_that_depend_on_the_identifiers(
+    recorder: Recorder, tmp_path: Path
+) -> None:
+    names = [f"Test {n}" for n in range(100, 100 + sources.SIMBAD_BATCH_SIZE + 10)]
+    paths = sources.fetch_simbad(names, tmp_path, False)
+    assert len(paths) == 2 == len(recorder.calls)
+    assert all(p.name.startswith("simbad_") and p.name.endswith(".csv") for p in paths)
+    assert paths[0].name != paths[1].name
+    again = sources.fetch_simbad([*reversed(names), names[0]], tmp_path, False)
+    assert [p.name for p in again] == [p.name for p in paths]  # order and duplicates do not matter
+    other = sources.fetch_simbad([*names[:-1], "Other"], tmp_path, False)
+    assert other[1].name != paths[1].name
+    assert all(call[0].startswith(sources.SIMBAD_TAP) for call in recorder.calls)
+
+
+def test_no_identifiers_means_no_simbad_downloads(recorder: Recorder, tmp_path: Path) -> None:
+    assert sources.fetch_simbad([], tmp_path, False) == []
+    assert recorder.calls == []

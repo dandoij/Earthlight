@@ -16,6 +16,7 @@ from earthlight_pipeline.cache import cached_download
 VIZIER_TAP = "https://tapvizier.cds.unistra.fr/TAPVizieR/tap/sync"
 GAIA_TAP = "https://gea.esac.esa.int/tap-server/tap/sync"
 EXOPLANET_ARCHIVE_TAP = "https://exoplanetarchive.ipac.caltech.edu/TAP/sync"
+SIMBAD_TAP = "https://simbad.cds.unistra.fr/simbad/sim-tap/sync"
 IAU_CSN_URL = "https://www.pas.rochester.edu/~emamajek/WGSN/IAU-CSN.txt"
 
 TAP_TIMEOUT_SECONDS = 900
@@ -27,6 +28,9 @@ TAP_RETRY_WAIT_SECONDS = 15.0
 
 GAIA_BATCH_SIZE = 20_000
 """Hipparcos numbers per Gaia query. The archive returns at most 50,000 rows per query."""
+
+SIMBAD_BATCH_SIZE = 90
+"""Identifier spellings per SIMBAD query, which keeps the URL well under 8 kB."""
 
 Progress = Callable[[str], None]
 
@@ -222,6 +226,54 @@ def fetch_host_distances(
             cached_download(
                 tap_url(GAIA_TAP, host_distance_query(batch)),
                 f"gaia_hosts_{digest}.csv",
+                cache_dir=cache_dir,
+                refresh=refresh,
+                timeout=TAP_TIMEOUT_SECONDS,
+                retries=TAP_RETRIES,
+                retry_wait=TAP_RETRY_WAIT_SECONDS,
+                notify=progress,
+            )
+        )
+    return paths
+
+
+def simbad_query(identifiers: Sequence[str]) -> str:
+    """ADQL for the SIMBAD rows of the given identifiers (exact spellings).
+
+    ``asked`` is the identifier as it was asked for, so the caller can match the answer to
+    the question however SIMBAD pads the main identifier.
+    """
+    if not identifiers:
+        raise ValueError("at least one identifier is needed")
+    names = ", ".join("'" + name.replace("'", "''") + "'" for name in identifiers)
+    return (
+        "SELECT i.id AS asked, b.main_id, b.otype, b.ra, b.dec, b.rvz_redshift, b.rvz_err, "
+        "b.rvz_type, b.rvz_qual, b.rvz_bibcode "
+        f"FROM ident AS i JOIN basic AS b ON b.oid = i.oidref WHERE i.id IN ({names})"
+    )
+
+
+def fetch_simbad(
+    identifiers: Sequence[str],
+    cache_dir: Path | None,
+    refresh: bool,
+    progress: Progress = _ignore,
+) -> list[Path]:
+    """SIMBAD position and redshift rows for the given identifiers, in batches.
+
+    The file name depends on the identifiers in the batch, so a changed list is never read
+    from an old file.
+    """
+    ordered = sorted(set(identifiers))
+    paths: list[Path] = []
+    for start in range(0, len(ordered), SIMBAD_BATCH_SIZE):
+        batch = ordered[start : start + SIMBAD_BATCH_SIZE]
+        digest = hashlib.sha256("|".join(batch).encode()).hexdigest()[:12]
+        progress(f"Downloading {len(batch)} identifiers from SIMBAD")
+        paths.append(
+            cached_download(
+                tap_url(SIMBAD_TAP, simbad_query(batch)),
+                f"simbad_{digest}.csv",
                 cache_dir=cache_dir,
                 refresh=refresh,
                 timeout=TAP_TIMEOUT_SECONDS,

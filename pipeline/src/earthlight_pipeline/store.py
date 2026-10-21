@@ -12,6 +12,7 @@ from pathlib import Path
 from earthlight.lookback import LookbackRange
 from earthlight.models import VantagePoint
 from earthlight.schema import SCHEMA_VERSION, create_empty_database, rebuild_search_index
+from earthlight_pipeline.deep_sky import DeepSkyRecord
 from earthlight_pipeline.exoplanets import ExoplanetRecord
 from earthlight_pipeline.stars import SearchEntry
 
@@ -151,6 +152,54 @@ def replace_exoplanets(connection: sqlite3.Connection, records: Sequence[Exoplan
         raise RuntimeError(f"could not store the exoplanets ({error})") from error
     rebuild_search_index(connection)
     connection.execute("VACUUM")
+
+
+DEEP_SKY_KINDS = ("star_cluster", "galaxy", "galaxy_cluster", "quasar", "cosmic_background")
+"""The vantage point kinds that the deep-sky build owns."""
+
+
+def replace_deep_sky(connection: sqlite3.Connection, records: Sequence[DeepSkyRecord]) -> None:
+    """Replace every deep-sky object in the database with ``records``, then rebuild the search
+    indexes and vacuum the file.
+
+    The replacement is one transaction: either all the objects are replaced or none are.
+    Raises RuntimeError if the new objects break a rule of the database.
+    """
+    kinds = ", ".join(f"'{kind}'" for kind in DEEP_SKY_KINDS)
+    try:
+        with connection:
+            connection.execute(
+                "DELETE FROM search_entries WHERE type = 'vantage_point' "
+                f"AND id IN (SELECT id FROM vantage_points WHERE kind IN ({kinds}))"
+            )
+            connection.execute(f"DELETE FROM vantage_points WHERE kind IN ({kinds})")
+            if records:
+                columns = list(vantage_row(records[0].point))
+                connection.executemany(
+                    f"INSERT INTO vantage_points ({', '.join(columns)}) "
+                    f"VALUES ({', '.join(':' + column for column in columns)})",
+                    [vantage_row(record.point) for record in records],
+                )
+                connection.executemany(
+                    "INSERT INTO search_entries (type, id, name, aliases, description) "
+                    "VALUES (?, ?, ?, ?, ?)",
+                    [
+                        (e.type, e.id, e.name, e.aliases, e.description)
+                        for e in (record.search for record in records)
+                    ],
+                )
+    except sqlite3.IntegrityError as error:
+        raise RuntimeError(f"could not store the deep-sky objects ({error})") from error
+    rebuild_search_index(connection)
+    connection.execute("VACUUM")
+
+
+def load_deep_sky(connection: sqlite3.Connection) -> list[VantagePoint]:
+    """Read every deep-sky object back as a model, ordered by id."""
+    points: list[VantagePoint] = []
+    for kind in DEEP_SKY_KINDS:
+        points += _load(connection, kind)
+    return sorted(points, key=lambda point: point.id)
 
 
 def load_stars(connection: sqlite3.Connection) -> list[VantagePoint]:

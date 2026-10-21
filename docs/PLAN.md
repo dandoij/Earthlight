@@ -116,9 +116,14 @@ No database yet. Pure, heavily tested functions.
   - **Phase 2.2 note:** use `ps` with `default_flag = 1`. 128 planets (including TRAPPIST-1) have no `sy_dist`: fall back to the host star's distance through `gaia_dr3_id` (parse the `Gaia DR3 <id>` text) or `hip_name`, otherwise omit the planet. Add the Exoplanet Archive reference paper (Christiansen et al. 2025) to the README credits once the full citation is confirmed.
   - **Build:** Exoplanet Archive query, distance ranges from the archive's error columns, link to host star vantage points where possible.
   - **Done when:** Planets load with host links; spot checks (for example Proxima Cen b, Kepler-22 b).
-- [ ] **2.6 Deep-sky objects**
-  - **Build:** `curated/deep_sky.yaml` (about 100 to 150 objects: globular clusters, Magellanic Clouds, Andromeda, well-known galaxies and clusters, famous quasars, JWST record galaxies, CMB) with distance or redshift and a source. Redshift to lookback via astropy `Planck18`. Pydantic validation.
-  - **Done when:** Loads and validates; lookbacks span from tens of thousands of years to about 13.8 billion.
+- [x] **2.6 Deep-sky objects (far)**
+  - **Split (agreed with Ian):** SIMBAD's stored distances are unusable for near objects, so 2.6 covers only objects with redshift 0.01 or more (52 objects); the near ones are the new step 2.6b.
+  - **Build:** `pipeline/curated/deep_sky.yaml` holds names, kinds, and fame only. Position and redshift come from SIMBAD (45 objects); 7 objects (JWST record galaxies, the quasar J0313-1806, the CMB) carry an inline redshift with the URL of its paper. Redshift to lookback via astropy `Planck18`, with the uncertainty described in `docs/data-sources.md`. Strict Pydantic validation; the build fails loudly, listing every problem.
+  - **Outcome:** 52 objects, lookbacks from 185 million years to 13.79 billion. Also fixed astropy's constellation misspellings in the shared helper.
+  - **Done when:** Loads and validates; lookbacks span from hundreds of millions to about 13.8 billion years.
+- [ ] **2.6b Deep-sky objects (near)**
+  - **Build:** add nearby objects to the same curated list and the same `deep-sky` command: globular clusters (Baumgardt and Vasiliev 2021), open clusters (Gaia-based catalogue such as Hunt and Reffert 2023 on VizieR), Local Group galaxies (McConnachie 2012), and nearby galaxies out to about 40 Mpc (Cosmicflows). Verify each catalogue's real format and license first and record it in `docs/data-sources.md`. The `CuratedObject` model needs a `distance` alternative to `simbad` and `inline` (a catalogue, an identifier in it, and the catalogue's own range).
+  - **Done when:** About 70 near objects load with sourced distance ranges; lookbacks span from tens of thousands of years to hundreds of millions.
 - [ ] **2.7 History schema and loader**
   - **Build:** Pydantic models and loader for `curated/history/*.yaml` (events, periods, landmarks). Fields include `year`, `year_uncertainty`, `category`, `region`, `summary` (own words), `importance` (1 to 5), `wikipedia`, `source`; landmarks add `built_start`, `built_end`, `destroyed`, `lat`, `lon`.
   - **Done when:** Loader validates a small sample file with tests.
