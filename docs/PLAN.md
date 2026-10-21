@@ -102,7 +102,7 @@ No database yet. Pure, heavily tested functions.
   - **Outcome (2026-10-20):** see `docs/data-sources.md`. Three plan changes, approved by Ian: (1) the bundled database is CC BY-NC 3.0 IGO because Gaia and Hipparcos are ESA non-commercial data (code stays MIT; `LICENSE-DATA` and the README "Data licenses" section were added in this step); (2) proper names come from the IAU Catalog of Star Names instead of HYG (HYG's CC BY-SA terms cannot be combined with non-commercial data); (3) star distances are two-tier, Gaia with Bailer-Jones ranges where matched and the Hipparcos new reduction (VizieR I/311/hip2) otherwise, because Gaia misses the famous bright stars.
   - **Build:** Investigate and document in `docs/data-sources.md`: HYG current version and columns; Gaia DR3 tables for the bright-star query; Hipparcos cross-match table; Bailer-Jones distance table name and columns; Exoplanet Archive table and distance columns; licenses and attribution text for each.
   - **Done when:** Doc is complete. **Ask Ian** about anything that differs from this plan.
-- [ ] **2.3 Database schema**
+- [x] **2.3 Database schema**
   - **Phase 2.2 note:** `meta` also records the data license (CC BY-NC 3.0 IGO) and each source's version or retrieval date. A star's `facts` includes `distance_source` (`gaia` or `hipparcos`). Include the `VantagePoint` fields `ra_deg`, `dec_deg`, `fame`, `host_id`, and `wikipedia`.
   - **Build:** `schema.sql`: `meta` (schema_version, build date, source versions), `vantage_points` (with indexed lookback columns, kind, magnitude, constellation, ra_deg, dec_deg, fame, host_id, wikipedia, facts JSON), `exoplanets`, `events`, `periods`, `landmarks`, `population`, FTS5 tables (unicode61 for search, trigram for did-you-mean).
   - **Done when:** Schema builds an empty database and a test checks every table and index exists.
@@ -132,6 +132,7 @@ No database yet. Pure, heavily tested functions.
   - **Build:** Our World in Data historical population estimates into the `population` table.
 - [ ] **2.15 Build and validate the database**
   - **Phase 2.2 note:** the validation tests also check that `meta` records the CC BY-NC 3.0 IGO data license and that `LICENSE-DATA` exists.
+  - **Phase 2.3 note:** SQLite cannot check two rules inside the schema, so the validation tests must: every `facts` value is a plain scalar (no nested objects or arrays), and every `host_id` points at a vantage point of kind `star`. The build also turns on `PRAGMA foreign_keys`, fills `search_entries` (deciding which things are searchable, for example leaving out unnamed stars to save space), and calls `rebuild_search_index()` before finishing.
   - **Build:** Full build into `packages/earthlight/src/earthlight/data/earthlight.db`. Validation tests: schema version, size limit, no duplicate ids, min <= best <= max, coverage per century from 3000 BCE to today and per era for deep time.
   - **Done when:** Tests pass; the built `.db` is committed.
 - [ ] **2.16 README update** (data sources and attribution section): the "Data licenses" section and `LICENSE-DATA` already exist from step 2.2; update them to match what was actually built and add the Exoplanet Archive reference citation.
