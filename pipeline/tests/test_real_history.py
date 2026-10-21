@@ -253,3 +253,97 @@ def test_the_middle_age_landmarks_stand_where_they_should(shipped: HistoryData) 
         < sites["borobudur"].built_end
         < sites["angkor-wat"].built_end
     )
+
+
+def test_the_modern_dates_use_the_calendar_year(shipped: HistoryData) -> None:
+    events = {e.id: e.year for e in shipped.events}
+    expected_year = {
+        "battle-of-waterloo": 1815,
+        "stockton-and-darlington-railway": 1825,
+        "origin-of-species": 1859,
+        "emancipation-proclamation": 1863,
+        "telephone-patent": 1876,
+        "first-powered-flight": 1903,
+        "special-relativity": 1905,
+        "sinking-of-the-titanic": 1912,
+        "october-revolution": 1917,
+        "influenza-pandemic-1918": 1918,
+        "discovery-of-penicillin": 1928,
+        "wall-street-crash": 1929,
+        "hiroshima-bombing": 1945,
+        "indian-independence": 1947,
+        "dna-double-helix": 1953,
+        "sputnik-launch": 1957,
+        "first-human-in-space": 1961,
+        "apollo-11-moon-landing": 1969,
+        "chernobyl-disaster": 1986,
+        "world-wide-web-proposed": 1989,
+        "fall-of-the-berlin-wall": 1989,
+        "mandela-released": 1990,
+        "hubble-space-telescope-launch": 1990,
+        "dissolution-of-the-soviet-union": 1991,
+        "september-11-attacks": 2001,
+        "human-genome-completed": 2003,
+        "covid-19-pandemic-declared": 2020,
+        "james-webb-space-telescope-launch": 2021,
+    }
+    for event_id, year in expected_year.items():
+        assert int(events[event_id] // 1) == year, event_id
+
+
+def test_the_wars_and_ages_line_up_with_their_events(shipped: HistoryData) -> None:
+    periods = {p.id: p for p in shipped.periods}
+    events = {e.id: e.year for e in shipped.events}
+    assert periods["space-age"].start == events["sputnik-launch"]
+    assert periods["space-age"].end == ONGOING_END_YEAR
+    assert periods["cold-war"].end == events["dissolution-of-the-soviet-union"]
+    assert (
+        periods["napoleonic-wars"].start
+        < events["battle-of-waterloo"]
+        < periods["napoleonic-wars"].end
+    )
+    assert periods["world-war-i"].end < periods["great-depression"].start
+    assert (
+        periods["great-depression"].start
+        < events["wall-street-crash"]
+        < periods["world-war-ii"].start
+    )
+    assert periods["world-war-ii"].start < events["hiroshima-bombing"] < periods["world-war-ii"].end
+    assert periods["world-war-ii"].end < periods["cold-war"].start
+
+
+def test_the_space_firsts_come_in_order(shipped: HistoryData) -> None:
+    events = {e.id: e.year for e in shipped.events}
+    order = [
+        "sputnik-launch",
+        "first-human-in-space",
+        "apollo-11-moon-landing",
+        "hubble-space-telescope-launch",
+        "james-webb-space-telescope-launch",
+    ]
+    assert [events[i] for i in order] == sorted(events[i] for i in order)
+
+
+def test_the_modern_landmarks_are_in_the_right_hemispheres(shipped: HistoryData) -> None:
+    sites = {m.id: m for m in shipped.landmarks}
+    assert 48 < sites["eiffel-tower"].lat < 49 and 2 < sites["eiffel-tower"].lon < 3
+    assert 40 < sites["statue-of-liberty"].lat < 41 and -75 < sites["statue-of-liberty"].lon < -74
+    assert (
+        37 < sites["golden-gate-bridge"].lat < 38 and -123 < sites["golden-gate-bridge"].lon < -122
+    )
+    assert (
+        -34 < sites["sydney-opera-house"].lat < -33 and 151 < sites["sydney-opera-house"].lon < 152
+    )
+    assert 25 < sites["burj-khalifa"].lat < 26 and 55 < sites["burj-khalifa"].lon < 56
+    assert 9 < sites["panama-canal"].lat < 10 and -80 < sites["panama-canal"].lon < -79
+    assert sites["eiffel-tower"].built_end < sites["empire-state-building"].built_start
+    assert sites["burj-khalifa"].built_end > 2009
+
+
+def test_the_history_reaches_from_the_big_bang_to_the_modern_day(shipped: HistoryData) -> None:
+    from earthlight_pipeline.history import years_covered
+
+    earliest, latest = years_covered(shipped)
+    assert earliest < -13.7e9
+    assert 2021 < latest <= ONGOING_END_YEAR
+    assert 150 <= shipped.total <= 190
