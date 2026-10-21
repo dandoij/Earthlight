@@ -158,3 +158,71 @@ def test_an_empty_catalogue_has_no_largest_number(tmp_path: Path) -> None:
     csv_path.write_text("HIP,Vmag\n", encoding="utf-8")
     with pytest.raises(ValueError, match="no Hipparcos stars"):
         max_hipparcos_number(csv_path)
+
+
+# --- exoplanet archive and host distances ----------------------------------------------------
+
+
+def test_the_exoplanet_query_asks_for_the_default_parameter_set_only() -> None:
+    query = sources.exoplanet_query()
+    assert query.startswith("select pl_name, hostname")
+    assert query.endswith("from ps where default_flag = 1")
+    for column in (
+        "sy_dist",
+        "sy_disterr1",
+        "sy_disterr2",
+        "gaia_dr3_id",
+        "hip_name",
+        "pl_controv_flag",
+    ):
+        assert column in sources.EXOPLANET_COLUMNS
+
+
+def test_the_exoplanet_archive_download_is_retried_and_cached_by_name(
+    recorder: Recorder, tmp_path: Path
+) -> None:
+    messages: list[str] = []
+    path = sources.fetch_exoplanet_archive(tmp_path, False, messages.append)
+    url, name, directory, refresh, timeout = recorder.calls[0]
+    assert path.name == name == "exoplanet_archive_ps.csv"
+    assert url.startswith(sources.EXOPLANET_ARCHIVE_TAP)
+    assert (directory, refresh, timeout) == (tmp_path, False, TAP_TIMEOUT_SECONDS)
+    assert recorder.retry_settings[0][:2] == (TAP_RETRIES, TAP_RETRY_WAIT_SECONDS)
+    assert len(messages) == 1
+
+
+def test_the_host_distance_query_is_a_plain_in_list() -> None:
+    query = sources.host_distance_query([30, 10, 20])
+    assert query.endswith("WHERE source_id IN (30, 10, 20)")
+    assert query.count("(") == 1  # no AND/OR groups, which the Gaia archive rejects
+    assert "external.gaiaedr3_distance" in query
+
+
+def test_the_host_distance_query_only_accepts_integers_and_something_to_ask() -> None:
+    with pytest.raises(ValueError):
+        sources.host_distance_query([])
+    with pytest.raises((TypeError, ValueError)):
+        sources.host_distance_query(["1); DROP TABLE x; --"])  # type: ignore[list-item]
+
+
+def test_host_distances_are_fetched_in_batches_with_names_that_depend_on_the_ids(
+    recorder: Recorder, tmp_path: Path
+) -> None:
+    ids = list(range(1_000_000, 1_000_250))
+    paths = sources.fetch_host_distances(ids, tmp_path, False)
+    assert len(paths) == 3 == len(recorder.calls)  # 100 + 100 + 50
+    names = [p.name for p in paths]
+    assert len(set(names)) == 3 and all(
+        n.startswith("gaia_hosts_") and n.endswith(".csv") for n in names
+    )
+    again = sources.fetch_host_distances(list(reversed(ids)) + ids[:5], tmp_path, False)
+    assert [p.name for p in again] == names  # order and duplicates do not matter
+    other = sources.fetch_host_distances([*ids[:99], 5], tmp_path, False)
+    assert other[0].name != names[0]  # a different set of hosts is a different file
+    assert all(call[0].startswith(GAIA_TAP) for call in recorder.calls)
+    assert all(settings[0] == TAP_RETRIES for settings in recorder.retry_settings)
+
+
+def test_no_hosts_means_no_downloads(recorder: Recorder, tmp_path: Path) -> None:
+    assert sources.fetch_host_distances([], tmp_path, False) == []
+    assert recorder.calls == []

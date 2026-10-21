@@ -49,7 +49,7 @@ def match(**overrides: object) -> GaiaMatch:
     return GaiaMatch(**(values | overrides))  # type: ignore[arg-type]
 
 
-# --- choosing a distance ----------------------------------------------------------------
+# --- choosing a distance ---------------------------------------------------------------------
 
 
 def test_gaia_with_bailer_jones_is_preferred() -> None:
@@ -128,7 +128,7 @@ def test_a_good_gaia_distance_rescues_a_star_with_a_poor_hipparcos_parallax() ->
     assert choose_distance(poor, match()).source == "gaia"
 
 
-# --- fame -------------------------------------------------------------------------------
+# --- fame ------------------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize(
@@ -153,7 +153,7 @@ def test_fame_rules(named: bool, vmag: float | None, light_years: float, expecte
     assert fame_for(has_iau_name=named, vmag=vmag, light_years=light_years) == expected
 
 
-# --- constellations ---------------------------------------------------------------------
+# --- constellations --------------------------------------------------------------------------
 
 
 def test_constellation_names_come_from_astropy() -> None:
@@ -162,7 +162,7 @@ def test_constellation_names_come_from_astropy() -> None:
     assert constellation_names([], []) == []
 
 
-# --- building ---------------------------------------------------------------------------
+# --- building --------------------------------------------------------------------------------
 
 
 def test_build_stars_applies_every_rule() -> None:
@@ -271,7 +271,7 @@ def test_empty_input_builds_nothing() -> None:
     assert result.skipped == Counter() and result.sources == Counter()
 
 
-# --- search entries ---------------------------------------------------------------------
+# --- search entries --------------------------------------------------------------------------
 
 
 def test_only_stars_with_fame_are_searchable() -> None:
@@ -293,7 +293,7 @@ def test_a_searchable_star_without_a_hd_number_has_only_its_hip_alias() -> None:
     assert entry is not None and entry.aliases == "HIP 5"
 
 
-# --- reading the files ------------------------------------------------------------------
+# --- reading the files -----------------------------------------------------------------------
 
 
 def write(path: Path, text: str) -> Path:
@@ -345,7 +345,7 @@ def test_read_gaia_matches_reads_batches_and_missing_distances(tmp_path: Path) -
     assert matches[70890].parallax_mas == 768.067
 
 
-# --- IAU names -------------------------------------------------------------------------
+# --- IAU names -------------------------------------------------------------------------------
 # The real-file tests are in test_real_stars.py. These check the edges of the parser.
 
 IAU_FIXTURE = Path(__file__).parent / "data" / "iau_csn_sample.txt"

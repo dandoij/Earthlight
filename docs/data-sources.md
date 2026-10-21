@@ -185,6 +185,42 @@ Proxima Centauri's Gaia and Bailer-Jones distance is 1.3019 pc, which is 4.2465 
 - **SQLite does not shrink a file when rows are deleted**, so a rebuilt database keeps its old size. The writer vacuums the file at the end.
 - VizieR returns `I/311/hip2` positions in columns named `RArad` and `DErad` whose values are degrees. The build uses the main catalogue's `RAICRS` and `DEICRS` instead.
 
+## Exoplanet build results (step 2.5)
+
+Run on the full archive: 6,451 default-parameter planets, of which **6,356** were built.
+
+### Distances
+
+- **Archive range (6,215 planets):** `sy_dist` with its upper and lower error columns.
+- **Host star range (141 planets):** where the archive has no distance or no error bars, the host's Bailer-Jones 16th, 50th, and 84th percentile distances, found through the `Gaia DR3 <id>` text in `gaia_dr3_id`. TRAPPIST-1 is one of these (40.62 light-years).
+- **Left out (95 planets):** 51 with no distance anywhere (`no_distance`) and 44 with a distance but no usable error bars and no host range (`no_distance_error`).
+- A range of zero width is never built, because it would make a planet look perfectly precise. Only 3 of the 108 planets without error bars had a parallax error to build a range from, so the host range is the fallback.
+- The 128 planets without `sy_dist` mentioned in step 2.2: 77 were rescued through the host star, 51 left out.
+
+### Host links
+
+- A planet links to its host star (`host_id`) through its Hipparcos number (`hip_name`) or its Gaia source id. 1,236 planets are linked.
+- Only 650 of the 1,167 planets with a Hipparcos host had that host in the magnitude 8 star database. The star build now **keeps every planet host** (862 stars) with fame at least 1 and the lower parallax bar, so the links exist. Because planets depend on those stars, the stars build refuses to run on a database that already has planets; `earthlight-build all` recreates the database first.
+
+### Rules chosen in this step
+
+- Every built planet is searchable (6,356 entries). 58 are flagged controversial.
+- Fame: a short editorial list (51 Peg b, HD 209458 b, Proxima Cen b, TRAPPIST-1 e at 4; Kepler-22 b at 3), at least 3 within 12 light-years, otherwise 1.
+- Extra facts stored: `distance_source` (`exoplanet_archive` or `bailer_jones_host`), `planets_in_system`, `gaia_dr3_host_id`. Radius, mass, period, discovery year and method live only in the `exoplanets` table (no Pydantic model yet).
+- Database size with stars and planets: **19.6 MB**, close to the 20 MB budget.
+
+### Spot checks
+
+| Planet | Lookback | Note |
+|---|---|---|
+| Proxima Cen b | 4.24 ly | host `hip-70890` |
+| Teegarden's Star d | 12.49 ly | |
+| 51 Peg b | 50.43 ly | host `hip-113357` |
+| HD 209458 b | 157.54 ly | |
+| Kepler-22 b | 634.84 ly | |
+| TRAPPIST-1 b and e | 40.62 ly | host range |
+| KMT-2024-BLG-0176L b | about 27,201 ly | microlensing, far away |
+
 ## Licenses and attribution
 
 Verified from the sources' own pages on 2026-10-20. Quotes are exact. This is a project record, not legal advice.

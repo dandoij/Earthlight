@@ -6,7 +6,8 @@ service was checked, in ``docs/data-sources.md``.
 """
 
 import csv
-from collections.abc import Callable
+import hashlib
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from urllib.parse import urlencode
 
@@ -14,12 +15,15 @@ from earthlight_pipeline.cache import cached_download
 
 VIZIER_TAP = "https://tapvizier.cds.unistra.fr/TAPVizieR/tap/sync"
 GAIA_TAP = "https://gea.esac.esa.int/tap-server/tap/sync"
+EXOPLANET_ARCHIVE_TAP = "https://exoplanetarchive.ipac.caltech.edu/TAP/sync"
 IAU_CSN_URL = "https://www.pas.rochester.edu/~emamajek/WGSN/IAU-CSN.txt"
 
 TAP_TIMEOUT_SECONDS = 900
+"""A Gaia query for 20,000 Hipparcos numbers takes about a minute, and can be slower."""
+
 TAP_RETRIES = 3
 TAP_RETRY_WAIT_SECONDS = 15.0
-"""A Gaia query for 20,000 Hipparcos numbers takes about a minute, and can be slower."""
+"""Dropped connections are retried this many times, waiting 15 s and then double each time."""
 
 GAIA_BATCH_SIZE = 20_000
 """Hipparcos numbers per Gaia query. The archive returns at most 50,000 rows per query."""
@@ -134,3 +138,96 @@ def max_hipparcos_number(hip_main_csv: Path) -> int:
     if not numbers:
         raise ValueError(f"{hip_main_csv} has no Hipparcos stars")
     return max(numbers)
+
+
+EXOPLANET_COLUMNS = (
+    "pl_name",
+    "hostname",
+    "pl_controv_flag",
+    "sy_dist",
+    "sy_disterr1",
+    "sy_disterr2",
+    "sy_vmag",
+    "ra",
+    "dec",
+    "gaia_dr3_id",
+    "hip_name",
+    "disc_year",
+    "discoverymethod",
+    "sy_pnum",
+    "pl_rade",
+    "pl_bmasse",
+    "pl_orbper",
+)
+"""The Planetary Systems columns the build reads (see docs/data-sources.md)."""
+
+HOST_DISTANCE_BATCH_SIZE = 100
+"""Gaia source ids per Bailer-Jones query, to keep the URL short."""
+
+
+def exoplanet_query() -> str:
+    """ADQL for one row per planet (the archive's default parameter set)."""
+    return f"select {', '.join(EXOPLANET_COLUMNS)} from ps where default_flag = 1"
+
+
+def fetch_exoplanet_archive(
+    cache_dir: Path | None, refresh: bool, progress: Progress = _ignore
+) -> Path:
+    """The NASA Exoplanet Archive's Planetary Systems table, one row per planet."""
+    progress("Downloading the NASA Exoplanet Archive planets")
+    return cached_download(
+        tap_url(EXOPLANET_ARCHIVE_TAP, exoplanet_query()),
+        "exoplanet_archive_ps.csv",
+        cache_dir=cache_dir,
+        refresh=refresh,
+        timeout=TAP_TIMEOUT_SECONDS,
+        retries=TAP_RETRIES,
+        retry_wait=TAP_RETRY_WAIT_SECONDS,
+        notify=progress,
+    )
+
+
+def host_distance_query(source_ids: Sequence[int]) -> str:
+    """ADQL for the Bailer-Jones distances of the given Gaia source ids.
+
+    Only a plain ``IN`` list is used (the Gaia archive rejects parenthesized AND/OR groups).
+    """
+    if not source_ids:
+        raise ValueError("at least one Gaia source id is needed")
+    ids = ", ".join(str(int(source_id)) for source_id in source_ids)
+    return (
+        "SELECT source_id, r_lo_geo, r_med_geo, r_hi_geo "
+        f"FROM external.gaiaedr3_distance WHERE source_id IN ({ids})"
+    )
+
+
+def fetch_host_distances(
+    source_ids: Sequence[int],
+    cache_dir: Path | None,
+    refresh: bool,
+    progress: Progress = _ignore,
+) -> list[Path]:
+    """Bailer-Jones distances for planet host stars, in batches of 100 ids.
+
+    The file name depends on the ids in the batch, so a different set of hosts is never read
+    from an old file.
+    """
+    ordered = sorted(set(source_ids))
+    paths: list[Path] = []
+    for start in range(0, len(ordered), HOST_DISTANCE_BATCH_SIZE):
+        batch = ordered[start : start + HOST_DISTANCE_BATCH_SIZE]
+        digest = hashlib.sha256(",".join(map(str, batch)).encode()).hexdigest()[:12]
+        progress(f"Downloading Bailer-Jones distances for {len(batch)} planet host stars")
+        paths.append(
+            cached_download(
+                tap_url(GAIA_TAP, host_distance_query(batch)),
+                f"gaia_hosts_{digest}.csv",
+                cache_dir=cache_dir,
+                refresh=refresh,
+                timeout=TAP_TIMEOUT_SECONDS,
+                retries=TAP_RETRIES,
+                retry_wait=TAP_RETRY_WAIT_SECONDS,
+                notify=progress,
+            )
+        )
+    return paths

@@ -5,8 +5,10 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
+from earthlight_pipeline.exoplanets import exoplanet_host_hips, read_archive
 from earthlight_pipeline.sources import (
     Progress,
+    fetch_exoplanet_archive,
     fetch_gaia_matches,
     fetch_hipparcos_main,
     fetch_hipparcos_parallaxes,
@@ -38,6 +40,7 @@ class StarsReport:
     skipped: dict[str, int]
     searchable: int
     named: int
+    planet_hosts: int
     fame_counts: dict[int, int]
     database: Path
     database_bytes: int
@@ -65,9 +68,11 @@ def run_stars(
     hipparcos = read_hipparcos(main_csv, parallax_csv)
     matches = read_gaia_matches(gaia_csvs)
     iau_names = parse_iau_names(iau_txt.read_text(encoding="utf-8"))
+    planets = read_archive(fetch_exoplanet_archive(cache_dir, refresh, progress))
+    host_hips = exoplanet_host_hips(planets, matches)
 
     progress(f"Building stars from {len(hipparcos):,} Hipparcos entries")
-    result = build_stars(hipparcos, matches, iau_names, max_vmag=max_vmag)
+    result = build_stars(hipparcos, matches, iau_names, max_vmag=max_vmag, keep_hips=host_hips)
     entries = [entry for star in result.stars if (entry := search_entry(star)) is not None]
 
     progress(f"Writing {len(result.stars):,} stars to {database}")
@@ -103,6 +108,7 @@ def run_stars(
         skipped=dict(result.skipped),
         searchable=len(entries),
         named=sum(1 for star in result.stars if not star.name.startswith("HIP ")),
+        planet_hosts=sum(1 for star in result.stars if star.facts["hip"] in host_hips),
         fame_counts=dict(sorted(fame_counts.items())),
         database=database,
         database_bytes=database.stat().st_size,
@@ -120,7 +126,8 @@ def format_stars_report(report: StarsReport) -> str:
             ", ".join(f"{reason} {count:,}" for reason, count in sorted(report.skipped.items()))
             or "nothing"
         ),
-        f"IAU-named stars: {report.named:,}; searchable: {report.searchable:,}",
+        f"IAU-named stars: {report.named:,}; planet hosts: {report.planet_hosts:,}; "
+        f"searchable: {report.searchable:,}",
         "Fame: " + ", ".join(f"{score}: {count:,}" for score, count in report.fame_counts.items()),
         f"Database: {report.database} ({report.database_bytes / 1_000_000:.1f} MB)",
     ]

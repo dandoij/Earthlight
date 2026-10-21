@@ -10,10 +10,18 @@ import pytest
 from earthlight.lookback import LookbackRange
 from earthlight.models import VantageKind, VantagePoint
 from earthlight.schema import SCHEMA_VERSION, create_empty_database
+from earthlight_pipeline.exoplanets import (
+    ArchivePlanet,
+    ExoplanetRecord,
+    StarIndex,
+    build_exoplanets,
+)
 from earthlight_pipeline.stars import HipparcosStar, SearchEntry, build_stars, search_entry
 from earthlight_pipeline.store import (
+    load_exoplanets,
     load_stars,
     open_database,
+    replace_exoplanets,
     replace_stars,
     set_meta,
     vantage_row,
@@ -231,3 +239,131 @@ def test_the_file_shrinks_when_fewer_stars_are_stored(tmp_path: Path) -> None:
     finally:
         connection.close()
     assert big > 5 * small  # without VACUUM the file would stay as large as it was
+
+
+# --- exoplanets ------------------------------------------------------------------------------
+
+
+def make_planet_records(host_id: str | None = None) -> list[ExoplanetRecord]:
+    planets = [
+        ArchivePlanet(
+            name=name,
+            host_name="Test",
+            controversial=name == "Test c",
+            distance_pc=10.0,
+            error_upper_pc=1.0,
+            error_lower_pc=-1.0,
+            vmag=9.5,
+            ra_deg=100.0,
+            dec_deg=20.0,
+            gaia_host_id=None,
+            hip=27989 if host_id else None,
+            discovery_year=2010,
+            discovery_method="Transit",
+            planets_in_system=3,
+            radius_earth=1.5,
+            mass_earth=None,
+            orbital_period_days=12.0,
+        )
+        for name in ("Test b", "Test c")
+    ]
+    index = StarIndex({27989: host_id} if host_id else {}, {})
+    return build_exoplanets(planets, {}, index).records
+
+
+def test_exoplanets_are_stored_with_their_details_and_search_entries(
+    database: sqlite3.Connection,
+) -> None:
+    stars = make_stars()
+    replace_stars(database, stars, entries_for(stars))
+    records = make_planet_records(host_id="hip-27989")
+    replace_exoplanets(database, records)
+    loaded = {p.id: p for p in load_exoplanets(database)}
+    assert sorted(loaded) == ["test-b", "test-c"]
+    assert loaded["test-b"].host_id == "hip-27989"
+    assert loaded["test-b"] == records[0].point
+    rows = database.execute(
+        "SELECT vantage_id, nasa_name, host_name, discovery_year, discovery_method, radius_earth, "
+        "mass_earth, orbital_period_days, controversial FROM exoplanets ORDER BY vantage_id"
+    ).fetchall()
+    assert rows == [
+        ("test-b", "Test b", "Test", 2010, "Transit", 1.5, None, 12.0, 0),
+        ("test-c", "Test c", "Test", 2010, "Transit", 1.5, None, 12.0, 1),
+    ]
+    found = database.execute(
+        "SELECT e.id FROM search_fts JOIN search_entries e ON e.entry_id = search_fts.rowid "
+        "WHERE search_fts MATCH 'test' ORDER BY e.id"
+    ).fetchall()
+    assert ("test-b",) in found and ("test-c",) in found
+
+
+def test_replacing_exoplanets_twice_gives_the_same_result(database: sqlite3.Connection) -> None:
+    records = make_planet_records()
+    replace_exoplanets(database, records)
+    replace_exoplanets(database, records)
+    assert database.execute("SELECT count(*) FROM exoplanets").fetchone() == (2,)
+    assert database.execute("SELECT count(*) FROM vantage_points").fetchone() == (2,)
+    assert database.execute("SELECT count(*) FROM search_entries").fetchone() == (2,)
+
+
+def test_replacing_exoplanets_leaves_stars_alone(database: sqlite3.Connection) -> None:
+    stars = make_stars()
+    replace_stars(database, stars, entries_for(stars))
+    replace_exoplanets(database, make_planet_records(host_id="hip-27989"))
+    replace_exoplanets(database, [])
+    assert [s.id for s in load_stars(database)] == sorted(s.id for s in stars)
+    assert load_exoplanets(database) == []
+    assert database.execute("SELECT count(*) FROM exoplanets").fetchone() == (0,)
+    assert database.execute("SELECT count(*) FROM search_entries").fetchone() == (1,)  # the star
+
+
+def test_the_file_shrinks_when_fewer_exoplanets_are_stored(tmp_path: Path) -> None:
+    planets = [
+        ArchivePlanet(
+            name=f"Many {n} b",
+            host_name=f"Many {n}",
+            controversial=False,
+            distance_pc=10.0,
+            error_upper_pc=1.0,
+            error_lower_pc=-1.0,
+            vmag=9.5,
+            ra_deg=100.0,
+            dec_deg=20.0,
+            gaia_host_id=None,
+            hip=None,
+            discovery_year=2010,
+            discovery_method="Transit",
+            planets_in_system=1,
+            radius_earth=1.5,
+            mass_earth=None,
+            orbital_period_days=12.0,
+        )
+        for n in range(3000)
+    ]
+    many = build_exoplanets(planets, {}, StarIndex({}, {})).records
+    path = tmp_path / "earthlight.db"
+    connection = open_database(path)
+    try:
+        replace_exoplanets(connection, many)
+        big = path.stat().st_size
+        replace_exoplanets(connection, many[:10])
+        small = path.stat().st_size
+    finally:
+        connection.close()
+    assert big > 5 * small  # without VACUUM the file would stay as large as it was
+
+
+def test_a_planet_with_a_missing_host_changes_nothing(database: sqlite3.Connection) -> None:
+    replace_exoplanets(database, make_planet_records())
+    with pytest.raises(RuntimeError, match="could not store the exoplanets"):
+        replace_exoplanets(database, make_planet_records(host_id="hip-no-such-star"))
+    assert [p.id for p in load_exoplanets(database)] == ["test-b", "test-c"]  # the old ones remain
+
+
+def test_stars_are_replaced_only_if_no_planet_depends_on_them(database: sqlite3.Connection) -> None:
+    stars = make_stars()
+    replace_stars(database, stars, entries_for(stars))
+    replace_exoplanets(database, make_planet_records(host_id="hip-27989"))
+    with pytest.raises(RuntimeError, match="rebuild the whole database"):
+        replace_stars(database, stars, entries_for(stars))
+    assert len(load_exoplanets(database)) == 2

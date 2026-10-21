@@ -16,7 +16,7 @@ import csv
 import math
 import re
 from collections import Counter
-from collections.abc import Iterable, Sequence
+from collections.abc import Collection, Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -29,6 +29,9 @@ from earthlight.lookback import (
     parsecs_to_light_years,
 )
 from earthlight.models import FactValue, VantageKind, VantagePoint
+from earthlight_pipeline.parsing import integer as _integer
+from earthlight_pipeline.parsing import number as _number
+from earthlight_pipeline.parsing import words as _words
 
 DistanceSource = Literal["gaia", "hipparcos"]
 
@@ -54,23 +57,7 @@ class SkipStar(Exception):
         self.reason = reason
 
 
-# --- reading the downloaded files ----------------------------------------------------------
-
-
-def _number(text: str) -> float | None:
-    text = text.strip()
-    if not text:
-        return None
-    try:
-        value = float(text)
-    except ValueError:
-        return None
-    return value if math.isfinite(value) else None
-
-
-def _integer(text: str) -> int | None:
-    text = text.strip()
-    return int(text) if text.isascii() and text.isdigit() else None
+# --- reading the downloaded files ------------------------------------------------------------
 
 
 @dataclass(frozen=True)
@@ -122,7 +109,7 @@ def read_hipparcos(main_csv: Path, parallax_csv: Path) -> list[HipparcosStar]:
                     ra_deg=_number(row["RAICRS"]),
                     dec_deg=_number(row["DEICRS"]),
                     vmag=_number(row["Vmag"]),
-                    spectral_type=" ".join(row["SpType"].split()) or None,
+                    spectral_type=_words(row["SpType"]) or None,
                     hd=_integer(row["HD"]),
                     parallax_mas=parallax,
                     parallax_error_mas=error,
@@ -189,7 +176,7 @@ def parse_iau_names(text: str) -> dict[int, str]:
     return names
 
 
-# --- the rules ---------------------------------------------------------------------------------
+# --- the rules -------------------------------------------------------------------------------
 
 
 @dataclass(frozen=True)
@@ -274,7 +261,7 @@ def constellation_names(ra_deg: Sequence[float], dec_deg: Sequence[float]) -> li
     return [str(name) for name in get_constellation(coordinates)]
 
 
-# --- building ---------------------------------------------------------------------------------
+# --- building --------------------------------------------------------------------------------
 
 
 @dataclass
@@ -302,11 +289,14 @@ def build_stars(
     iau_names: dict[int, str],
     *,
     max_vmag: float | None = None,
+    keep_hips: Collection[int] = (),
 ) -> StarBuild:
     """Build a vantage point for every usable Hipparcos star.
 
     Stars fainter than ``max_vmag`` (or with no magnitude) are left out, unless they have a
-    fame above 0. Everything left out is counted by reason in ``skipped``.
+    fame above 0. Stars in ``keep_hips`` (the hosts of exoplanets) are always kept: they get
+    a fame of at least 1, so they are searchable, and the lower precision bar of named stars.
+    Everything left out is counted by reason in ``skipped``.
     """
     skipped: Counter[str] = Counter()
     candidates: list[_Candidate] = []
@@ -319,14 +309,13 @@ def build_stars(
             skipped["invalid_position"] += 1
             continue
         iau_name = iau_names.get(star.hip)
+        wanted = iau_name is not None or star.hip in keep_hips
         try:
             distance = choose_distance(
                 star,
                 matches.get(star.hip),
                 min_parallax_over_error=(
-                    MIN_HIPPARCOS_PARALLAX_OVER_ERROR
-                    if iau_name is None
-                    else MIN_NAMED_PARALLAX_OVER_ERROR
+                    MIN_NAMED_PARALLAX_OVER_ERROR if wanted else MIN_HIPPARCOS_PARALLAX_OVER_ERROR
                 ),
             )
         except SkipStar as why:
@@ -337,6 +326,8 @@ def build_stars(
             vmag=star.vmag,
             light_years=distance.lookback.best,
         )
+        if star.hip in keep_hips:
+            fame = max(fame, 1)
         if fame == 0 and max_vmag is not None and (star.vmag is None or star.vmag > max_vmag):
             skipped["too_faint"] += 1
             continue
@@ -390,7 +381,7 @@ def _vantage_point(candidate: _Candidate, constellation: str) -> VantagePoint:
     )
 
 
-# --- search --------------------------------------------------------------------------------------
+# --- search ----------------------------------------------------------------------------------
 
 
 @dataclass(frozen=True)

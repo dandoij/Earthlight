@@ -111,7 +111,8 @@ No database yet. Pure, heavily tested functions.
   - **Outcome (2026-10-21):** `uv run earthlight-build stars` builds 39,976 stars (V 8.0 limit, 14.4 MB) from the real services: 98,004 usable Gaia distances and 11,636 Hipparcos distances before the limit, 409 IAU-named. The 12 famous stars all check out. IAU-named stars use a 3 times parallax bar and others 5 times; `--no-limit` keeps all 109,640 (40.4 MB). Counts, rules, and service quirks are in `docs/data-sources.md`. Stars have ids `hip-<n>` and facts `hip` and `gaia_dr3_source_id` (text) for linking in step 2.5.
   - **Build:** Gaia DR3 query for bright stars with precise parallax (tune cutoffs to keep the final database under about 20 MB), Bailer-Jones distances to lookback ranges, HYG names via cross-match, constellation via astropy.
   - **Done when:** Stars load; spot checks (for example Betelgeuse, Vega, Polaris) have sane distances; counts and size reported to Ian.
-- [ ] **2.5 Exoplanets**
+- [x] **2.5 Exoplanets**
+  - **Outcome:** 6,356 of 6,451 planets built (details in `docs/data-sources.md`, "Exoplanet build results"); 1,236 linked to host stars; planet hosts are kept in the star build; `earthlight-build all` now recreates the database.
   - **Phase 2.2 note:** use `ps` with `default_flag = 1`. 128 planets (including TRAPPIST-1) have no `sy_dist`: fall back to the host star's distance through `gaia_dr3_id` (parse the `Gaia DR3 <id>` text) or `hip_name`, otherwise omit the planet. Add the Exoplanet Archive reference paper (Christiansen et al. 2025) to the README credits once the full citation is confirmed.
   - **Build:** Exoplanet Archive query, distance ranges from the archive's error columns, link to host star vantage points where possible.
   - **Done when:** Planets load with host links; spot checks (for example Proxima Cen b, Kepler-22 b).

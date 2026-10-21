@@ -17,9 +17,15 @@ from earthlight_pipeline.store import load_stars, open_database
 
 DATA = Path(__file__).parent / "data"
 
+ARCHIVE_HEADER = (
+    "pl_name,hostname,pl_controv_flag,sy_dist,sy_disterr1,sy_disterr2,sy_vmag,ra,dec,gaia_dr3_id,"
+    "hip_name,disc_year,discoverymethod,sy_pnum,pl_rade,pl_bmasse,pl_orbper\n"
+)
+
 
 @pytest.fixture(autouse=True)
 def fixtures_instead_of_downloads(monkeypatch: pytest.MonkeyPatch) -> list[str]:
+    """Every download is replaced by a real-data excerpt, so no test uses the network."""
     calls: list[str] = []
 
     def record(name: str, path: Path) -> object:
@@ -29,18 +35,23 @@ def fixtures_instead_of_downloads(monkeypatch: pytest.MonkeyPatch) -> list[str]:
 
         return fetch
 
+    def fetch_gaia(*_args: object, **_kwargs: object) -> list[Path]:
+        calls.append("gaia")
+        return [DATA / "gaia_sample.csv"]
+
     monkeypatch.setattr(
         build_stars, "fetch_hipparcos_main", record("main", DATA / "hip_main_sample.csv")
     )
     monkeypatch.setattr(
         build_stars, "fetch_hipparcos_parallaxes", record("hip2", DATA / "hip2_sample.csv")
     )
+    monkeypatch.setattr(build_stars, "fetch_gaia_matches", fetch_gaia)
+    monkeypatch.setattr(build_stars, "fetch_iau_names", record("iau", DATA / "iau_csn_sample.txt"))
     monkeypatch.setattr(
         build_stars,
-        "fetch_gaia_matches",
-        lambda *_a, **_k: [calls.append("gaia"), DATA / "gaia_sample.csv"][1:],
+        "fetch_exoplanet_archive",
+        record("archive", DATA / "exoplanet_archive_sample.csv"),
     )
-    monkeypatch.setattr(build_stars, "fetch_iau_names", record("iau", DATA / "iau_csn_sample.txt"))
     return calls
 
 
@@ -67,6 +78,7 @@ def test_the_build_stores_every_star_and_reports_what_it_did(tmp_path: Path) -> 
         "non_positive_parallax": 1,
     }
     assert report.named == 16 and report.searchable == 16
+    assert report.planet_hosts == 3  # Proxima Centauri, Belenos, and Monch host fixture planets
     assert report.fame_counts == {0: 4, 2: 2, 3: 1, 4: 3, 5: 10}
     assert report.database == tmp_path / "earthlight.db"
     assert report.database_bytes == (tmp_path / "earthlight.db").stat().st_size > 0
@@ -90,6 +102,29 @@ def test_the_stored_stars_can_be_read_back(tmp_path: Path) -> None:
         connection.close()
 
 
+def test_a_star_that_hosts_a_planet_is_kept_however_faint(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # HIP 2 is unnamed and V 9.27, so the magnitude limit would drop it.
+    without, _ = run(tmp_path / "without", max_vmag=8.0)
+    row = ARCHIVE_HEADER + "Faint b,Faint,0,10,1,-1,12,0.01,-19.5,,HIP 2,2020,Transit,1,1,1,1\n"
+    archive = tmp_path / "faint.csv"
+    archive.write_text(row, encoding="utf-8")
+    monkeypatch.setattr(build_stars, "fetch_exoplanet_archive", lambda *_a, **_k: archive)
+    kept, _ = run(tmp_path / "with", max_vmag=8.0)
+    assert kept.built == without.built + 1
+    assert kept.planet_hosts == 1 and without.planet_hosts == 3
+
+    connection = open_database(tmp_path / "with" / "earthlight.db")
+    try:
+        star = {s.id: s for s in load_stars(connection)}["hip-2"]
+        assert star.fame == 1  # a host is notable enough to be searchable
+        found = connection.execute("SELECT id FROM search_entries WHERE id = 'hip-2'").fetchall()
+        assert found == [("hip-2",)]
+    finally:
+        connection.close()
+
+
 def test_the_database_records_where_its_data_came_from(tmp_path: Path) -> None:
     run(tmp_path, max_vmag=8.0)
     connection = open_database(tmp_path / "earthlight.db")
@@ -97,18 +132,9 @@ def test_the_database_records_where_its_data_came_from(tmp_path: Path) -> None:
         meta = dict(connection.execute("SELECT key, value FROM meta").fetchall())
     finally:
         connection.close()
-    assert {
-        "source.hipparcos",
-        "source.gaia_dr3",
-        "source.bailer_jones_2021",
-        "source.iau_csn",
-    } <= set(meta)
-    for key in (
-        "source.hipparcos",
-        "source.gaia_dr3",
-        "source.bailer_jones_2021",
-        "source.iau_csn",
-    ):
+    keys = ("source.hipparcos", "source.gaia_dr3", "source.bailer_jones_2021", "source.iau_csn")
+    assert set(keys) <= set(meta)
+    for key in keys:
         info = json.loads(meta[key])
         assert info["name"]
         assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", info["retrieved"])
@@ -141,30 +167,31 @@ def test_every_source_is_fetched_once(
     tmp_path: Path, fixtures_instead_of_downloads: list[str]
 ) -> None:
     run(tmp_path)
-    assert sorted(fixtures_instead_of_downloads) == ["gaia", "hip2", "iau", "main"]
+    assert sorted(fixtures_instead_of_downloads) == ["archive", "gaia", "hip2", "iau", "main"]
 
 
 def test_the_report_text_is_readable() -> None:
     report = StarsReport(
         hipparcos_total=118_218,
-        built=39_976,
-        by_source={"gaia": 33_800, "hipparcos": 6_176},
-        skipped={"too_faint": 69_664, "no_position": 263},
-        searchable=420,
+        built=40_346,
+        by_source={"gaia": 34_160, "hipparcos": 6_186},
+        skipped={"too_faint": 69_295, "no_position": 263},
+        searchable=1_171,
         named=409,
-        fame_counts={0: 39_556, 2: 78},
+        planet_hosts=862,
+        fame_counts={0: 39_175, 1: 751},
         database=Path("earthlight.db"),
-        database_bytes=14_400_000,
+        database_bytes=14_800_000,
     )
     text = format_stars_report(report)
-    assert "Stars built: 39,976 of 118,218 Hipparcos entries" in text
-    assert "Distance source: gaia 33,800, hipparcos 6,176" in text
-    assert "Left out: no_position 263, too_faint 69,664" in text
-    assert "IAU-named stars: 409; searchable: 420" in text
-    assert "Fame: 0: 39,556, 2: 78" in text
-    assert "(14.4 MB)" in text
+    assert "Stars built: 40,346 of 118,218 Hipparcos entries" in text
+    assert "Distance source: gaia 34,160, hipparcos 6,186" in text
+    assert "Left out: no_position 263, too_faint 69,295" in text
+    assert "IAU-named stars: 409; planet hosts: 862; searchable: 1,171" in text
+    assert "Fame: 0: 39,175, 1: 751" in text
+    assert "(14.8 MB)" in text
 
 
 def test_a_report_with_nothing_left_out_says_so() -> None:
-    report = StarsReport(1, 1, {"gaia": 1}, {}, 0, 0, {0: 1}, Path("x.db"), 1000)
+    report = StarsReport(1, 1, {"gaia": 1}, {}, 0, 0, 0, {0: 1}, Path("x.db"), 1000)
     assert "Left out: nothing" in format_stars_report(report)

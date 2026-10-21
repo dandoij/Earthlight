@@ -12,6 +12,7 @@ from pathlib import Path
 from earthlight.lookback import LookbackRange
 from earthlight.models import VantagePoint
 from earthlight.schema import SCHEMA_VERSION, create_empty_database, rebuild_search_index
+from earthlight_pipeline.exoplanets import ExoplanetRecord
 from earthlight_pipeline.stars import SearchEntry
 
 
@@ -97,11 +98,77 @@ def replace_stars(
     connection.execute("VACUUM")
 
 
+def replace_exoplanets(connection: sqlite3.Connection, records: Sequence[ExoplanetRecord]) -> None:
+    """Replace every exoplanet in the database with ``records``, then rebuild the search
+    indexes and vacuum the file.
+
+    The replacement is one transaction: either all the exoplanets are replaced or none are.
+    A planet's host star must already be in the database if its ``host_id`` is set. Raises
+    RuntimeError if the new planets break a rule of the database.
+    """
+    try:
+        with connection:
+            connection.execute(
+                "DELETE FROM search_entries WHERE type = 'vantage_point' "
+                "AND id IN (SELECT id FROM vantage_points WHERE kind = 'exoplanet')"
+            )
+            connection.execute("DELETE FROM vantage_points WHERE kind = 'exoplanet'")  # cascades
+            if records:
+                columns = list(vantage_row(records[0].point))
+                connection.executemany(
+                    f"INSERT INTO vantage_points ({', '.join(columns)}) "
+                    f"VALUES ({', '.join(':' + column for column in columns)})",
+                    [vantage_row(record.point) for record in records],
+                )
+                connection.executemany(
+                    "INSERT INTO exoplanets (vantage_id, nasa_name, host_name, discovery_year, "
+                    "discovery_method, radius_earth, mass_earth, orbital_period_days, "
+                    "controversial) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    [
+                        (
+                            d.vantage_id,
+                            d.nasa_name,
+                            d.host_name,
+                            d.discovery_year,
+                            d.discovery_method,
+                            d.radius_earth,
+                            d.mass_earth,
+                            d.orbital_period_days,
+                            int(d.controversial),
+                        )
+                        for d in (record.details for record in records)
+                    ],
+                )
+                connection.executemany(
+                    "INSERT INTO search_entries (type, id, name, aliases, description) "
+                    "VALUES (?, ?, ?, ?, ?)",
+                    [
+                        (e.type, e.id, e.name, e.aliases, e.description)
+                        for e in (record.search for record in records)
+                    ],
+                )
+    except sqlite3.IntegrityError as error:
+        raise RuntimeError(f"could not store the exoplanets ({error})") from error
+    rebuild_search_index(connection)
+    connection.execute("VACUUM")
+
+
 def load_stars(connection: sqlite3.Connection) -> list[VantagePoint]:
     """Read every star back as a model, ordered by id."""
+    return _load(connection, "star")
+
+
+def load_exoplanets(connection: sqlite3.Connection) -> list[VantagePoint]:
+    """Read every exoplanet back as a model, ordered by id."""
+    return _load(connection, "exoplanet")
+
+
+def _load(connection: sqlite3.Connection, kind: str) -> list[VantagePoint]:
     connection.row_factory = sqlite3.Row
     try:
-        rows = connection.execute("SELECT * FROM vantage_points WHERE kind = 'star' ORDER BY id")
+        rows = connection.execute(
+            "SELECT * FROM vantage_points WHERE kind = ? ORDER BY id", (kind,)
+        )
         return [
             VantagePoint(
                 id=row["id"],

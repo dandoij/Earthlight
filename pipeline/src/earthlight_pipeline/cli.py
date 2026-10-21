@@ -12,6 +12,8 @@ from typing import Annotated
 
 import typer
 
+from earthlight.schema import create_empty_database
+from earthlight_pipeline.build_exoplanets import format_exoplanets_report, run_exoplanets
 from earthlight_pipeline.build_stars import DEFAULT_MAX_VMAG, format_stars_report, run_stars
 from earthlight_pipeline.cache import DEFAULT_CACHE_DIR
 
@@ -149,8 +151,33 @@ def stars(
     _build_stars(get_options(ctx), limit)
 
 
+def _build_exoplanets(options: BuildOptions) -> None:
+    report = run_exoplanets(
+        cache_dir=options.cache_dir,
+        refresh=options.refresh,
+        database=options.database,
+        progress=typer.echo,
+    )
+    typer.echo("")
+    typer.echo(format_exoplanets_report(report))
+
+
+@app.command(
+    name="exoplanets",
+    help="NASA Exoplanet Archive planets, linked to their host stars. (step 2.5)",
+)
+def exoplanets(ctx: typer.Context) -> None:
+    """Build the exoplanet vantage points and store them in the database.
+
+    Run `stars` first: planets are linked to the host stars already in the database.
+    """
+    _build_exoplanets(get_options(ctx))
+
+
+IMPLEMENTED = frozenset({"stars", "exoplanets"})
+
 for _source in SOURCES:
-    if _source.command != "stars":
+    if _source.command not in IMPLEMENTED:
         app.command(name=_source.command, help=f"{_source.summary} (step {_source.step})")(
             _make_placeholder(_source)
         )
@@ -158,11 +185,20 @@ for _source in SOURCES:
 
 @app.command(name="all")
 def build_all(ctx: typer.Context) -> None:
-    """Build every source in order, stopping at the first one that fails."""
+    """Build every source in order into a fresh database, stopping at the first failure.
+
+    The database file is recreated first: planets depend on their host stars, so rebuilding
+    one source on top of the others is not always possible, and a full build is the one
+    way to get a database that is consistent from top to bottom.
+    """
     options = get_options(ctx)
+    typer.echo(f"Creating a fresh database at {options.database}")
+    create_empty_database(options.database, overwrite=True)
     for source in SOURCES:
         typer.echo(f"Building {source.command}...")
         if source.command == "stars":
             _build_stars(options, DEFAULT_MAX_VMAG)
+        elif source.command == "exoplanets":
+            _build_exoplanets(options)
         else:
             _not_implemented(source)
