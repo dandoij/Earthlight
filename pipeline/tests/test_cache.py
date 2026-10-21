@@ -1,5 +1,9 @@
 """Tests for the download cache. They use file:// URLs, so they need no network."""
 
+import http.client
+import time
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 import pytest
@@ -9,6 +13,7 @@ from earthlight_pipeline.cache import (
     DownloadError,
     cache_path,
     cached_download,
+    is_transient,
 )
 
 
@@ -134,3 +139,139 @@ def test_a_bad_name_is_rejected_before_any_download(source_file: Path, cache_dir
     with pytest.raises(ValueError, match="plain file name"):
         cached_download(source_file.as_uri(), "../evil.txt", cache_dir=cache_dir)
     assert not cache_dir.exists()
+
+
+def test_the_timeout_is_passed_to_the_download(
+    source_file: Path, cache_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import urllib.request
+
+    seen: list[float] = []
+    real_urlopen = urllib.request.urlopen
+
+    def spy(request: object, timeout: float = 0.0) -> object:
+        seen.append(timeout)
+        return real_urlopen(request, timeout=timeout)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(urllib.request, "urlopen", spy)
+    cached_download(source_file.as_uri(), "a.txt", cache_dir=cache_dir)
+    cached_download(source_file.as_uri(), "b.txt", cache_dir=cache_dir, timeout=600)
+    assert seen == [60, 600]
+
+
+# --- retries ----------------------------------------------------------------------------
+
+
+class Flaky:
+    """A replacement for urlopen that fails with the given errors, then really downloads."""
+
+    def __init__(self, errors: list[BaseException]) -> None:
+        self.errors = list(errors)
+        self.calls = 0
+        self.real = urllib.request.urlopen
+
+    def __call__(self, request: urllib.request.Request, timeout: float = 0.0) -> object:
+        self.calls += 1
+        if self.errors:
+            raise self.errors.pop(0)
+        return self.real(request, timeout=timeout)
+
+
+@pytest.fixture
+def sleeps(monkeypatch: pytest.MonkeyPatch) -> list[float]:
+    recorded: list[float] = []
+    monkeypatch.setattr(time, "sleep", recorded.append)
+    return recorded
+
+
+def install(monkeypatch: pytest.MonkeyPatch, errors: list[BaseException]) -> Flaky:
+    flaky = Flaky(errors)
+    monkeypatch.setattr(urllib.request, "urlopen", flaky)
+    return flaky
+
+
+def http_error(code: int) -> urllib.error.HTTPError:
+    return urllib.error.HTTPError("http://x", code, "msg", {}, None)  # type: ignore[arg-type]
+
+
+def test_a_dropped_connection_is_retried_with_growing_pauses(
+    source_file: Path, cache_dir: Path, monkeypatch: pytest.MonkeyPatch, sleeps: list[float]
+) -> None:
+    flaky = install(monkeypatch, [http.client.RemoteDisconnected("closed"), TimeoutError("slow")])
+    messages: list[str] = []
+    path = cached_download(
+        source_file.as_uri(),
+        "data.txt",
+        cache_dir=cache_dir,
+        retries=3,
+        retry_wait=10,
+        notify=messages.append,
+    )
+    assert path.read_text(encoding="utf-8") == "first version"
+    assert flaky.calls == 3
+    assert sleeps == [10, 20]
+    assert len(messages) == 2 and "RemoteDisconnected" in messages[0] and "1 of 3" in messages[0]
+    assert [p.name for p in cache_dir.iterdir()] == ["data.txt"]  # no half-written files
+
+
+@pytest.mark.parametrize("code", [429, 502, 503, 504])
+def test_try_again_responses_are_retried(
+    code: int,
+    source_file: Path,
+    cache_dir: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    sleeps: list[float],
+) -> None:
+    flaky = install(monkeypatch, [http_error(code)])
+    cached_download(source_file.as_uri(), "d.txt", cache_dir=cache_dir, retries=1)
+    assert flaky.calls == 2 and sleeps == [5.0]
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        http_error(404),
+        http_error(500),  # a rejected query: waiting will not help
+        http_error(403),
+        urllib.error.URLError(FileNotFoundError("gone")),
+        FileNotFoundError("gone"),
+        PermissionError("no"),
+    ],
+)
+def test_errors_that_cannot_succeed_are_not_retried(
+    error: BaseException,
+    source_file: Path,
+    cache_dir: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    sleeps: list[float],
+) -> None:
+    flaky = install(monkeypatch, [error])
+    with pytest.raises(DownloadError):
+        cached_download(source_file.as_uri(), "d.txt", cache_dir=cache_dir, retries=3)
+    assert flaky.calls == 1 and sleeps == []
+
+
+def test_a_wrapped_connection_error_counts_as_transient() -> None:
+    assert is_transient(urllib.error.URLError(ConnectionResetError("reset")))
+    assert is_transient(urllib.error.URLError(TimeoutError("slow")))
+    assert not is_transient(urllib.error.URLError("some text reason"))
+    assert not is_transient(ValueError("bad"))
+
+
+def test_giving_up_after_the_last_retry_raises(
+    source_file: Path, cache_dir: Path, monkeypatch: pytest.MonkeyPatch, sleeps: list[float]
+) -> None:
+    flaky = install(monkeypatch, [ConnectionResetError("a")] * 5)
+    with pytest.raises(DownloadError, match="could not download"):
+        cached_download(source_file.as_uri(), "d.txt", cache_dir=cache_dir, retries=2, retry_wait=1)
+    assert flaky.calls == 3 and sleeps == [1, 2]
+    assert list(cache_dir.iterdir()) == []
+
+
+def test_by_default_nothing_is_retried(
+    source_file: Path, cache_dir: Path, monkeypatch: pytest.MonkeyPatch, sleeps: list[float]
+) -> None:
+    flaky = install(monkeypatch, [ConnectionResetError("a")])
+    with pytest.raises(DownloadError):
+        cached_download(source_file.as_uri(), "d.txt", cache_dir=cache_dir)
+    assert flaky.calls == 1 and sleeps == []

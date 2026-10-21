@@ -116,6 +116,75 @@ All checked 2026-10-20 against the live services. Spot checks use stars everyone
 
 `astropy.coordinates.get_constellation` works offline with no download, for both full and short names. Spot checks: Betelgeuse in Orion (Ori), Vega in Lyra (Lyr), Polaris in Ursa Minor (UMi), Sirius in Canis Major (CMa), Proxima in Centaurus (Cen).
 
+## Star build results (step 2.4)
+
+Built from the real services on 2026-10-21 with `uv run earthlight-build stars`. The star universe is the 118,218 entries of the Hipparcos main catalogue, and each becomes a vantage point with id `hip-<number>`.
+
+### What happened to the 118,218 entries
+
+| Outcome | Stars | Why |
+|---|---|---|
+| Distance from Gaia with Bailer-Jones | 98,004 | Matched in Gaia DR3 and has a Bailer-Jones geometric distance |
+| Distance from Hipparcos | 11,636 | No usable Gaia distance, and the Hipparcos parallax is precise (at least 5 times its error) |
+| Left out: `parallax_not_precise` | 7,865 | No Gaia distance and the Hipparcos parallax is under 5 times its error (3 times for IAU-named stars) |
+| Left out: `non_positive_parallax` | 450 | Hipparcos parallax of zero or less |
+| Left out: `no_position` | 263 | No position in the main catalogue |
+
+That is 109,640 usable stars. The default magnitude limit (below) then keeps 39,976 of them.
+
+### Magnitude limit and database size
+
+The plan asks for the whole database to stay under about 20 MB. Measured on the real data, with exoplanets, history, and deep-sky objects still to come, the stars alone are:
+
+| Unnamed stars no fainter than | Stars | Database size |
+|---|---|---|
+| V 6.5 (naked eye) | 8,856 | 3.5 MB |
+| V 7.5 | 25,161 | 9.4 MB |
+| **V 8.0 (the default)** | **39,976** | **14.4 MB** |
+| V 8.5 | 58,860 | 21.8 MB |
+| V 9.5 | 92,551 | 34.2 MB |
+| No limit (`--no-limit`) | 109,640 | 40.4 MB |
+
+Stars with an IAU name, and stars within 12 light-years, are always kept whatever their magnitude. At the default limit the build has 409 IAU-named stars, 420 searchable stars, and a fame spread of 0: 39,556, 2: 78, 3: 200, 4: 119, 5: 23.
+
+### Rules chosen in this step
+
+- **Distance source:** Gaia with Bailer-Jones when the star has a match and the match has a distance (`0 < r_lo_geo <= r_med_geo <= r_hi_geo`), otherwise the Hipparcos new reduction with a 1 sigma range from `earthlight.lookback.lookback_range_from_parallax`. The source is stored in the star's `facts` as `distance_source`. Gaia lists some very bright stars (for example Aludra and Polis) with no parallax or distance at all, and these fall back to Hipparcos.
+- **Parallax precision:** a Hipparcos parallax must be at least 5 times its error. For IAU-named stars the bar is 3 times, because Alnilam (3.7) and Aludra (4.1) would otherwise be missing. Their ranges are wide but honest: Alnilam 1,553 to 2,718 ly and Aludra 1,599 to 2,630 ly, both about 2,000 light-years as expected. Two named stars still cannot be built: Alula Australis has no Hipparcos parallax or position, and Polis has a parallax of 0.09 with an error of 0.28.
+- **Fame** (an editorial rule, not a measurement): 0 by default. An IAU-named star scores 2, rising to 3 if V is at most 6, 4 if at most 3, and 5 if at most 1.5. Any star within 12 light-years scores at least 3.
+- **Searchable stars** are those with a fame above 0 (about 420). Every other star is stored but not in the search indexes, which keeps them small. Search entries carry the aliases `HIP n` and `HD n`.
+- **Names:** the IAU diacritic spelling (for example "Chason" with a hacek, "Belenos" with accents). IAU names with several words are kept whole ("Alula Australis", "Proxima Centauri").
+- **Facts stored per star:** `hip`, `distance_source`, and where known `hd`, `spectral_type`, `parallax_mas`, and `gaia_dr3_source_id` (as text, because the number is too large for JSON).
+- **Positions** are the Hipparcos ICRS positions in degrees (epoch 1991.25), wrapped into 0 to 360. Proper motion is ignored, which is far below sky-map precision. Constellations are astropy's full names.
+
+### Spot checks (from the built database)
+
+| Star | Lookback (ly) | Source |
+|---|---|---|
+| Proxima Centauri | 4.2465 | Gaia |
+| Sirius | 8.57 to 8.64 | Hipparcos |
+| Procyon | 11.4 to 11.5 | Hipparcos |
+| Vega | 25.0 to 25.1 | Hipparcos |
+| Pollux | 33.7 to 33.9 | Hipparcos |
+| Arcturus | 36.5 to 36.9 | Hipparcos |
+| Aldebaran | 65.6 to 67.7 | Hipparcos |
+| Polaris | 426.3 to 439.0 | Hipparcos |
+| Betelgeuse | 441.9 to 570.2 | Hipparcos |
+| Antares | 473.4 to 667.0 | Hipparcos |
+| Rigel | 791.6 to 948.1 | Hipparcos |
+| Deneb | 1,240 to 1,639 | Hipparcos |
+
+Proxima Centauri's Gaia and Bailer-Jones distance is 1.3019 pc, which is 4.2465 light-years. The Exoplanet Archive's 1.30119 pc (used for the zone boundary in step 1.4) differs in the third decimal place, which does not matter for a zone edge.
+
+### Things learned about the services
+
+- **Gaia returns at most 50,000 rows per query and a 20,000-number batch takes about 45 seconds.** The build asks for Hipparcos numbers in batches of 20,000, seven batches in all (about five minutes the first time).
+- **The Gaia archive sometimes drops a connection** (`RemoteDisconnected`). The download layer retries dropped connections, timeouts, and HTTP 429, 502, 503, and 504 with a doubling pause, and fails at once on errors that cannot succeed (404, 500, a missing file).
+- **Completed batches stay in the cache**, so a build that fails partway resumes where it stopped.
+- **One impossible declination crashes astropy for the whole batch.** Positions are checked before the constellation step, and bad stars are counted as `invalid_position`.
+- **SQLite does not shrink a file when rows are deleted**, so a rebuilt database keeps its old size. The writer vacuums the file at the end.
+- VizieR returns `I/311/hip2` positions in columns named `RArad` and `DErad` whose values are degrees. The build uses the main catalogue's `RAICRS` and `DEICRS` instead.
+
 ## Licenses and attribution
 
 Verified from the sources' own pages on 2026-10-20. Quotes are exact. This is a project record, not legal advice.

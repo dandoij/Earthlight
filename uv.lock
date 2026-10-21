@@ -393,6 +393,7 @@ source = { editable = "pipeline" }
 dependencies = [
     { name = "astropy" },
     { name = "astroquery" },
+    { name = "earthlight" },
     { name = "pandas" },
     { name = "pyyaml" },
     { name = "scipy" },
@@ -403,6 +404,7 @@ dependencies = [
 requires-dist = [
     { name = "astropy", specifier = ">=8.0.2" },
     { name = "astroquery", specifier = ">=0.4.11" },
+    { name = "earthlight", editable = "packages/earthlight" },
     { name = "pandas", specifier = ">=3.0.6" },
     { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "scipy", specifier = ">=1.18.1" },
