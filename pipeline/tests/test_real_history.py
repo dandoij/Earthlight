@@ -182,4 +182,74 @@ def test_the_landmarks_stand_where_they_should(shipped: HistoryData) -> None:
     assert 41 < sites["colosseum"].lat < 42 and 12 < sites["colosseum"].lon < 13
     colossus = sites["colossus-of-rhodes"]
     assert colossus.destroyed is not None and colossus.destroyed > colossus.built_end
-    assert all(m.destroyed is None for m in shipped.landmarks if m.id != "colossus-of-rhodes")
+    for landmark_id in ("great-pyramid-of-giza", "parthenon", "terracotta-army", "colosseum"):
+        assert sites[landmark_id].destroyed is None, landmark_id
+
+
+def test_the_middle_ages_and_early_modern_dates_use_the_calendar_year(
+    shipped: HistoryData,
+) -> None:
+    events = {e.id: e.year for e in shipped.events}
+    expected_year = {
+        "hijra": 622,
+        "lindisfarne-raid": 793,
+        "charlemagne-crowned": 800,
+        "diamond-sutra-printed": 868,
+        "norse-in-north-america": 1021,
+        "battle-of-hastings": 1066,
+        "crusaders-take-jerusalem": 1099,
+        "genghis-khan-proclaimed": 1206,
+        "magna-carta": 1215,
+        "mongols-take-baghdad": 1258,
+        "mansa-musa-hajj": 1324,
+        "black-death-reaches-europe": 1347,
+        "fall-of-constantinople": 1453,
+        "gutenberg-bible": 1455,
+        "columbus-reaches-the-americas": 1492,
+        "da-gama-reaches-india": 1498,
+        "luther-ninety-five-theses": 1517,
+        "fall-of-tenochtitlan": 1521,
+        "first-circumnavigation": 1522,
+        "copernicus-heliocentric-model": 1543,
+        "galileo-starry-messenger": 1610,
+        "peace-of-westphalia": 1648,
+        "newton-principia": 1687,
+        "declaration-of-independence": 1776,
+        "storming-of-the-bastille": 1789,
+        "jenner-smallpox-vaccination": 1796,
+    }
+    for event_id, year in expected_year.items():
+        assert int(events[event_id] // 1) == year, event_id
+
+
+def test_famous_days_fall_in_the_right_season(shipped: HistoryData) -> None:
+    fraction = {e.id: e.year % 1 for e in shipped.events}
+    assert 0.95 < fraction["charlemagne-crowned"] < 1  # Christmas Day
+    assert 0.50 < fraction["declaration-of-independence"] < 0.51  # 4 July
+    assert 0.52 < fraction["storming-of-the-bastille"] < 0.54  # 14 July
+    assert 0.77 < fraction["columbus-reaches-the-americas"] < 0.79  # 12 October
+    assert 0.18 < fraction["galileo-starry-messenger"] < 0.21  # 13 March
+
+
+def test_the_empires_in_this_era_start_and_end_in_order(shipped: HistoryData) -> None:
+    periods = {p.id: p for p in shipped.periods}
+    events = {e.id: e.year for e in shipped.events}
+    assert periods["byzantine-empire"].end == events["fall-of-constantinople"]
+    assert periods["mongol-empire"].end == periods["ming-dynasty"].start
+    assert periods["ottoman-empire"].start < events["fall-of-constantinople"]
+    assert periods["ottoman-empire"].end > events["storming-of-the-bastille"]
+    assert periods["tang-dynasty"].end < periods["song-dynasty"].start
+
+
+def test_the_middle_age_landmarks_stand_where_they_should(shipped: HistoryData) -> None:
+    sites = {m.id: m for m in shipped.landmarks}
+    assert 41 < sites["hagia-sophia"].lat < 41.1 and 28.9 < sites["hagia-sophia"].lon < 29
+    assert sites["borobudur"].lat < 0 and 110 < sites["borobudur"].lon < 111
+    assert sites["machu-picchu"].lat < 0 and sites["machu-picchu"].lon < 0
+    assert 13 < sites["angkor-wat"].lat < 14 and 103 < sites["angkor-wat"].lon < 104
+    assert sites["alhambra"].lon < 0
+    assert (
+        sites["hagia-sophia"].built_end
+        < sites["borobudur"].built_end
+        < sites["angkor-wat"].built_end
+    )

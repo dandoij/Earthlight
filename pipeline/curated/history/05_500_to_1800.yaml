@@ -1,0 +1,557 @@
+# 500 CE to 1800 CE.
+# Years are astronomical decimal years (the same as the calendar year from 1 CE on). A date known
+# to the day is converted with earthlight.time.from_calendar, which counts in the Gregorian
+# calendar; dates before 1582 were recorded in the Julian calendar, which differs by up to ten
+# days, so those carry a year_uncertainty of 0.03 or more. A date known only to the year is the
+# middle of that year, plus or minus 0.5.
+events:
+  - id: hijra
+    name: The Hijra, the start of the Islamic calendar
+    category: civilization
+    region: Mecca and Medina, Arabia
+    summary: >-
+      Muhammad and his followers moved from Mecca to Medina. Later Muslim rulers counted
+      years from this journey, making it the first year of the Islamic calendar. The date used
+      for that first day is a calculation made back from the later calendar.
+    importance: 4
+    wikipedia: Hijra (Islam)
+    source: https://en.wikipedia.org/wiki/Hijra_(Islam)
+    year: 622.537
+    year_uncertainty: 0.05
+
+  - id: lindisfarne-raid
+    name: The Viking raid on Lindisfarne
+    category: war_politics
+    region: Northumbria, England
+    summary: >-
+      Norse raiders attacked the island monastery of Lindisfarne, an event often taken as the
+      start of the Viking Age in Western Europe. The accepted day is 8 June, though one chronicle
+      gives a January date.
+    importance: 3
+    wikipedia: Lindisfarne
+    source: https://en.wikipedia.org/wiki/Lindisfarne
+    year: 793.433
+    year_uncertainty: 0.1
+
+  - id: charlemagne-crowned
+    name: Charlemagne is crowned emperor
+    category: war_politics
+    region: Rome, Italy
+    summary: >-
+      On Christmas Day the pope crowned the Frankish king Charlemagne emperor in Rome, reviving
+      the imperial title in Western Europe for the first time in over three centuries.
+    importance: 4
+    wikipedia: Charlemagne
+    source: https://en.wikipedia.org/wiki/Charlemagne
+    year: 800.981
+    year_uncertainty: 0.03
+
+  - id: diamond-sutra-printed
+    name: The oldest dated printed book
+    category: technology
+    region: Dunhuang, China
+    summary: >-
+      A scroll of the Buddhist Diamond Sutra, printed from carved wooden blocks, carries a
+      date that corresponds to 868 CE. It is the oldest printed book with a date on it, though
+      earlier undated printing exists.
+    importance: 4
+    wikipedia: Diamond Sutra
+    source: https://en.wikipedia.org/wiki/Diamond_Sutra
+    year: 868.358
+    year_uncertainty: 0.05
+
+  - id: norse-in-north-america
+    name: Norse people at L'Anse aux Meadows
+    category: civilization
+    region: Newfoundland, Canada
+    summary: >-
+      Tree rings in wood cut with metal tools show Norse presence in Newfoundland in the year
+      1021, almost five centuries before Columbus. It is the only certain calendar date for
+      Europeans in the Americas before him.
+    importance: 4
+    wikipedia: L'Anse aux Meadows
+    source: https://en.wikipedia.org/wiki/L%27Anse_aux_Meadows
+    year: 1021.5
+    year_uncertainty: 0.5
+
+  - id: battle-of-hastings
+    name: The Battle of Hastings
+    category: war_politics
+    region: Sussex, England
+    summary: >-
+      William of Normandy defeated the English king Harold Godwinson, who was killed. William
+      became king of England, and Norman rule changed English law, language, and landholding.
+    importance: 4
+    wikipedia: Battle of Hastings
+    source: https://en.wikipedia.org/wiki/Battle_of_Hastings
+    year: 1066.784
+    year_uncertainty: 0.03
+
+  - id: crusaders-take-jerusalem
+    name: Crusaders capture Jerusalem
+    category: war_politics
+    region: Jerusalem
+    summary: >-
+      An army that Pope Urban II had called to arms in 1095 took Jerusalem after a siege,
+      ending the First Crusade. The Crusader states founded in its wake lasted about two
+      centuries.
+    importance: 4
+    wikipedia: First Crusade
+    source: https://en.wikipedia.org/wiki/First_Crusade
+    year: 1099.534
+    year_uncertainty: 0.03
+
+  - id: genghis-khan-proclaimed
+    name: Genghis Khan is proclaimed ruler of the Mongols
+    category: war_politics
+    region: Mongolia
+    summary: >-
+      A council of Mongol leaders named Temujin their supreme ruler, with the title Genghis
+      Khan. His armies went on to build the largest land empire in history.
+    importance: 5
+    wikipedia: Genghis Khan
+    source: https://en.wikipedia.org/wiki/Genghis_Khan
+    year: 1206.5
+    year_uncertainty: 0.5
+
+  - id: magna-carta
+    name: Magna Carta is sealed
+    category: war_politics
+    region: Runnymede, England
+    summary: >-
+      Rebel barons forced King John of England to agree to a charter that limited the king's
+      power. Its clause that no one is above the law became a foundation of later constitutions.
+    importance: 4
+    wikipedia: Magna Carta
+    source: https://en.wikipedia.org/wiki/Magna_Carta
+    year: 1215.452
+    year_uncertainty: 0.03
+
+  - id: mongols-take-baghdad
+    name: The Mongols take Baghdad
+    category: war_politics
+    region: Baghdad, Iraq
+    summary: >-
+      After a siege of about two weeks, Mongol forces took Baghdad and ended the Abbasid
+      Caliphate, which had ruled much of the Islamic world for about 500 years. The city
+      suffered heavy destruction.
+    importance: 4
+    wikipedia: Siege of Baghdad (1258)
+    source: https://en.wikipedia.org/wiki/Siege_of_Baghdad_(1258)
+    year: 1258.11
+    year_uncertainty: 0.03
+
+  - id: mansa-musa-hajj
+    name: Mansa Musa's pilgrimage to Mecca
+    category: civilization
+    region: Mali and Egypt
+    summary: >-
+      The emperor of Mali travelled to Mecca with a huge retinue and so much gold that he is
+      said to have affected prices in Cairo. The trip made Mali's wealth known across the
+      Mediterranean world.
+    importance: 3
+    wikipedia: Mansa Musa
+    source: https://en.wikipedia.org/wiki/Mansa_Musa
+    year: 1324.5
+    year_uncertainty: 1
+
+  - id: black-death-reaches-europe
+    name: The Black Death reaches Europe
+    category: life
+    region: Sicily and Europe
+    summary: >-
+      Plague arrived by ship in Sicily and then spread across the continent, killing a large
+      share of the people of Europe within a few years. The pandemic ran from about 1346 to 1353.
+    importance: 5
+    wikipedia: Black Death
+    source: https://en.wikipedia.org/wiki/Black_Death
+    year: 1347.786
+    year_uncertainty: 0.1
+
+  - id: fall-of-constantinople
+    name: The Ottomans take Constantinople
+    category: war_politics
+    region: Constantinople, Turkey
+    summary: >-
+      Sultan Mehmed II captured the capital of the Byzantine Empire after a siege of about
+      seven weeks, ending the last remnant of the Roman Empire. The city became the Ottoman
+      capital.
+    importance: 5
+    wikipedia: Fall of Constantinople
+    source: https://en.wikipedia.org/wiki/Fall_of_Constantinople
+    year: 1453.405
+    year_uncertainty: 0.03
+
+  - id: gutenberg-bible
+    name: The Gutenberg Bible
+    category: technology
+    region: Mainz, Germany
+    summary: >-
+      Johannes Gutenberg printed the Bible with movable metal type, the first major book made
+      this way in Europe. Cheap printing then spread ideas far faster than copying by hand.
+    importance: 5
+    wikipedia: Gutenberg Bible
+    source: https://en.wikipedia.org/wiki/Gutenberg_Bible
+    year: 1455
+    year_uncertainty: 1
+
+  - id: columbus-reaches-the-americas
+    name: Columbus reaches the Americas
+    category: civilization
+    region: The Bahamas
+    summary: >-
+      Christopher Columbus, sailing for Spain, landed on an island in the Bahamas. His voyages
+      began lasting contact between Europe and the Americas, with enormous consequences for the
+      peoples already living there.
+    importance: 5
+    wikipedia: Voyages of Christopher Columbus
+    source: https://en.wikipedia.org/wiki/Voyages_of_Christopher_Columbus
+    year: 1492.779
+    year_uncertainty: 0.03
+
+  - id: da-gama-reaches-india
+    name: Vasco da Gama reaches India by sea
+    category: civilization
+    region: Kozhikode, India
+    summary: >-
+      Portuguese ships sailed around Africa and reached Kozhikode, opening a sea route from
+      Europe to India that bypassed the overland trade routes.
+    importance: 4
+    wikipedia: Vasco da Gama
+    source: https://en.wikipedia.org/wiki/Vasco_da_Gama
+    year: 1498.381
+    year_uncertainty: 0.03
+
+  - id: luther-ninety-five-theses
+    name: Luther's Ninety-five Theses
+    category: civilization
+    region: Wittenberg, Germany
+    summary: >-
+      The German monk Martin Luther sent a list of arguments against the sale of indulgences to
+      his archbishop. It began the Protestant Reformation. Whether he also nailed it to a church
+      door is doubted.
+    importance: 5
+    wikipedia: Ninety-five Theses
+    source: https://en.wikipedia.org/wiki/Ninety-five_Theses
+    year: 1517.83
+    year_uncertainty: 0.1
+
+  - id: fall-of-tenochtitlan
+    name: Tenochtitlan falls to the Spanish and their allies
+    category: war_politics
+    region: Mexico City, Mexico
+    summary: >-
+      After a siege of about two and a half months, Hernan Cortes and his many Indigenous allies
+      took the Aztec capital. Disease, which had already weakened the city, played a large part.
+    importance: 4
+    wikipedia: Fall of Tenochtitlan
+    source: https://en.wikipedia.org/wiki/Fall_of_Tenochtitlan
+    year: 1521.614
+    year_uncertainty: 0.03
+
+  - id: first-circumnavigation
+    name: The first voyage around the world
+    category: civilization
+    region: Global
+    summary: >-
+      One ship of Magellan's fleet, commanded by Juan Sebastian Elcano after Magellan was killed
+      in the Philippines, sailed back to Spain after nearly three years at sea.
+    importance: 4
+    wikipedia: Magellan-Elcano expedition
+    source: https://en.wikipedia.org/wiki/Magellan%E2%80%93Elcano_expedition
+    year: 1522.679
+    year_uncertainty: 0.03
+
+  - id: copernicus-heliocentric-model
+    name: Copernicus publishes his Sun-centred model
+    category: science
+    region: Nuremberg, Germany
+    summary: >-
+      Nicolaus Copernicus argued in print that the Earth and planets go around the Sun, not the
+      other way around. The book was published just before his death.
+    importance: 5
+    wikipedia: De revolutionibus orbium coelestium
+    source: https://en.wikipedia.org/wiki/De_revolutionibus_orbium_coelestium
+    year: 1543.5
+    year_uncertainty: 0.5
+
+  - id: galileo-starry-messenger
+    name: Galileo publishes the Starry Messenger
+    category: science
+    region: Venice, Italy
+    summary: >-
+      Galileo reported what he saw through his telescope: mountains on the Moon and four moons
+      circling Jupiter. The moons showed that not everything in the sky goes around the Earth.
+    importance: 5
+    wikipedia: Sidereus Nuncius
+    source: https://en.wikipedia.org/wiki/Sidereus_Nuncius
+    year: 1610.195
+    year_uncertainty: 0.02
+
+  - id: peace-of-westphalia
+    name: The Peace of Westphalia
+    category: war_politics
+    region: Westphalia, Germany
+    summary: >-
+      A set of treaties ended the Thirty Years' War in the Holy Roman Empire. It is often cited
+      as the start of the modern system of independent states.
+    importance: 3
+    wikipedia: Peace of Westphalia
+    source: https://en.wikipedia.org/wiki/Peace_of_Westphalia
+    year: 1648.811
+    year_uncertainty: 0.02
+
+  - id: newton-principia
+    name: Newton publishes the Principia
+    category: science
+    region: London, England
+    summary: >-
+      Isaac Newton set out his laws of motion and the law of universal gravitation, explaining
+      falling apples and orbiting planets with the same mathematics.
+    importance: 5
+    wikipedia: Philosophiae Naturalis Principia Mathematica
+    source: https://en.wikipedia.org/wiki/Philosophi%C3%A6_Naturalis_Principia_Mathematica
+    year: 1687.5
+    year_uncertainty: 0.1
+
+  - id: declaration-of-independence
+    name: The US Declaration of Independence
+    category: war_politics
+    region: Philadelphia, United States
+    summary: >-
+      Delegates of thirteen American colonies adopted a statement announcing their separation
+      from Britain and setting out the ideas behind it. The vote for independence itself came
+      two days earlier.
+    importance: 5
+    wikipedia: United States Declaration of Independence
+    source: https://en.wikipedia.org/wiki/United_States_Declaration_of_Independence
+    year: 1776.505
+    year_uncertainty: 0.01
+
+  - id: storming-of-the-bastille
+    name: The storming of the Bastille
+    category: war_politics
+    region: Paris, France
+    summary: >-
+      A Paris crowd attacked a royal fortress and prison, a symbol of royal power. The event
+      became the best-known moment of the early French Revolution.
+    importance: 5
+    wikipedia: Storming of the Bastille
+    source: https://en.wikipedia.org/wiki/Storming_of_the_Bastille
+    year: 1789.532
+    year_uncertainty: 0.01
+
+  - id: jenner-smallpox-vaccination
+    name: Jenner's first cowpox vaccination
+    category: science
+    region: Berkeley, England
+    summary: >-
+      Edward Jenner gave a boy matter from a cowpox sore and later showed that he did not catch
+      smallpox. His work led to the first vaccine and, eventually, the end of smallpox. Others
+      had tried cowpox inoculation earlier.
+    importance: 4
+    wikipedia: Edward Jenner
+    source: https://en.wikipedia.org/wiki/Edward_Jenner
+    year: 1796.366
+    year_uncertainty: 0.01
+
+periods:
+  - id: byzantine-empire
+    name: Byzantine Empire
+    category: war_politics
+    region: Eastern Mediterranean
+    summary: >-
+      The eastern half of the Roman Empire, with its capital at Constantinople, which carried on
+      Roman rule and Greek-speaking Christian culture for a thousand years. Historians disagree
+      about when Roman history becomes Byzantine.
+    importance: 4
+    wikipedia: Byzantine Empire
+    source: https://en.wikipedia.org/wiki/Byzantine_Empire
+    start: 330
+    end: 1453.405
+
+  - id: tang-dynasty
+    name: Tang dynasty
+    category: civilization
+    region: China
+    summary: >-
+      A wealthy, outward-looking dynasty with its capital at Chang'an, remembered for its poetry
+      and for trade along the Silk Road. Empress Wu Zetian interrupted it from 690 to 705.
+    importance: 4
+    wikipedia: Tang dynasty
+    source: https://en.wikipedia.org/wiki/Tang_dynasty
+    start: 618
+    end: 907
+
+  - id: song-dynasty
+    name: Song dynasty
+    category: civilization
+    region: China
+    summary: >-
+      A period of fast economic growth and invention, including paper money, gunpowder weapons,
+      and the compass at sea. It split into a northern and a southern phase when the north fell.
+    importance: 4
+    wikipedia: Song dynasty
+    source: https://en.wikipedia.org/wiki/Song_dynasty
+    start: 960
+    end: 1279
+
+  - id: mongol-empire
+    name: Mongol Empire
+    category: war_politics
+    region: Eurasia
+    summary: >-
+      The largest connected land empire in history, stretching from Korea to Eastern Europe. It
+      broke into four separate realms after 1294.
+    importance: 5
+    wikipedia: Mongol Empire
+    source: https://en.wikipedia.org/wiki/Mongol_Empire
+    start: 1206
+    end: 1368
+
+  - id: ming-dynasty
+    name: Ming dynasty
+    category: civilization
+    region: China
+    summary: >-
+      A native Chinese dynasty that followed Mongol rule. It built the Forbidden City, rebuilt
+      the Great Wall, and sent large treasure fleets across the Indian Ocean.
+    importance: 4
+    wikipedia: Ming dynasty
+    source: https://en.wikipedia.org/wiki/Ming_dynasty
+    start: 1368
+    end: 1644
+
+  - id: ottoman-empire
+    name: Ottoman Empire
+    category: war_politics
+    region: Anatolia, the Balkans, the Middle East, and North Africa
+    summary: >-
+      A state that grew from a small border principality in Anatolia into an empire spanning
+      three continents. The sultanate was abolished in 1922.
+    importance: 5
+    wikipedia: Ottoman Empire
+    source: https://en.wikipedia.org/wiki/Ottoman_Empire
+    start: 1299
+    end: 1922.836
+
+  - id: mughal-empire
+    name: Mughal Empire
+    category: war_politics
+    region: South Asia
+    summary: >-
+      A Muslim-ruled empire that governed most of the Indian subcontinent at its height and
+      left monuments such as the Taj Mahal. Britain formally ended it after the revolt of 1857.
+    importance: 4
+    wikipedia: Mughal Empire
+    source: https://en.wikipedia.org/wiki/Mughal_Empire
+    start: 1526.3
+    end: 1857
+
+landmarks:
+  - id: hagia-sophia
+    name: Hagia Sophia
+    category: culture
+    region: Istanbul, Turkey
+    summary: >-
+      A vast domed cathedral built for the emperor Justinian in under six years. It later served
+      as a mosque, a museum, and again a mosque, and its dome shaped church and mosque design
+      for centuries.
+    importance: 5
+    wikipedia: Hagia Sophia
+    source: https://en.wikipedia.org/wiki/Hagia_Sophia
+    built_start: 532
+    built_end: 537
+    lat: 41.0083
+    lon: 28.98
+
+  - id: borobudur
+    name: Borobudur
+    category: culture
+    region: Java, Indonesia
+    summary: >-
+      The largest Buddhist monument in the world, built as a stepped pyramid of volcanic stone
+      covered with carved scenes. It was later abandoned and buried by ash and jungle.
+    importance: 4
+    wikipedia: Borobudur
+    source: https://en.wikipedia.org/wiki/Borobudur
+    built_start: 780
+    built_end: 833
+    lat: -7.608
+    lon: 110.204
+
+  - id: angkor-wat
+    name: Angkor Wat
+    category: culture
+    region: Cambodia
+    summary: >-
+      A huge temple complex built by the Khmer king Suryavarman II. It was first Hindu and later
+      Buddhist, and it appears on Cambodia's flag.
+    importance: 5
+    wikipedia: Angkor Wat
+    source: https://en.wikipedia.org/wiki/Angkor_Wat
+    built_start: 1113
+    built_end: 1150
+    lat: 13.4125
+    lon: 103.8667
+
+  - id: alhambra
+    name: The Alhambra
+    category: culture
+    region: Granada, Spain
+    summary: >-
+      A hilltop palace and fortress of the Nasrid rulers of Granada, the last Muslim state in
+      Spain. Most of its famous courtyards and carved halls date from the 1300s.
+    importance: 4
+    wikipedia: Alhambra
+    source: https://en.wikipedia.org/wiki/Alhambra
+    built_start: 1238
+    built_end: 1391
+    lat: 37.1775
+    lon: -3.59
+
+  - id: forbidden-city
+    name: The Forbidden City
+    category: civilization
+    region: Beijing, China
+    summary: >-
+      The palace complex of the Chinese emperors, built for the Yongle Emperor of the Ming
+      dynasty. Twenty-four emperors lived and ruled there until 1912.
+    importance: 5
+    wikipedia: Forbidden City
+    source: https://en.wikipedia.org/wiki/Forbidden_City
+    built_start: 1406
+    built_end: 1420
+    lat: 39.9158
+    lon: 116.3908
+
+  - id: machu-picchu
+    name: Machu Picchu
+    category: culture
+    region: Andes, Peru
+    summary: >-
+      A mountaintop estate of the Inca ruler Pachacuti, high above the Urubamba River. It was
+      left empty around the time of the Spanish conquest, and the outside world learned of it
+      in the early 1900s.
+    importance: 5
+    wikipedia: Machu Picchu
+    source: https://en.wikipedia.org/wiki/Machu_Picchu
+    built_start: 1450
+    built_end: 1470
+    lat: -13.1633
+    lon: -72.5456
+
+  - id: taj-mahal
+    name: The Taj Mahal
+    category: culture
+    region: Agra, India
+    summary: >-
+      A white marble tomb built by the Mughal emperor Shah Jahan for his wife Mumtaz Mahal. It
+      is often called the finest example of Mughal architecture.
+    importance: 5
+    wikipedia: Taj Mahal
+    source: https://en.wikipedia.org/wiki/Taj_Mahal
+    built_start: 1632
+    built_end: 1653
+    lat: 27.175
+    lon: 78.0419

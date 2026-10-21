@@ -132,7 +132,7 @@ No database yet. Pure, heavily tested functions.
 - [x] **2.9 History: complex life to human evolution** (540 million to 300,000 years ago)
 - [x] **2.10 History: prehistory** (300,000 years ago to 3000 BCE)
 - [x] **2.11 History: ancient world** (3000 BCE to 500 CE)
-- [ ] **2.12 History: 500 CE to 1800 CE**
+- [x] **2.12 History: 500 CE to 1800 CE**
 - [ ] **2.13 History: 1800 CE to today**
   - **For 2.8 to 2.13:** Well-known dates only, a source per entry, own-words summaries. Target total about 160 across the six steps (roughly 5 / 20 / 15 / 35 / 40 / 45). Each commit lists its entries in the learning summary so Ian can spot-check quickly.
 - [ ] **2.14 Population data**
