@@ -128,7 +128,7 @@ No database yet. Pure, heavily tested functions.
   - **Build:** Pydantic models and loader for `curated/history/*.yaml` (events, periods, landmarks). Fields include `year`, `year_uncertainty`, `category`, `region`, `summary` (own words), `importance` (1 to 5), `wikipedia`, `source`; landmarks add `built_start`, `built_end`, `destroyed`, `lat`, `lon`.
   - **Done when:** Loader validates a small sample file with tests.
   - **Phase 1 review note:** reuse `HistoryEvent`, `HistoryPeriod`, and `Landmark` from `earthlight.models` instead of defining parallel models, and validate the YAML in strict mode so `fame: true` or `year: "1492"` is an error, not a silent coercion.
-- [ ] **2.8 History: deep time** (before Earth to 540 million years ago, using the ICS chart as the main source)
+- [x] **2.8 History: deep time** (before Earth to 540 million years ago, using the ICS chart as the main source)
 - [ ] **2.9 History: complex life to human evolution** (540 million to 300,000 years ago)
 - [ ] **2.10 History: prehistory** (300,000 years ago to 3000 BCE)
 - [ ] **2.11 History: ancient world** (3000 BCE to 500 CE)
