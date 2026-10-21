@@ -85,7 +85,7 @@ No database yet. Pure, heavily tested functions.
 - [x] **1.4 Solar system**
   - **Build:** `solar_system.py`: Earth-to-planet distance at a given date using JPL's published approximate Keplerian elements; Voyager 1 approximate distance; zone definitions (heliopause, inner and outer Oort Cloud, interstellar space) with light-travel times.
   - **Done when:** Planet distances match reference values within a documented tolerance, and tests cite where reference values came from.
-- [ ] **1.5 Shared models**
+- [x] **1.5 Shared models**
   - **Build:** `models.py`: Pydantic models for `VantagePoint` (id, name, kind, lookback range, facts), `MomentResult` (four category winners, zone info, notes), `EarthSnapshot` (events, periods, landmarks with status, population, notes), `SearchResult`, `Suggestion`.
   - **Done when:** Models validate, have docstrings, and serialize to stable JSON.
 - [ ] **1.6 README update** (core concepts section)
