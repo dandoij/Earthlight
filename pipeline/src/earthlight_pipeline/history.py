@@ -37,6 +37,11 @@ CATEGORIES = (
 """The allowed values of ``category``. The model accepts any text; this fixed list keeps the
 curated files consistent, so the web app can offer a filter for each."""
 
+ONGOING_END_YEAR = 2100.0
+"""What ``end: present`` becomes. A period that has not ended (the Cenozoic, the Holocene) needs
+an end year that stays after "now" for as long as a built database is likely to be used, so
+the files say ``present`` instead of a year that would go stale. Search text shows "present"."""
+
 DESCRIPTION_REFERENCE_YEAR = 2026.0
 """The year that "N years ago" in search descriptions counts back from. It is fixed so that
 rebuilding the database later gives the same text."""
@@ -114,6 +119,8 @@ def _read_file(path: Path, problems: list[str]) -> dict[str, list[Any]]:
         entries = result.setdefault(section, [])
         for position, item in enumerate(items, start=1):
             label = item.get("id", "?") if isinstance(item, dict) else "?"
+            if section == "periods" and isinstance(item, dict) and item.get("end") == "present":
+                item = {**item, "end": ONGOING_END_YEAR}
             try:
                 entries.append(model.model_validate(item, strict=True))
             except ValidationError as error:
@@ -148,6 +155,8 @@ def _entry_problems(found: dict[str, list[Any]]) -> list[str]:
 
 
 def _when(year: float) -> str:
+    if year == ONGOING_END_YEAR:
+        return "present"
     return format_year(year, now_year=DESCRIPTION_REFERENCE_YEAR)
 
 

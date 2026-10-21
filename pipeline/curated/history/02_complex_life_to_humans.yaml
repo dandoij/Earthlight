@@ -222,7 +222,7 @@ periods:
     wikipedia: Cenozoic
     source: https://stratigraphy.org/chart
     start: -66000000
-    end: 2026
+    end: present
 
   - id: pleistocene-epoch
     name: Pleistocene Epoch

@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from earthlight_pipeline.build_history import HISTORY_DIR, run_history
-from earthlight_pipeline.history import HistoryData, load_curated_history
+from earthlight_pipeline.history import ONGOING_END_YEAR, HistoryData, load_curated_history
 
 
 @pytest.fixture(scope="module")
@@ -97,3 +97,35 @@ def test_no_event_is_dated_after_its_own_era_ends(shipped: HistoryData) -> None:
     assert events["first-dinosaurs"].year < events["end-cretaceous-extinction"].year
     assert events["first-mammals"].year < events["end-cretaceous-extinction"].year
     assert events["tiktaalik"].year < events["permian-triassic-extinction"].year
+
+
+def test_the_ongoing_periods_are_still_going(shipped: HistoryData) -> None:
+    periods = {p.id: p for p in shipped.periods}
+    assert periods["cenozoic-era"].end == periods["holocene-epoch"].end == ONGOING_END_YEAR
+    assert periods["pleistocene-epoch"].end == periods["holocene-epoch"].start
+    assert periods["younger-dryas"].end == periods["holocene-epoch"].start
+
+
+def test_the_prehistory_events_are_in_a_sensible_order(shipped: HistoryData) -> None:
+    years = {e.id: e.year for e in shipped.events}
+    order = [
+        "first-homo-sapiens",
+        "toba-eruption",
+        "out-of-africa",
+        "neanderthals-disappear",
+        "chauvet-cave-paintings",
+        "first-pottery",
+        "humans-reach-the-americas",
+        "farming-begins",
+        "wheeled-vehicles",
+        "otzi-the-iceman",
+    ]
+    assert [years[i] for i in order] == sorted(years[i] for i in order)
+    assert years["earliest-writing"] < years["otzi-the-iceman"]
+
+
+def test_the_landmarks_are_real_places_and_built_in_prehistory(shipped: HistoryData) -> None:
+    sites = {m.id: m for m in shipped.landmarks}
+    assert 36 < sites["gobekli-tepe"].lat < 38 and 38 < sites["gobekli-tepe"].lon < 40
+    assert 51 < sites["stonehenge"].lat < 52 and -2 < sites["stonehenge"].lon < -1
+    assert sites["gobekli-tepe"].built_end < sites["stonehenge"].built_start < -3000

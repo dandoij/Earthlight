@@ -130,7 +130,7 @@ No database yet. Pure, heavily tested functions.
   - **Phase 1 review note:** reuse `HistoryEvent`, `HistoryPeriod`, and `Landmark` from `earthlight.models` instead of defining parallel models, and validate the YAML in strict mode so `fame: true` or `year: "1492"` is an error, not a silent coercion.
 - [x] **2.8 History: deep time** (before Earth to 540 million years ago, using the ICS chart as the main source)
 - [x] **2.9 History: complex life to human evolution** (540 million to 300,000 years ago)
-- [ ] **2.10 History: prehistory** (300,000 years ago to 3000 BCE)
+- [x] **2.10 History: prehistory** (300,000 years ago to 3000 BCE)
 - [ ] **2.11 History: ancient world** (3000 BCE to 500 CE)
 - [ ] **2.12 History: 500 CE to 1800 CE**
 - [ ] **2.13 History: 1800 CE to today**

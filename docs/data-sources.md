@@ -262,6 +262,8 @@ History is hand-curated, so the work is in the rules, not a download. `pipeline/
 - **Categories are a fixed list** in `history.py` (`CATEGORIES`): cosmic, geological, life, human_origins, civilization, science, war_politics, culture, technology. The model accepts any text; the loader enforces the list so the files stay consistent.
 - **Ids are unique across events, periods, and landmarks**, and names are unique within each type.
 - **Every problem in every file is reported at once**, and a bad file stops the build before the database is touched.
+- **A period that has not ended** (the Cenozoic, the Holocene) says `end: present` in the YAML. The loader turns it into `ONGOING_END_YEAR` (2100), and search text shows "present". Only a period's `end` may use it.
+- **Years in the files:** N BCE is written as -(N-1). A date given as "N years ago" is 2026 minus N; BP dates are 1950 minus N. At deep-time scale (millions of years) plain -N is fine.
 - **Search descriptions** read like "Event, 1492 CE" or "Period, 539 million years ago to 485 million years ago". "N years ago" counts back from a fixed year (`DESCRIPTION_REFERENCE_YEAR`) so a rebuild gives identical text.
 
 ### How dates are sourced

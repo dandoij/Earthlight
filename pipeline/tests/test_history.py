@@ -6,6 +6,7 @@ import pytest
 
 from earthlight_pipeline.history import (
     CATEGORIES,
+    ONGOING_END_YEAR,
     HistoryData,
     HistoryError,
     category_counts,
@@ -164,3 +165,40 @@ def test_the_years_and_categories_covered() -> None:
 def test_there_is_nothing_to_cover_without_entries() -> None:
     with pytest.raises(ValueError, match="no history entries"):
         years_covered(HistoryData((), (), ()))
+
+
+PERIOD = """\
+periods:
+  - id: era
+    name: Era
+    category: geological
+    region: Earth
+    summary: Something that lasts.
+    importance: 3
+    source: https://example.org/era
+    start: -66000000
+    end: present
+"""
+
+
+def test_a_period_can_be_ongoing(tmp_path: Path) -> None:
+    (period,) = load_curated_history(write(tmp_path, PERIOD)).periods
+    assert period.end == ONGOING_END_YEAR > 2026
+    (entry,) = search_entries(load_curated_history(tmp_path))
+    assert entry.description == "Period, 66 million years ago to present"
+
+
+@pytest.mark.parametrize(
+    ("old", "new"),
+    [
+        ("start: -66000000", "start: present"),  # only an end can be ongoing
+        ("end: present", "end: now"),
+        ("end: present", 'end: "present "'),
+    ],
+)
+def test_present_is_only_allowed_as_the_end_of_a_period(tmp_path: Path, old: str, new: str) -> None:
+    assert "periods 1 (era)" in problems(write(tmp_path, PERIOD.replace(old, new)))
+
+
+def test_present_is_not_allowed_for_an_event(tmp_path: Path) -> None:
+    assert "year" in problems(write(tmp_path, EVENT.replace("year: 1492", "year: present")))
