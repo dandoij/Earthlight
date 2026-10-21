@@ -129,3 +129,57 @@ def test_the_landmarks_are_real_places_and_built_in_prehistory(shipped: HistoryD
     assert 36 < sites["gobekli-tepe"].lat < 38 and 38 < sites["gobekli-tepe"].lon < 40
     assert 51 < sites["stonehenge"].lat < 52 and -2 < sites["stonehenge"].lon < -1
     assert sites["gobekli-tepe"].built_end < sites["stonehenge"].built_start < -3000
+
+
+def test_ancient_dates_use_astronomical_numbering(shipped: HistoryData) -> None:
+    """Each year is the integer part of the astronomical year of the date it stands for."""
+    events = {e.id: e.year for e in shipped.events}
+    expected_year = {  # N BCE is 1 - N
+        "battle-of-marathon": 1 - 490,
+        "death-of-socrates": 1 - 399,
+        "death-of-alexander": 1 - 323,
+        "qin-unifies-china": 1 - 221,
+        "destruction-of-carthage": 1 - 146,
+        "assassination-of-caesar": 1 - 44,
+        "battle-of-actium": 1 - 31,
+        "birth-of-confucius": 1 - 551,
+        "vesuvius-eruption": 79,
+        "invention-of-paper-by-cai-lun": 105,
+        "founding-of-constantinople": 330,
+        "fall-of-the-western-roman-empire": 476,
+    }
+    for event_id, year in expected_year.items():
+        assert int(events[event_id] // 1) == year, event_id
+
+
+def test_the_day_known_dates_land_in_the_right_season(shipped: HistoryData) -> None:
+    events = {e.id: e.year for e in shipped.events}
+    assert round(events["assassination-of-caesar"] % 1, 2) == 0.2  # 15 March, Julian-ish
+    assert 0.65 < events["battle-of-marathon"] % 1 < 0.72  # September
+    assert 0.40 < events["death-of-alexander"] % 1 < 0.45  # June
+    assert 0.65 < events["battle-of-actium"] % 1 < 0.70  # September
+
+
+def test_the_ancient_states_follow_the_expected_order(shipped: HistoryData) -> None:
+    periods = {p.id: p for p in shipped.periods}
+    assert periods["roman-republic"].end == periods["roman-empire-west"].start  # 27 BCE
+    assert periods["achaemenid-empire"].end > periods["classical-greece"].start  # Persian Wars
+    assert periods["classical-greece"].end > periods["achaemenid-empire"].end  # to Alexander
+    assert periods["old-kingdom-of-egypt"].end < periods["new-kingdom-of-egypt"].start
+    assert periods["han-dynasty"].start < 0 < periods["han-dynasty"].end
+    events = {e.id: e.year for e in shipped.events}
+    assert events["battle-of-actium"] > events["assassination-of-caesar"]
+    assert events["fall-of-the-western-roman-empire"] == periods["roman-empire-west"].end + 0.5
+
+
+def test_the_landmarks_stand_where_they_should(shipped: HistoryData) -> None:
+    sites = {m.id: m for m in shipped.landmarks}
+    assert (
+        29 < sites["great-pyramid-of-giza"].lat < 30
+        and 31 < sites["great-pyramid-of-giza"].lon < 32
+    )
+    assert 37 < sites["parthenon"].lat < 38 and 23 < sites["parthenon"].lon < 24
+    assert 41 < sites["colosseum"].lat < 42 and 12 < sites["colosseum"].lon < 13
+    colossus = sites["colossus-of-rhodes"]
+    assert colossus.destroyed is not None and colossus.destroyed > colossus.built_end
+    assert all(m.destroyed is None for m in shipped.landmarks if m.id != "colossus-of-rhodes")

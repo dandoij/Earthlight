@@ -1,0 +1,471 @@
+# The ancient world: 3000 BCE to 500 CE.
+# Years are astronomical decimal years: N BCE is written as -(N-1), so 44 BCE is -43. A date
+# known to the day is converted with earthlight.time.from_calendar (ancient dates are in the
+# Julian calendar, which differs by a few days; year_uncertainty 0.01 allows for that). A date
+# known only to the year is the middle of that year (for example 399 BCE is -397.5, plus or
+# minus 0.5). Traditional or approximate dates carry a wider year_uncertainty.
+events:
+  - id: unification-of-egypt
+    name: Egypt is unified
+    category: civilization
+    region: Egypt
+    summary: >-
+      The lands of Upper and Lower Egypt came under a single king, usually linked to Narmer.
+      Unification was gradual, spread over perhaps a few centuries, so the date is approximate.
+    importance: 4
+    wikipedia: Narmer
+    source: https://en.wikipedia.org/wiki/Early_Dynastic_Period_(Egypt)
+    year: -3149
+    year_uncertainty: 150
+
+  - id: indus-cities-mature
+    name: The Indus Valley cities reach their peak
+    category: civilization
+    region: Indus Valley, South Asia
+    summary: >-
+      Planned towns with drains, standard weights, and trade links spread across what is now
+      Pakistan and north-west India. The mature phase lasted until about 1900 BCE.
+    importance: 4
+    wikipedia: Indus Valley Civilisation
+    source: https://en.wikipedia.org/wiki/Indus_Valley_Civilisation
+    year: -2599
+    year_uncertainty: 100
+
+  - id: sargon-of-akkad
+    name: Sargon founds the Akkadian Empire
+    category: war_politics
+    region: Mesopotamia
+    summary: >-
+      Sargon of Akkad united the Sumerian city-states and built what is often called the first
+      empire. His dates depend on the chronology used and are uncertain by a few decades.
+    importance: 3
+    wikipedia: Sargon of Akkad
+    source: https://en.wikipedia.org/wiki/Sargon_of_Akkad
+    year: -2333
+    year_uncertainty: 20
+
+  - id: code-of-hammurabi
+    name: The Code of Hammurabi
+    category: civilization
+    region: Babylon, Mesopotamia
+    summary: >-
+      King Hammurabi of Babylon had a long list of laws and penalties carved on a stone pillar
+      for all to see. It is one of the oldest known written law codes. The date follows the
+      commonly used middle chronology.
+    importance: 4
+    wikipedia: Code of Hammurabi
+    source: https://en.wikipedia.org/wiki/Code_of_Hammurabi
+    year: -1752
+    year_uncertainty: 60
+
+  - id: late-bronze-age-collapse
+    name: The Late Bronze Age collapse
+    category: civilization
+    region: Eastern Mediterranean
+    summary: >-
+      Around 1200 BCE many of the great Bronze Age states, such as the Mycenaeans and the
+      Hittites, fell or shrank within a few decades. Historians still argue about the causes,
+      and the collapse was a process, not a single event.
+    importance: 4
+    wikipedia: Late Bronze Age collapse
+    source: https://en.wikipedia.org/wiki/Late_Bronze_Age_collapse
+    year: -1199
+    year_uncertainty: 50
+
+  - id: phoenician-alphabet
+    name: The Phoenician alphabet
+    category: civilization
+    region: Phoenicia, eastern Mediterranean
+    summary: >-
+      A script of about two dozen letters, each standing for one consonant, spread across the
+      Mediterranean by traders. Greek and Latin letters descend from it. The usual starting
+      date is a convention, since the earliest securely dated inscriptions are a little later.
+    importance: 4
+    wikipedia: Phoenician alphabet
+    source: https://en.wikipedia.org/wiki/Phoenician_alphabet
+    year: -1049
+    year_uncertainty: 100
+
+  - id: first-olympic-games
+    name: The first Olympic Games
+    category: culture
+    region: Olympia, Greece
+    summary: >-
+      Greek city-states met at Olympia for athletic contests held in honour of Zeus. The date
+      of 776 BCE is traditional and cannot be checked; the games are certainly old by 700 BCE.
+    importance: 3
+    wikipedia: Ancient Olympic Games
+    source: https://en.wikipedia.org/wiki/Ancient_Olympic_Games
+    year: -775
+    year_uncertainty: 25
+
+  - id: founding-of-rome
+    name: The traditional founding of Rome
+    category: civilization
+    region: Rome, Italy
+    summary: >-
+      Roman writers dated the city's founding by Romulus to 753 BCE. Historians treat the story
+      as legend; archaeology shows villages on the hills growing together over several centuries.
+    importance: 3
+    wikipedia: Founding of Rome
+    source: https://en.wikipedia.org/wiki/Founding_of_Rome
+    year: -752
+    year_uncertainty: 50
+
+  - id: lydian-coinage
+    name: Coins appear in Lydia
+    category: technology
+    region: Lydia, Anatolia
+    summary: >-
+      Kings of Lydia in western Turkey stamped lumps of gold and silver alloy to guarantee their
+      weight, among the oldest coins known. The exact date is debated between about 700 and
+      550 BCE.
+    importance: 3
+    wikipedia: Lydia
+    source: https://en.wikipedia.org/wiki/Lydia
+    year: -599
+    year_uncertainty: 75
+
+  - id: birth-of-confucius
+    name: Confucius is born
+    category: culture
+    region: Lu, China
+    summary: >-
+      The teacher whose ideas about duty, family, and good government shaped Chinese society
+      for over two thousand years. The birth date is the traditional one.
+    importance: 4
+    wikipedia: Confucius
+    source: https://en.wikipedia.org/wiki/Confucius
+    year: -549.26
+    year_uncertainty: 2
+
+  - id: battle-of-marathon
+    name: The Battle of Marathon
+    category: war_politics
+    region: Marathon, Greece
+    summary: >-
+      An Athenian army beat a larger Persian force on the plain of Marathon, ending the first
+      Persian invasion of Greece. The exact day depends on which calendar is used.
+    importance: 3
+    wikipedia: Battle of Marathon
+    source: https://en.wikipedia.org/wiki/Battle_of_Marathon
+    year: -488.304
+    year_uncertainty: 0.1
+
+  - id: death-of-socrates
+    name: Socrates is put to death
+    category: culture
+    region: Athens, Greece
+    summary: >-
+      The philosopher who taught by questioning was tried in Athens for not honouring the city's
+      gods and for corrupting the young. He was sentenced to drink poison.
+    importance: 4
+    wikipedia: Trial of Socrates
+    source: https://en.wikipedia.org/wiki/Trial_of_Socrates
+    year: -397.5
+    year_uncertainty: 0.5
+
+  - id: death-of-alexander
+    name: Alexander the Great dies
+    category: war_politics
+    region: Babylon, Mesopotamia
+    summary: >-
+      Alexander died in Babylon at 32, having conquered an empire that stretched from Greece to
+      north-western India. It broke apart among his generals within a few years.
+    importance: 5
+    wikipedia: Alexander the Great
+    source: https://en.wikipedia.org/wiki/Alexander_the_Great
+    year: -321.562
+    year_uncertainty: 0.01
+
+  - id: qin-unifies-china
+    name: Qin unifies China
+    category: war_politics
+    region: China
+    summary: >-
+      After defeating the other warring states, the king of Qin took the title of First Emperor.
+      His standardised laws, writing, and measures shaped the empires that followed.
+    importance: 5
+    wikipedia: Qin Shi Huang
+    source: https://en.wikipedia.org/wiki/Qin_Shi_Huang
+    year: -219.5
+    year_uncertainty: 0.5
+
+  - id: destruction-of-carthage
+    name: Rome destroys Carthage
+    category: war_politics
+    region: Carthage, North Africa
+    summary: >-
+      At the end of the Third Punic War, Roman forces took and razed the city of Carthage, once
+      Rome's greatest rival, leaving Rome the main power of the western Mediterranean.
+    importance: 3
+    wikipedia: Third Punic War
+    source: https://en.wikipedia.org/wiki/Third_Punic_War
+    year: -144.5
+    year_uncertainty: 0.5
+
+  - id: assassination-of-caesar
+    name: Julius Caesar is assassinated
+    category: war_politics
+    region: Rome, Italy
+    summary: >-
+      A group of senators stabbed the dictator Julius Caesar on the Ides of March. The plot
+      meant to save the Republic but led to civil war and the rise of Augustus.
+    importance: 5
+    wikipedia: Assassination of Julius Caesar
+    source: https://en.wikipedia.org/wiki/Assassination_of_Julius_Caesar
+    year: -42.8
+    year_uncertainty: 0.01
+
+  - id: battle-of-actium
+    name: The Battle of Actium
+    category: war_politics
+    region: Ionian Sea, Greece
+    summary: >-
+      Octavian's fleet beat the ships of Mark Antony and Cleopatra off the coast of Greece. It
+      left Octavian master of the Roman world, and he soon became the first emperor, Augustus.
+    importance: 4
+    wikipedia: Battle of Actium
+    source: https://en.wikipedia.org/wiki/Battle_of_Actium
+    year: -29.332
+    year_uncertainty: 0.01
+
+  - id: vesuvius-eruption
+    name: Vesuvius buries Pompeii
+    category: geological
+    region: Bay of Naples, Italy
+    summary: >-
+      A huge eruption buried Pompeii, Herculaneum, and nearby towns under ash and rock, freezing
+      daily life in place for later archaeologists. The month is debated: the traditional August
+      date may be wrong, and autumn is likely.
+    importance: 4
+    wikipedia: Eruption of Mount Vesuvius in 79 AD
+    source: https://en.wikipedia.org/wiki/Eruption_of_Mount_Vesuvius_in_79_AD
+    year: 79.5
+    year_uncertainty: 0.5
+
+  - id: invention-of-paper-by-cai-lun
+    name: Cai Lun presents paper to the Han court
+    category: technology
+    region: China
+    summary: >-
+      An official at the Han court is credited with a method of making paper from bark, rags,
+      and fishing nets. Simpler paper was already in use in China, so the date marks the
+      improvement and its adoption, not the first paper.
+    importance: 3
+    wikipedia: Cai Lun
+    source: https://en.wikipedia.org/wiki/Cai_Lun
+    year: 105.5
+    year_uncertainty: 0.5
+
+  - id: founding-of-constantinople
+    name: Constantinople is dedicated
+    category: civilization
+    region: Constantinople, Turkey
+    summary: >-
+      The emperor Constantine consecrated the city on the Bosporus as a new capital of the Roman
+      Empire. It lasted as the heart of the Byzantine Empire until the Ottomans took it in 1453.
+    importance: 4
+    wikipedia: Constantinople
+    source: https://en.wikipedia.org/wiki/Constantinople
+    year: 330.356
+    year_uncertainty: 0.01
+
+  - id: fall-of-the-western-roman-empire
+    name: The fall of the Western Roman Empire
+    category: war_politics
+    region: Ravenna, Italy
+    summary: >-
+      The Germanic leader Odoacer removed the last western emperor, Romulus Augustulus. The date
+      is a convenient marker: the empire had been shrinking for decades, and the eastern half
+      lasted until 1453.
+    importance: 5
+    wikipedia: Fall of the Western Roman Empire
+    source: https://en.wikipedia.org/wiki/Fall_of_the_Western_Roman_Empire
+    year: 476.5
+    year_uncertainty: 0.5
+
+periods:
+  - id: old-kingdom-of-egypt
+    name: Old Kingdom of Egypt
+    category: civilization
+    region: Egypt
+    summary: >-
+      The age of the great pyramids. A strong central government built enormous royal tombs,
+      the best known at Giza.
+    importance: 4
+    wikipedia: Old Kingdom
+    source: https://en.wikipedia.org/wiki/Old_Kingdom
+    start: -2685
+    end: -2180
+
+  - id: new-kingdom-of-egypt
+    name: New Kingdom of Egypt
+    category: civilization
+    region: Egypt
+    summary: >-
+      Egypt's richest and most powerful age, with pharaohs such as Hatshepsut, Akhenaten, and
+      Ramesses II. Royal burials moved to the Valley of the Kings.
+    importance: 4
+    wikipedia: New Kingdom of Egypt
+    source: https://en.wikipedia.org/wiki/New_Kingdom_of_Egypt
+    start: -1549
+    end: -1068
+
+  - id: achaemenid-empire
+    name: Achaemenid Persian Empire
+    category: war_politics
+    region: Persia and the Near East
+    summary: >-
+      Founded by Cyrus the Great, it grew into the largest empire the world had yet seen, from
+      Egypt to the Indus. It fell to Alexander the Great.
+    importance: 4
+    wikipedia: Achaemenid Empire
+    source: https://en.wikipedia.org/wiki/Achaemenid_Empire
+    start: -549
+    end: -329
+
+  - id: classical-greece
+    name: Classical Greece
+    category: culture
+    region: Greece
+    summary: >-
+      The age of Athens at its height and of Sparta, with the first democracy, Greek drama, and
+      philosophy. It is usually dated from the Persian Wars to the death of Alexander.
+    importance: 4
+    wikipedia: Classical Greece
+    source: https://en.wikipedia.org/wiki/Classical_Greece
+    start: -479
+    end: -322
+
+  - id: roman-republic
+    name: Roman Republic
+    category: war_politics
+    region: Rome and the Mediterranean
+    summary: >-
+      Rome was ruled by elected magistrates and the Senate. In this time it grew from a city in
+      Italy to the master of the Mediterranean.
+    importance: 4
+    wikipedia: Roman Republic
+    source: https://en.wikipedia.org/wiki/Roman_Republic
+    start: -508
+    end: -26
+
+  - id: roman-empire-west
+    name: Roman Empire, until the fall of the West
+    category: war_politics
+    region: Rome and the Mediterranean
+    summary: >-
+      Rule by emperors, from Augustus to the end of the western half. The eastern half carried
+      on as the Byzantine Empire until 1453.
+    importance: 5
+    wikipedia: Roman Empire
+    source: https://en.wikipedia.org/wiki/Roman_Empire
+    start: -26
+    end: 476
+
+  - id: han-dynasty
+    name: Han dynasty
+    category: civilization
+    region: China
+    summary: >-
+      A long, stable dynasty that set the pattern for later Chinese states and opened the Silk
+      Road. A brief interruption, the Xin dynasty, split it into western and eastern halves.
+    importance: 4
+    wikipedia: Han dynasty
+    source: https://en.wikipedia.org/wiki/Han_dynasty
+    start: -201
+    end: 220
+
+landmarks:
+  - id: great-pyramid-of-giza
+    name: Great Pyramid of Giza
+    category: civilization
+    region: Egypt
+    summary: >-
+      The tomb of the pharaoh Khufu and the largest of the Giza pyramids. It was built over
+      about 26 years from enormous blocks of stone, and it stands near the edge of modern Cairo.
+    importance: 5
+    wikipedia: Great Pyramid of Giza
+    source: https://en.wikipedia.org/wiki/Great_Pyramid_of_Giza
+    built_start: -2599
+    built_end: -2574
+    lat: 29.9792
+    lon: 31.1342
+
+  - id: parthenon
+    name: The Parthenon
+    category: culture
+    region: Athens, Greece
+    summary: >-
+      A marble temple to the goddess Athena on the Acropolis, built at the height of Athenian
+      power. It still stands as a ruin after an explosion in 1687.
+    importance: 5
+    wikipedia: Parthenon
+    source: https://en.wikipedia.org/wiki/Parthenon
+    built_start: -446
+    built_end: -431
+    lat: 37.9715
+    lon: 23.7266
+
+  - id: colossus-of-rhodes
+    name: Colossus of Rhodes
+    category: culture
+    region: Rhodes, Greece
+    summary: >-
+      A giant bronze statue of the sun god Helios, one of the Seven Wonders of the ancient
+      world. An earthquake toppled it about fifty years after it was finished. Where exactly it
+      stood is still disputed.
+    importance: 4
+    wikipedia: Colossus of Rhodes
+    source: https://en.wikipedia.org/wiki/Colossus_of_Rhodes
+    built_start: -291
+    built_end: -279
+    destroyed: -225
+    lat: 36.4516
+    lon: 28.2279
+
+  - id: terracotta-army
+    name: Terracotta Army
+    category: culture
+    region: Xi'an, China
+    summary: >-
+      Thousands of life-size clay soldiers buried near the tomb of Qin Shi Huang to guard him
+      in the afterlife. Farmers found the first pieces in 1974.
+    importance: 5
+    wikipedia: Terracotta Army
+    source: https://en.wikipedia.org/wiki/Terracotta_Army
+    built_start: -245
+    built_end: -208
+    lat: 34.385
+    lon: 109.2731
+
+  - id: colosseum
+    name: The Colosseum
+    category: civilization
+    region: Rome, Italy
+    summary: >-
+      An oval amphitheatre in Rome where crowds watched gladiator fights and animal hunts. It
+      was started under Vespasian and opened under his son Titus.
+    importance: 5
+    wikipedia: Colosseum
+    source: https://en.wikipedia.org/wiki/Colosseum
+    built_start: 72
+    built_end: 80
+    lat: 41.8903
+    lon: 12.4922
+
+  - id: pantheon-rome
+    name: The Pantheon
+    category: civilization
+    region: Rome, Italy
+    summary: >-
+      A Roman temple crowned by the largest unreinforced concrete dome ever built. The present
+      building, from Hadrian's reign, is still in use as a church.
+    importance: 4
+    wikipedia: Pantheon, Rome
+    source: https://en.wikipedia.org/wiki/Pantheon,_Rome
+    built_start: 114
+    built_end: 126
+    lat: 41.8986
+    lon: 12.4769
