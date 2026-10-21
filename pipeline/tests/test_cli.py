@@ -10,9 +10,11 @@ from earthlight.schema import SCHEMA_VERSION
 from earthlight_pipeline import cli
 from earthlight_pipeline.build_deep_sky import DeepSkyReport
 from earthlight_pipeline.build_exoplanets import ExoplanetsReport
+from earthlight_pipeline.build_history import HistoryReport
 from earthlight_pipeline.build_stars import DEFAULT_MAX_VMAG, StarsReport
 from earthlight_pipeline.cache import DEFAULT_CACHE_DIR
 from earthlight_pipeline.cli import SOURCES, Source, app
+from earthlight_pipeline.history import HistoryError
 
 runner = CliRunner()
 
@@ -61,6 +63,19 @@ def fake_deep_sky_report(database: Path) -> DeepSkyReport:
     )
 
 
+def fake_history_report(database: Path) -> HistoryReport:
+    return HistoryReport(
+        events=10,
+        periods=3,
+        landmarks=2,
+        by_category={"cosmic": 4, "science": 11},
+        earliest_year=-13_800_000_000.0,
+        latest_year=2025.0,
+        database=database,
+        database_bytes=300_000,
+    )
+
+
 @pytest.fixture
 def calls(monkeypatch: pytest.MonkeyPatch) -> list[Call]:
     """Replace the real builds, which use the network, with recorders."""
@@ -87,6 +102,14 @@ def calls(monkeypatch: pytest.MonkeyPatch) -> list[Call]:
         progress("downloading SIMBAD...")
         return fake_deep_sky_report(Path(str(kwargs["database"])))
 
+    def fake_run_history(**kwargs: object) -> HistoryReport:
+        recorded.append(("history", kwargs))
+        progress = kwargs["progress"]
+        assert callable(progress)
+        progress("reading history...")
+        return fake_history_report(Path(str(kwargs["database"])))
+
+    monkeypatch.setattr(cli, "run_history", fake_run_history)
     monkeypatch.setattr(cli, "run_deep_sky", fake_run_deep_sky)
     monkeypatch.setattr(cli, "run_stars", fake_run_stars)
     monkeypatch.setattr(cli, "run_exoplanets", fake_run_exoplanets)
@@ -113,8 +136,8 @@ def test_sources_are_unique_and_match_the_plan() -> None:
     commands = [s.command for s in SOURCES]
     assert len(set(commands)) == len(commands)
     assert commands == ["stars", "exoplanets", "deep-sky", "history", "population"]
-    assert [s.step for s in SOURCES] == ["2.4", "2.5", "2.6", "2.8 to 2.13", "2.14"]
-    assert {"stars", "exoplanets", "deep-sky"} == cli.IMPLEMENTED
+    assert [s.step for s in SOURCES] == ["2.4", "2.5", "2.6", "2.7", "2.14"]
+    assert {"stars", "exoplanets", "deep-sky", "history"} == cli.IMPLEMENTED
 
 
 @pytest.mark.parametrize("source", SOURCES, ids=lambda s: s.command)
@@ -204,13 +227,41 @@ def test_deep_sky_runs_the_build_and_prints_the_report(calls: list[Call], tmp_pa
     assert "Numbers from: inline 7, simbad 45" in result.output
 
 
+def test_history_reads_the_curated_files_and_prints_the_report(
+    calls: list[Call], tmp_path: Path
+) -> None:
+    result = runner.invoke(app, ["--database", str(tmp_path / "my.db"), "history"])
+    assert result.exit_code == 0, result.output
+    ((name, kwargs),) = calls
+    assert name == "history"
+    assert kwargs == {
+        "database": tmp_path / "my.db",
+        "progress": kwargs["progress"],
+    }
+    assert "reading history..." in result.output
+    assert "History entries built: 15 (10 events, 3 periods, 2 landmarks)" in result.output
+
+
+def test_history_problems_are_printed_and_exit_with_an_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def broken(**_kwargs: object) -> HistoryReport:
+        raise HistoryError("era.yaml events 1 (x): year: field required")
+
+    monkeypatch.setattr(cli, "run_history", broken)
+    result = runner.invoke(app, ["history"])
+    assert result.exit_code == 1
+    assert "The history files have problems" in result.output
+    assert "era.yaml events 1 (x)" in result.output
+
+
 def test_the_database_option_overrides_the_default(calls: list[Call], tmp_path: Path) -> None:
     target = tmp_path / "elsewhere" / "my.db"
     runner.invoke(app, ["--database", str(target), "stars"])
     assert calls[0][1]["database"] == target
 
 
-def test_all_builds_stars_planets_and_deep_sky_into_a_fresh_database(
+def test_all_builds_every_finished_source_into_a_fresh_database(
     calls: list[Call], tmp_path: Path
 ) -> None:
     database = tmp_path / "earthlight.db"
@@ -221,15 +272,16 @@ def test_all_builds_stars_planets_and_deep_sky_into_a_fresh_database(
         "stars",
         "exoplanets",
         "deep-sky",
+        "history",
     ]  # planets link to stars
     assert calls[0][1]["max_vmag"] == DEFAULT_MAX_VMAG
     out = result.output
-    stars_at, planets_at, deep_at, history_at = (
-        out.index(f"Building {s}") for s in ("stars", "exoplanets", "deep-sky", "history")
+    stars_at, planets_at, deep_at, history_at, population_at = (
+        out.index(f"Building {s}")
+        for s in ("stars", "exoplanets", "deep-sky", "history", "population")
     )
-    assert stars_at < planets_at < deep_at < history_at
-    assert "Building population" not in out
-    assert "'history' is not implemented yet" in out
+    assert stars_at < planets_at < deep_at < history_at < population_at
+    assert "'population' is not implemented yet" in out
     # The old file was replaced by an empty database with the current schema.
     connection = sqlite3.connect(database)
     try:

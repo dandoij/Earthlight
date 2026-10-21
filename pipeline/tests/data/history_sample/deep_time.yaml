@@ -1,0 +1,22 @@
+# A small sample for the loader tests. The entries are real, but this is not the shipped data.
+events:
+  - id: formation-of-earth
+    name: Formation of Earth
+    category: geological
+    region: Solar System
+    summary: Earth gathered from the disc of gas and dust around the young Sun.
+    importance: 5
+    wikipedia: History of Earth
+    source: https://en.wikipedia.org/wiki/History_of_Earth
+    year: -4540000000
+    year_uncertainty: 50000000
+periods:
+  - id: cambrian
+    name: Cambrian
+    category: geological
+    region: Global
+    summary: The first period of the Paleozoic, when most animal groups appear in the fossils.
+    importance: 4
+    source: https://stratigraphy.org/chart
+    start: -538800000
+    end: -485400000

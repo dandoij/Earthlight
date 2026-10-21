@@ -253,6 +253,23 @@ Lookbacks run from 185 million years (the Hydra Cluster) to 13.79 billion years 
 - **astropy misspells three constellations and pads one:** "Chamaleon", "Ophiucus", "Pisces Austrinus", and "Crux " with a trailing space. The shared helper now corrects them to the IAU names, and a test checks all 88.
 - **Wikipedia rate-limits bursts** (HTTP 429 after about 30 quick requests). Article titles were checked one request every few seconds; "NGC 4676" and "Pandora's Cluster" are redirects, so the file uses "Mice Galaxies" and "Abell 2744".
 
+## History data (steps 2.7 to 2.13)
+
+History is hand-curated, so the work is in the rules, not a download. `pipeline/curated/history/` holds one YAML file per era, each with any of `events`, `periods`, and `landmarks`. Entries are read straight into `HistoryEvent`, `HistoryPeriod`, and `Landmark` from `earthlight.models`, in strict mode (so `year: "1492"` or `importance: true` is an error).
+
+### Rules chosen in step 2.7
+
+- **Categories are a fixed list** in `history.py` (`CATEGORIES`): cosmic, geological, life, human_origins, civilization, science, war_politics, culture, technology. The model accepts any text; the loader enforces the list so the files stay consistent.
+- **Ids are unique across events, periods, and landmarks**, and names are unique within each type.
+- **Every problem in every file is reported at once**, and a bad file stops the build before the database is touched.
+- **Search descriptions** read like "Event, 1492 CE" or "Period, 539 million years ago to 485 million years ago". "N years ago" counts back from a fixed year (`DESCRIPTION_REFERENCE_YEAR`) so a rebuild gives identical text.
+
+### How dates are sourced
+
+- **Deep time (2.8, 2.9):** boundary ages follow the International Chronostratigraphic Chart (Gradstein et al. 2020 ages) from stratigraphy.org. The chart is copyrighted by the ICS; we cite dates (facts) and write our own summaries. CSIRO republished the 2017 to 2019 editions as CC BY 4.0 RDF.
+- **Everything else:** every date is checked against two independent pages (such as Wikipedia plus Britannica, NASA, or the Smithsonian). Wikidata (CC0) is a third check for borderline dates. An entry whose date cannot be confirmed is dropped rather than guessed, and a date that is a best estimate gets a `year_uncertainty`.
+- **Not used:** Seshat (CC BY-NC-SA, codes societies, not events) and bulk event dumps with unclear licenses.
+
 ## Licenses and attribution
 
 Verified from the sources' own pages on 2026-10-20. Quotes are exact. This is a project record, not legal advice.

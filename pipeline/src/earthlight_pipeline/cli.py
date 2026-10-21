@@ -15,8 +15,10 @@ import typer
 from earthlight.schema import create_empty_database
 from earthlight_pipeline.build_deep_sky import format_deep_sky_report, run_deep_sky
 from earthlight_pipeline.build_exoplanets import format_exoplanets_report, run_exoplanets
+from earthlight_pipeline.build_history import format_history_report, run_history
 from earthlight_pipeline.build_stars import DEFAULT_MAX_VMAG, format_stars_report, run_stars
 from earthlight_pipeline.cache import DEFAULT_CACHE_DIR
+from earthlight_pipeline.history import HistoryError
 
 
 @dataclass(frozen=True)
@@ -32,7 +34,7 @@ SOURCES: tuple[Source, ...] = (
     Source("stars", "2.4", "Hipparcos stars with Gaia and Bailer-Jones distances and IAU names."),
     Source("exoplanets", "2.5", "NASA Exoplanet Archive planets, linked to their host stars."),
     Source("deep-sky", "2.6", "Curated galaxies, clusters, quasars, and the CMB."),
-    Source("history", "2.8 to 2.13", "Hand-curated events, periods, and landmarks."),
+    Source("history", "2.7", "Hand-curated events, periods, and landmarks."),
     Source("population", "2.14", "Our World in Data historical population estimates."),
 )
 
@@ -195,7 +197,26 @@ def deep_sky(ctx: typer.Context) -> None:
     _build_deep_sky(get_options(ctx))
 
 
-IMPLEMENTED = frozenset({"stars", "exoplanets", "deep-sky"})
+def _build_history(options: BuildOptions) -> None:
+    try:
+        report = run_history(database=options.database, progress=typer.echo)
+    except HistoryError as error:
+        typer.echo(f"The history files have problems:\n{error}", err=True)
+        raise typer.Exit(code=1) from error
+    typer.echo("")
+    typer.echo(format_history_report(report))
+
+
+@app.command(
+    name="history",
+    help="Hand-curated events, periods, and landmarks from curated/history. (step 2.7)",
+)
+def history(ctx: typer.Context) -> None:
+    """Build the history events, periods, and landmarks from curated/history/*.yaml."""
+    _build_history(get_options(ctx))
+
+
+IMPLEMENTED = frozenset({"stars", "exoplanets", "deep-sky", "history"})
 
 for _source in SOURCES:
     if _source.command not in IMPLEMENTED:
@@ -223,5 +244,7 @@ def build_all(ctx: typer.Context) -> None:
             _build_exoplanets(options)
         elif source.command == "deep-sky":
             _build_deep_sky(options)
+        elif source.command == "history":
+            _build_history(options)
         else:
             _not_implemented(source)

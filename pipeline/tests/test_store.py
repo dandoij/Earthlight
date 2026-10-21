@@ -17,14 +17,17 @@ from earthlight_pipeline.exoplanets import (
     StarIndex,
     build_exoplanets,
 )
+from earthlight_pipeline.history import load_curated_history
 from earthlight_pipeline.stars import HipparcosStar, SearchEntry, build_stars, search_entry
 from earthlight_pipeline.store import (
     load_deep_sky,
     load_exoplanets,
+    load_history,
     load_stars,
     open_database,
     replace_deep_sky,
     replace_exoplanets,
+    replace_history,
     replace_stars,
     set_meta,
     vantage_row,
@@ -446,3 +449,79 @@ def test_the_file_shrinks_when_fewer_deep_sky_objects_are_stored(tmp_path: Path)
     finally:
         connection.close()
     assert big > 5 * small  # without VACUUM the file would stay as large as it was
+
+
+HISTORY_SAMPLE = Path(__file__).parent / "data" / "history_sample"
+
+
+def test_history_round_trips_through_the_database(database: sqlite3.Connection) -> None:
+    data = load_curated_history(HISTORY_SAMPLE)
+    replace_history(database, data)
+    stored = load_history(database)
+    assert stored.events == tuple(sorted(data.events, key=lambda e: e.year))
+    assert stored.periods == data.periods and stored.landmarks == data.landmarks
+    assert database.execute(
+        "SELECT type, count(*) FROM search_entries GROUP BY type"
+    ).fetchall() == [
+        ("event", 2),
+        ("landmark", 1),
+        ("period", 1),
+    ]
+
+
+def test_replacing_history_removes_what_was_there(database: sqlite3.Connection) -> None:
+    data = load_curated_history(HISTORY_SAMPLE)
+    replace_history(database, data)
+    replace_history(database, type(data)(data.events[:1], (), ()))
+    assert len(load_history(database).events) == 1
+    assert load_history(database).landmarks == ()
+    assert database.execute("SELECT count(*) FROM search_entries").fetchone() == (1,)
+    found = database.execute(
+        "SELECT count(*) FROM search_fts WHERE search_fts MATCH 'pyramid*'"
+    ).fetchone()
+    assert found == (0,)  # the index was rebuilt, so removed entries cannot be found
+
+
+def test_replacing_history_leaves_vantage_points_alone(database: sqlite3.Connection) -> None:
+    stars = make_stars()
+    replace_stars(database, stars, entries_for(stars))
+    replace_history(database, load_curated_history(HISTORY_SAMPLE))
+    assert [s.id for s in load_stars(database)] == sorted(s.id for s in stars)
+    assert database.execute(
+        "SELECT count(*) FROM search_entries WHERE type = 'vantage_point'"
+    ).fetchone() == (len(entries_for(stars)),)
+
+
+def test_a_failed_history_replacement_changes_nothing(database: sqlite3.Connection) -> None:
+    data = load_curated_history(HISTORY_SAMPLE)
+    replace_history(database, data)
+    twice = type(data)(data.events, data.periods, data.landmarks)
+    bad = type(data)(data.events + data.events[:1], (), ())  # the same id twice
+    with pytest.raises(RuntimeError, match="could not store the history"):
+        replace_history(database, bad)
+    assert load_history(database).events == tuple(sorted(twice.events, key=lambda e: e.year))
+    assert len(load_history(database).landmarks) == 1
+
+
+def test_replacing_history_shrinks_the_file(tmp_path: Path) -> None:
+    path = tmp_path / "earthlight.db"
+    connection = open_database(path)
+    try:
+        data = load_curated_history(HISTORY_SAMPLE)
+        big = type(data)(
+            tuple(
+                e.model_copy(
+                    update={"id": f"event-{n}", "name": f"Event {n}", "summary": "x" * 900}
+                )
+                for n in range(300)
+                for e in data.events[:1]
+            ),
+            (),
+            (),
+        )
+        replace_history(connection, big)
+        before = path.stat().st_size
+        replace_history(connection, type(data)((), (), ()))
+        assert path.stat().st_size < before
+    finally:
+        connection.close()

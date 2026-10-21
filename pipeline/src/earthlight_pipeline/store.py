@@ -8,12 +8,14 @@ import json
 import sqlite3
 from collections.abc import Iterable, Sequence
 from pathlib import Path
+from typing import Any
 
 from earthlight.lookback import LookbackRange
-from earthlight.models import VantagePoint
+from earthlight.models import HistoryEvent, HistoryPeriod, Landmark, VantagePoint
 from earthlight.schema import SCHEMA_VERSION, create_empty_database, rebuild_search_index
 from earthlight_pipeline.deep_sky import DeepSkyRecord
 from earthlight_pipeline.exoplanets import ExoplanetRecord
+from earthlight_pipeline.history import HistoryData, search_entries
 from earthlight_pipeline.stars import SearchEntry
 
 
@@ -192,6 +194,112 @@ def replace_deep_sky(connection: sqlite3.Connection, records: Sequence[DeepSkyRe
         raise RuntimeError(f"could not store the deep-sky objects ({error})") from error
     rebuild_search_index(connection)
     connection.execute("VACUUM")
+
+
+_ENTRY_COLUMNS = (
+    "id",
+    "name",
+    "category",
+    "region",
+    "summary",
+    "importance",
+    "wikipedia",
+    "source",
+)
+_HISTORY_TABLES = {
+    "event": ("events", (*_ENTRY_COLUMNS, "year", "year_uncertainty")),
+    "period": ("periods", (*_ENTRY_COLUMNS, "start_year", "end_year")),
+    "landmark": (
+        "landmarks",
+        (*_ENTRY_COLUMNS, "built_start", "built_end", "destroyed", "lat", "lon"),
+    ),
+}
+"""Each history type with its table and columns, in the order the values are inserted."""
+
+
+def _history_values(data: HistoryData) -> dict[str, list[tuple[object, ...]]]:
+    """The rows to insert for each history type, in the column order of ``_HISTORY_TABLES``."""
+
+    def shared(entry: HistoryEvent | HistoryPeriod | Landmark) -> tuple[object, ...]:
+        return tuple(getattr(entry, column) for column in _ENTRY_COLUMNS)
+
+    return {
+        "event": [(*shared(e), e.year, e.year_uncertainty) for e in data.events],
+        "period": [(*shared(p), p.start, p.end) for p in data.periods],
+        "landmark": [
+            (*shared(m), m.built_start, m.built_end, m.destroyed, m.lat, m.lon)
+            for m in data.landmarks
+        ],
+    }
+
+
+def replace_history(connection: sqlite3.Connection, data: HistoryData) -> None:
+    """Replace every event, period, and landmark in the database with ``data``, then rebuild
+    the search indexes and vacuum the file.
+
+    The replacement is one transaction: either everything is replaced or nothing is. Raises
+    RuntimeError if the new rows break a rule of the database.
+    """
+    rows = _history_values(data)
+    searchable = search_entries(data)
+    try:
+        with connection:
+            for kind, (table, columns) in _HISTORY_TABLES.items():
+                connection.execute("DELETE FROM search_entries WHERE type = ?", (kind,))
+                connection.execute(f"DELETE FROM {table}")
+                connection.executemany(
+                    f"INSERT INTO {table} ({', '.join(columns)}) "
+                    f"VALUES ({', '.join('?' * len(columns))})",
+                    rows[kind],
+                )
+            connection.executemany(
+                "INSERT INTO search_entries (type, id, name, aliases, description) "
+                "VALUES (?, ?, ?, ?, ?)",
+                [(e.type, e.id, e.name, e.aliases, e.description) for e in searchable],
+            )
+    except sqlite3.IntegrityError as error:
+        raise RuntimeError(f"could not store the history ({error})") from error
+    rebuild_search_index(connection)
+    connection.execute("VACUUM")
+
+
+def load_history(connection: sqlite3.Connection) -> HistoryData:
+    """Read every event, period, and landmark back as models, ordered by time then id."""
+    connection.row_factory = sqlite3.Row
+    try:
+        events = connection.execute("SELECT * FROM events ORDER BY year, id").fetchall()
+        periods = connection.execute("SELECT * FROM periods ORDER BY start_year, id").fetchall()
+        landmarks = connection.execute("SELECT * FROM landmarks ORDER BY built_start, id")
+        landmarks = landmarks.fetchall()
+        return HistoryData(
+            events=tuple(
+                HistoryEvent(
+                    **_entry_fields(row), year=row["year"], year_uncertainty=row["year_uncertainty"]
+                )
+                for row in events
+            ),
+            periods=tuple(
+                HistoryPeriod(**_entry_fields(row), start=row["start_year"], end=row["end_year"])
+                for row in periods
+            ),
+            landmarks=tuple(
+                Landmark(
+                    **_entry_fields(row),
+                    built_start=row["built_start"],
+                    built_end=row["built_end"],
+                    destroyed=row["destroyed"],
+                    lat=row["lat"],
+                    lon=row["lon"],
+                )
+                for row in landmarks
+            ),
+        )
+    finally:
+        connection.row_factory = None
+
+
+def _entry_fields(row: sqlite3.Row) -> dict[str, Any]:
+    return {column: row[column] for column in _ENTRY_COLUMNS}
 
 
 def load_deep_sky(connection: sqlite3.Connection) -> list[VantagePoint]:

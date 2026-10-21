@@ -124,7 +124,7 @@ No database yet. Pure, heavily tested functions.
 - [ ] **2.6b Deep-sky objects (near)**
   - **Build:** add nearby objects to the same curated list and the same `deep-sky` command: globular clusters (Baumgardt and Vasiliev 2021), open clusters (Gaia-based catalogue such as Hunt and Reffert 2023 on VizieR), Local Group galaxies (McConnachie 2012), and nearby galaxies out to about 40 Mpc (Cosmicflows). Verify each catalogue's real format and license first and record it in `docs/data-sources.md`. The `CuratedObject` model needs a `distance` alternative to `simbad` and `inline` (a catalogue, an identifier in it, and the catalogue's own range).
   - **Done when:** About 70 near objects load with sourced distance ranges; lookbacks span from tens of thousands of years to hundreds of millions.
-- [ ] **2.7 History schema and loader**
+- [x] **2.7 History schema and loader**
   - **Build:** Pydantic models and loader for `curated/history/*.yaml` (events, periods, landmarks). Fields include `year`, `year_uncertainty`, `category`, `region`, `summary` (own words), `importance` (1 to 5), `wikipedia`, `source`; landmarks add `built_start`, `built_end`, `destroyed`, `lat`, `lon`.
   - **Done when:** Loader validates a small sample file with tests.
   - **Phase 1 review note:** reuse `HistoryEvent`, `HistoryPeriod`, and `Landmark` from `earthlight.models` instead of defining parallel models, and validate the YAML in strict mode so `fame: true` or `year: "1492"` is an error, not a silent coercion.
