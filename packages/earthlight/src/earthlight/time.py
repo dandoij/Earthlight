@@ -24,11 +24,19 @@ Era = Literal["CE", "BCE"]
 
 SECONDS_PER_DAY = 86_400
 SECONDS_PER_JULIAN_YEAR = 365.25 * SECONDS_PER_DAY
-"""Used only to turn a span of years into minutes, hours, and days for display."""
+"""Used to turn spans of 100 years or more into seconds. Shorter spans are counted in
+real calendar seconds instead (see ``seconds_between``), because decimal-year
+fractions are fractions of a calendar year, which is 365 or 366 days long."""
 
 MAX_CALENDAR_YEAR = 1_000_000
-"""Largest absolute year the calendar functions accept. Beyond this a float cannot
-hold a moment to the second, so a calendar date would be meaningless."""
+"""Largest absolute year the calendar functions accept. A float holds a moment to the
+second out to roughly 100 million years, so this is a deliberately conservative limit:
+a calendar date for a moment that far from year 0 is not meaningful anyway."""
+
+_EXACT_SPAN_YEARS = 100.0
+"""Spans shorter than this are counted year by year, exactly. Longer ones use the
+Julian year, which can be off by up to about a day in total: far below what matters
+for a span of a century or more."""
 
 _OLDEST_CALENDAR_YEAR = -9_999
 """Moments from this astronomical year (10000 BCE) onward are shown as calendar years.
@@ -135,9 +143,18 @@ def to_calendar(moment: DecimalYear) -> CalendarDate:
 
 
 def from_datetime(value: datetime) -> DecimalYear:
-    """Convert a datetime to a decimal year. Naive datetimes are treated as UTC."""
+    """Convert a datetime to a decimal year. Naive datetimes are treated as UTC.
+
+    Raises ValueError if converting to UTC would leave the range ``datetime`` supports
+    (years 1 to 9999), which can happen for aware datetimes at the very edges.
+    """
     if value.tzinfo is not None:
-        value = value.astimezone(UTC)
+        try:
+            value = value.astimezone(UTC)
+        except OverflowError as error:
+            raise ValueError(
+                f"{value.isoformat()} is outside the supported range in UTC"
+            ) from error
     return from_calendar(
         value.year,
         value.month,
@@ -151,6 +168,54 @@ def from_datetime(value: datetime) -> DecimalYear:
 def now() -> DecimalYear:
     """Return the current UTC time as a decimal year."""
     return from_datetime(datetime.now(UTC))
+
+
+def _seconds_into_year(moment: DecimalYear) -> tuple[int, float]:
+    year = math.floor(moment)
+    return year, (moment - year) * days_in_year(year) * SECONDS_PER_DAY
+
+
+def seconds_between(earlier: DecimalYear, later: DecimalYear) -> float:
+    """Real seconds from ``earlier`` to ``later`` (negative if ``later`` comes first).
+
+    A decimal-year fraction is a fraction of *that calendar year*, so converting a
+    difference to seconds with one fixed year length gives the wrong answer (up to
+    about 22 seconds for "3 hours ago" in a leap year). This counts whole calendar
+    years exactly. Spans of 100 years or more use the Julian year.
+
+    Raises ValueError if either moment is not finite.
+    """
+    if not (math.isfinite(earlier) and math.isfinite(later)):
+        raise ValueError("moments must be finite")
+    if later < earlier:
+        return -seconds_between(later, earlier)
+    if later - earlier >= _EXACT_SPAN_YEARS:
+        return (later - earlier) * SECONDS_PER_JULIAN_YEAR
+    first_year, first = _seconds_into_year(earlier)
+    last_year, last = _seconds_into_year(later)
+    whole_years = sum(days_in_year(y) for y in range(first_year, last_year)) * SECONDS_PER_DAY
+    return whole_years + last - first
+
+
+def subtract_seconds(moment: DecimalYear, seconds: float) -> DecimalYear:
+    """The moment ``seconds`` real seconds before ``moment`` (after it if negative).
+
+    The inverse of ``seconds_between``: ``seconds_between(subtract_seconds(m, s), m)``
+    is ``s``. Raises ValueError if either argument is not finite.
+    """
+    if not (math.isfinite(moment) and math.isfinite(seconds)):
+        raise ValueError("moment and seconds must be finite")
+    if abs(seconds) >= _EXACT_SPAN_YEARS * SECONDS_PER_JULIAN_YEAR:
+        return moment - seconds / SECONDS_PER_JULIAN_YEAR
+    year, into_year = _seconds_into_year(moment)
+    into_year -= seconds
+    while into_year < 0:
+        year -= 1
+        into_year += days_in_year(year) * SECONDS_PER_DAY
+    while into_year >= days_in_year(year) * SECONDS_PER_DAY:
+        into_year -= days_in_year(year) * SECONDS_PER_DAY
+        year += 1
+    return year + into_year / (days_in_year(year) * SECONDS_PER_DAY)
 
 
 def _plural(count: int, unit: str) -> str:
@@ -197,13 +262,17 @@ def format_year(moment: DecimalYear, *, now_year: DecimalYear | None = None) -> 
     "N years ago" rounded to three significant figures ("66 million years ago").
 
     ``now_year`` overrides the current time, which makes the output deterministic
-    for tests.
+    for tests. Raises ValueError if the moment or ``now_year`` is not finite.
     """
     reference = now() if now_year is None else now_year
+    if not (math.isfinite(moment) and math.isfinite(reference)):
+        raise ValueError(f"cannot format {moment} relative to {reference}")
     lookback = reference - moment
+    if not math.isfinite(lookback):
+        raise ValueError(f"cannot format {moment} relative to {reference}")
 
-    if lookback >= 0:
-        recent = _format_recent(lookback * SECONDS_PER_JULIAN_YEAR)
+    if 0 <= lookback < 1:  # only the last 60 days can be "recent"
+        recent = _format_recent(seconds_between(moment, reference))
         if recent is not None:
             return recent
 

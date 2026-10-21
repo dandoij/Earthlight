@@ -36,16 +36,14 @@ PARSEC_IN_LIGHT_YEARS = PARSEC_M / LIGHT_YEAR_M
 
 @dataclass(frozen=True)
 class LookbackRange:
-    """A lookback in years as a low, best, and high estimate (``minimum <= best <= maximum``).
-
-    Raises ValueError if the values are not finite, are negative, or are out of order.
-    """
+    """A lookback in years as a low, best, and high estimate (``minimum <= best <= maximum``)."""
 
     minimum: float
     best: float
     maximum: float
 
     def __post_init__(self) -> None:
+        """Raise ValueError if the values are not finite, are negative, or are out of order."""
         if not all(math.isfinite(v) for v in (self.minimum, self.best, self.maximum)):
             raise ValueError("lookback values must be finite")
         if not 0 <= self.minimum <= self.best <= self.maximum:
@@ -74,16 +72,14 @@ class LookbackRange:
 
 @dataclass(frozen=True)
 class MomentRange:
-    """A span of moments as ``earliest <= best <= latest`` (decimal years).
-
-    Raises ValueError if the values are not finite or are out of order.
-    """
+    """A span of moments as ``earliest <= best <= latest`` (decimal years)."""
 
     earliest: DecimalYear
     best: DecimalYear
     latest: DecimalYear
 
     def __post_init__(self) -> None:
+        """Raise ValueError if the values are not finite or are out of order."""
         if not all(math.isfinite(v) for v in (self.earliest, self.best, self.latest)):
             raise ValueError("moment values must be finite")
         if not self.earliest <= self.best <= self.latest:

@@ -181,7 +181,7 @@
    },
    "LookbackRange": {
     "additionalProperties": false,
-    "description": "A lookback in years as a low, best, and high estimate (``minimum <= best <= maximum``).\n\nRaises ValueError if the values are not finite, are negative, or are out of order.",
+    "description": "A lookback in years as a low, best, and high estimate (``minimum <= best <= maximum``).",
     "properties": {
      "best": {
       "title": "Best",
@@ -206,7 +206,7 @@
    },
    "MomentRange": {
     "additionalProperties": false,
-    "description": "A span of moments as ``earliest <= best <= latest`` (decimal years).\n\nRaises ValueError if the values are not finite or are out of order.",
+    "description": "A span of moments as ``earliest <= best <= latest`` (decimal years).",
     "properties": {
      "best": {
       "title": "Best",
@@ -413,6 +413,21 @@
       "description": "Full constellation name, for objects with a sky position.",
       "title": "Constellation"
      },
+     "dec_deg": {
+      "anyOf": [
+       {
+        "maximum": 90,
+        "minimum": -90,
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Declination in degrees (equatorial, about J2000). Set with ra_deg.",
+      "title": "Dec Deg"
+     },
      "facts": {
       "additionalProperties": {
        "anyOf": [
@@ -492,6 +507,21 @@
       "title": "Name",
       "type": "string"
      },
+     "ra_deg": {
+      "anyOf": [
+       {
+        "exclusiveMaximum": 360,
+        "minimum": 0,
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Right ascension in degrees (equatorial, about J2000). Set with dec_deg.",
+      "title": "Ra Deg"
+     },
      "wikipedia": {
       "anyOf": [
        {
@@ -528,6 +558,7 @@
     "type": "boolean"
    },
    "events": {
+    "default": [],
     "items": {
      "$ref": "#/$defs/HistoryEvent"
     },
@@ -535,6 +566,7 @@
     "type": "array"
    },
    "landmarks": {
+    "default": [],
     "items": {
      "$ref": "#/$defs/SnapshotLandmark"
     },
@@ -553,6 +585,7 @@
     "type": "string"
    },
    "notes": {
+    "default": [],
     "description": "Plain-language remarks, such as a very wide span.",
     "items": {
      "type": "string"
@@ -561,6 +594,7 @@
     "type": "array"
    },
    "periods": {
+    "default": [],
     "items": {
      "$ref": "#/$defs/HistoryPeriod"
     },
@@ -594,7 +628,7 @@
   "$defs": {
    "LookbackRange": {
     "additionalProperties": false,
-    "description": "A lookback in years as a low, best, and high estimate (``minimum <= best <= maximum``).\n\nRaises ValueError if the values are not finite, are negative, or are out of order.",
+    "description": "A lookback in years as a low, best, and high estimate (``minimum <= best <= maximum``).",
     "properties": {
      "best": {
       "title": "Best",
@@ -673,6 +707,21 @@
       "description": "Full constellation name, for objects with a sky position.",
       "title": "Constellation"
      },
+     "dec_deg": {
+      "anyOf": [
+       {
+        "maximum": 90,
+        "minimum": -90,
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Declination in degrees (equatorial, about J2000). Set with ra_deg.",
+      "title": "Dec Deg"
+     },
      "facts": {
       "additionalProperties": {
        "anyOf": [
@@ -752,6 +801,21 @@
       "title": "Name",
       "type": "string"
      },
+     "ra_deg": {
+      "anyOf": [
+       {
+        "exclusiveMaximum": 360,
+        "minimum": 0,
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Right ascension in degrees (equatorial, about J2000). Set with dec_deg.",
+      "title": "Ra Deg"
+     },
      "wikipedia": {
       "anyOf": [
        {
@@ -826,7 +890,7 @@
        }
       ],
       "default": null,
-      "description": "Progress of the light towards Proxima Centauri. Interstellar zone only.",
+      "description": "Progress of the light towards Proxima Centauri, when that is meaningful.",
       "title": "Percent To Proxima"
      }
     },
@@ -869,6 +933,7 @@
    },
    "lookback_years": {
     "description": "Years between the moment and now.",
+    "minimum": 0,
     "title": "Lookback Years",
     "type": "number"
    },
@@ -895,6 +960,7 @@
     "default": null
    },
    "notes": {
+    "default": [],
     "description": "Plain-language remarks, such as why a category is empty.",
     "items": {
      "type": "string"
@@ -1072,7 +1138,7 @@
   "$defs": {
    "LookbackRange": {
     "additionalProperties": false,
-    "description": "A lookback in years as a low, best, and high estimate (``minimum <= best <= maximum``).\n\nRaises ValueError if the values are not finite, are negative, or are out of order.",
+    "description": "A lookback in years as a low, best, and high estimate (``minimum <= best <= maximum``).",
     "properties": {
      "best": {
       "title": "Best",
@@ -1130,6 +1196,21 @@
     "default": null,
     "description": "Full constellation name, for objects with a sky position.",
     "title": "Constellation"
+   },
+   "dec_deg": {
+    "anyOf": [
+     {
+      "maximum": 90,
+      "minimum": -90,
+      "type": "number"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "description": "Declination in degrees (equatorial, about J2000). Set with ra_deg.",
+    "title": "Dec Deg"
    },
    "facts": {
     "additionalProperties": {
@@ -1209,6 +1290,21 @@
     "minLength": 1,
     "title": "Name",
     "type": "string"
+   },
+   "ra_deg": {
+    "anyOf": [
+     {
+      "exclusiveMaximum": 360,
+      "minimum": 0,
+      "type": "number"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "description": "Right ascension in degrees (equatorial, about J2000). Set with dec_deg.",
+    "title": "Ra Deg"
    },
    "wikipedia": {
     "anyOf": [

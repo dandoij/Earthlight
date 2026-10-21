@@ -89,7 +89,7 @@ No database yet. Pure, heavily tested functions.
   - **Build:** `models.py`: Pydantic models for `VantagePoint` (id, name, kind, lookback range, facts), `MomentResult` (four category winners, zone info, notes), `EarthSnapshot` (events, periods, landmarks with status, population, notes), `SearchResult`, `Suggestion`.
   - **Done when:** Models validate, have docstrings, and serialize to stable JSON.
 - [x] **1.6 README update** (core concepts section)
-- [ ] **1.7 Phase review**
+- [x] **1.7 Phase review**
 
 ---
 
@@ -102,7 +102,7 @@ No database yet. Pure, heavily tested functions.
   - **Build:** Investigate and document in `docs/data-sources.md`: HYG current version and columns; Gaia DR3 tables for the bright-star query; Hipparcos cross-match table; Bailer-Jones distance table name and columns; Exoplanet Archive table and distance columns; licenses and attribution text for each.
   - **Done when:** Doc is complete. **Ask Ian** about anything that differs from this plan.
 - [ ] **2.3 Database schema**
-  - **Build:** `schema.sql`: `meta` (schema_version, build date, source versions), `vantage_points` (with indexed lookback columns, kind, magnitude, constellation, facts JSON), `exoplanets`, `events`, `periods`, `landmarks`, `population`, FTS5 tables (unicode61 for search, trigram for did-you-mean).
+  - **Build:** `schema.sql`: `meta` (schema_version, build date, source versions), `vantage_points` (with indexed lookback columns, kind, magnitude, constellation, ra_deg, dec_deg, fame, host_id, wikipedia, facts JSON), `exoplanets`, `events`, `periods`, `landmarks`, `population`, FTS5 tables (unicode61 for search, trigram for did-you-mean).
   - **Done when:** Schema builds an empty database and a test checks every table and index exists.
 - [ ] **2.4 Stars**
   - **Build:** Gaia DR3 query for bright stars with precise parallax (tune cutoffs to keep the final database under about 20 MB), Bailer-Jones distances to lookback ranges, HYG names via cross-match, constellation via astropy.
@@ -116,6 +116,7 @@ No database yet. Pure, heavily tested functions.
 - [ ] **2.7 History schema and loader**
   - **Build:** Pydantic models and loader for `curated/history/*.yaml` (events, periods, landmarks). Fields include `year`, `year_uncertainty`, `category`, `region`, `summary` (own words), `importance` (1 to 5), `wikipedia`, `source`; landmarks add `built_start`, `built_end`, `destroyed`, `lat`, `lon`.
   - **Done when:** Loader validates a small sample file with tests.
+  - **Phase 1 review note:** reuse `HistoryEvent`, `HistoryPeriod`, and `Landmark` from `earthlight.models` instead of defining parallel models, and validate the YAML in strict mode so `fame: true` or `year: "1492"` is an error, not a silent coercion.
 - [ ] **2.8 History: deep time** (before Earth to 540 million years ago, using the ICS chart as the main source)
 - [ ] **2.9 History: complex life to human evolution** (540 million to 300,000 years ago)
 - [ ] **2.10 History: prehistory** (300,000 years ago to 3000 BCE)
@@ -139,6 +140,7 @@ No database yet. Pure, heavily tested functions.
   - **Build:** `repository.py`: open the bundled database via `importlib.resources` in read-only URI mode; typed query functions; schema version check on open.
   - **Done when:** Tests run against the real bundled database.
 - [ ] **3.2 Moment to place**
+  - **Phase 1 review notes:** read the clock once per request and pass `now_year` to every helper, so one answer never mixes two "now" values. A moment after now is rejected with a friendly "that has not happened yet" error (`MomentResult.lookback_years` must be >= 0). `parse` stays unaware of the future.
   - **Build:** `engine.when(moment)`: zone or solar system handling for lookbacks under 4.2 years; candidate query by interval overlap; scoring (closeness of best estimate, narrowness of range); one winner per category (famous, exoplanet, visible tonight, most precise); graceful notes when a category has no match.
   - **Done when:** Tests for recent dates, 1492, Rome, 66 million years ago, 4.5 billion years ago, and before the first stars.
 - [ ] **3.3 Place to moment**
@@ -157,7 +159,7 @@ No database yet. Pure, heavily tested functions.
 ## Phase 4: CLI (branch `phase-4-cli`)
 
 - [ ] **4.1 CLI skeleton**: Typer app, `earthlight` entry point, `--version`, friendly error handling with exit codes.
-- [ ] **4.2 `when` command**: smart argument plus `--year`, `--date`, `--ago`, `--event` overrides; Rich output (hero line, four category panels, zone info).
+- [ ] **4.2 `when` command**: smart argument plus `--year`, `--date`, `--ago`, `--event` overrides; Rich output (hero line, four category panels, zone info). Phase 1 review note: the overrides need public per-format entry points in `earthlight.parse` (for example `parse_year`, `parse_date`, `parse_ago`) so the CLI does not rebuild strings, and bare years (capped at 9999) should be reconciled with ISO years (up to 999999).
 - [ ] **4.3 `from` and `info` commands**: Earth snapshot and object facts with Rich layout.
 - [ ] **4.4 `search` command and did-you-mean** in all commands' "not found" errors.
 - [ ] **4.5 `--json` output** for every command (same shapes as the API), plus CLI tests with Typer's `CliRunner` and JSON snapshot tests.
@@ -208,7 +210,7 @@ No database yet. Pure, heavily tested functions.
 - [ ] **8.2 Moment results page**: hero line, four category cards, zone and edge-case states, loading and error states.
 - [ ] **8.3 Vantage page**: object fact card beside the Earth snapshot card.
 - [ ] **8.4 Object page and images**: Wikipedia image fetched client-side by stored link, with a graceful fallback.
-- [ ] **8.5 Sky map**: d3-geo stereographic "where to look" map with constellation lines (open dataset, attribution added).
+- [ ] **8.5 Sky map**: d3-geo stereographic "where to look" map with constellation lines (open dataset, attribution added). Uses `ra_deg` and `dec_deg` from `VantagePoint`.
 - [ ] **8.6 Share card**: "Save card" button exporting a PNG with html-to-image.
 - [ ] **8.7 Tests**: component tests with MSW and one Playwright flow (search 1492, open a star, see the snapshot).
 - [ ] **8.8 Accessibility and responsive pass**: keyboard navigation, contrast, mobile layout.

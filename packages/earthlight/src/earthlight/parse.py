@@ -1,13 +1,13 @@
 """Turn user text into a moment or an event-name query.
 
 Input is matched, case-insensitively and ignoring extra whitespace, against these
-moment formats in order:
+moment formats in order (digits are ASCII only):
 
 ==========================  ======================================  ==============
 Format                      Examples                                Meaning
 ==========================  ======================================  ==============
 Calendar year (bare)        ``1492``  ``1492.5``                    Calendar year CE
-Year with era               ``500 BCE``  ``500 BC``  ``1492 AD``    Calendar year
+Year with era               ``500 BCE``  ``500 B.C.``  ``1492 AD``  Calendar year
 ISO date                    ``2004-06-15``  ``-0043-03-15``         Proleptic Gregorian
 Relative time               ``3 days ago``  ``12,000 years ago``    Before ``now``
 Scaled relative time        ``66 million years ago``  ``66 mya``    Before ``now``
@@ -15,11 +15,17 @@ Scaled relative time        ``66 million years ago``  ``66 mya``    Before ``now
 
 A bare number is always a calendar year, never a count of years ago. The first
 instant of a calendar year is used as its moment. ISO dates follow ISO 8601, where
-a sign means an astronomical year (so ``-0043`` is 44 BCE).
+a sign means an astronomical year (so ``-0043`` is 44 BCE). Eras are ``BCE``, ``BC``,
+``CE``, and ``AD``, with or without dots.
 
-Anything else is treated as an event-name query (``fall of rome``). Text that has
-the *shape* of a moment but an impossible value (``2023-02-30``, ``0 BCE``) is an
-error, not an event query, so typos in dates are not silently searched as names.
+Text that matches one of these formats but has an impossible value (``2023-02-30``,
+``0 BCE``) is an error, so a mistyped date is not silently searched as a name. Anything
+that matches no format, including text that merely looks like a moment (``1.5 bce``,
+``+1992``), is an event-name query (``fall of rome``).
+
+Relative times up to a month are counted in real calendar seconds, so "1 day ago" on
+1 March 2024 is exactly midnight on 29 February. A month is 1/12 of a Julian year
+(about 30.44 days), and years and longer use the Julian year of 365.25 days.
 
 Parsing is hand-written on purpose: no date library understands BCE or deep time.
 """
@@ -36,10 +42,13 @@ from earthlight.time import (
     astronomical_year,
     from_calendar,
     now,
+    subtract_seconds,
 )
 
 MAX_BARE_YEAR = 9999
 """Largest bare calendar year. Larger numbers are probably a mistake for "N years ago"."""
+
+_MAX_ECHOED_CHARS = 40
 
 
 class ParseError(ValueError):
@@ -72,24 +81,30 @@ ParseResult = MomentQuery | EventQuery
 
 _COUNT = r"\d+(?:,\d{3})*(?:\.\d+)?"
 
-_BARE_YEAR = re.compile(r"\d+(?:\.\d+)?")
-_NEGATIVE_BARE_YEAR = re.compile(r"-\d+(?:\.\d+)?")
-_ERA_YEAR = re.compile(r"(\d+(?:,\d{3})*)\s*(bce|bc|ce|ad)")
-_ISO_DATE = re.compile(r"([+-]?\d{1,6})-(\d{1,2})-(\d{1,2})")
+# re.ASCII keeps \d to 0-9, so Arabic-Indic or fullwidth digits are not moments.
+_BARE_YEAR = re.compile(r"\d+(?:\.\d+)?", re.ASCII)
+_NEGATIVE_BARE_YEAR = re.compile(r"-\d+(?:\.\d+)?", re.ASCII)
+_ERA_YEAR = re.compile(
+    r"(\d+(?:,\d{3})*)\s*(b\.c\.e\.|b\.c\.|c\.e\.|a\.d\.|bce|bc|ce|ad)", re.ASCII
+)
+_ISO_DATE = re.compile(r"([+-]?\d{1,6})-(\d{1,2})-(\d{1,2})", re.ASCII)
 _RELATIVE = re.compile(
     rf"({_COUNT})\s*"
     r"((?:thousand|million|billion)\s+years?|seconds?|minutes?|hours?|days?|weeks?|months?|years?)"
-    r"\s+ago"
+    r"\s+ago",
+    re.ASCII,
 )
-_ABBREVIATED = re.compile(rf"({_COUNT})\s*(kya|mya|gya)")
+_ABBREVIATED = re.compile(rf"({_COUNT})\s*(kya|mya|gya)", re.ASCII)
 
+_SECONDS_PER_UNIT: dict[str, float] = {
+    "second": 1.0,
+    "minute": 60.0,
+    "hour": 3600.0,
+    "day": float(SECONDS_PER_DAY),
+    "week": 7.0 * SECONDS_PER_DAY,
+    "month": SECONDS_PER_JULIAN_YEAR / 12,
+}
 _YEARS_PER_UNIT: dict[str, float] = {
-    "second": 1 / SECONDS_PER_JULIAN_YEAR,
-    "minute": 60 / SECONDS_PER_JULIAN_YEAR,
-    "hour": 3600 / SECONDS_PER_JULIAN_YEAR,
-    "day": SECONDS_PER_DAY / SECONDS_PER_JULIAN_YEAR,
-    "week": 7 * SECONDS_PER_DAY / SECONDS_PER_JULIAN_YEAR,
-    "month": 1 / 12,
     "year": 1.0,
     "thousand year": 1e3,
     "million year": 1e6,
@@ -100,6 +115,13 @@ _YEARS_PER_UNIT: dict[str, float] = {
 }
 
 
+def _shown(text: str) -> str:
+    """Shorten user text before it goes into an error message."""
+    if len(text) <= _MAX_ECHOED_CHARS:
+        return text
+    return text[: _MAX_ECHOED_CHARS - 3] + "..."
+
+
 def parse(text: str, *, now_year: DecimalYear | None = None) -> ParseResult:
     """Parse ``text`` into a ``MomentQuery`` or an ``EventQuery``.
 
@@ -107,7 +129,7 @@ def parse(text: str, *, now_year: DecimalYear | None = None) -> ParseResult:
     result deterministic in tests.
 
     Raises ``EmptyInputError`` for blank input and ``InvalidMomentError`` when the
-    text has the shape of a moment but cannot be one.
+    text matches a moment format but cannot be a moment.
     """
     cleaned = " ".join(text.split())
     if not cleaned:
@@ -116,7 +138,7 @@ def parse(text: str, *, now_year: DecimalYear | None = None) -> ParseResult:
 
     if _NEGATIVE_BARE_YEAR.fullmatch(lowered):
         raise InvalidMomentError(
-            f'"{cleaned}" is not a calendar year. Write "N BCE" for years before 1 CE.'
+            f'"{_shown(cleaned)}" is not a calendar year. Write "N BCE" for years before 1 CE.'
         )
     if _BARE_YEAR.fullmatch(lowered):
         return _parse_bare_year(cleaned)
@@ -136,37 +158,46 @@ def _parse_bare_year(text: str) -> MomentQuery:
     value = float(text)
     if value < 1:
         raise InvalidMomentError(
-            f'"{text}" is not a calendar year: there is no year 0. '
+            f'"{_shown(text)}" is not a calendar year: there is no year 0. '
             'Write "1 BCE" for the year before 1 CE.'
         )
     if value >= MAX_BARE_YEAR + 1:
         raise InvalidMomentError(
-            f'"{text}" is too large for a calendar year (the limit is {MAX_BARE_YEAR}). '
-            f'For a long time ago, write for example "{text} years ago".'
+            f'"{_shown(text)}" is too large for a calendar year (the limit is {MAX_BARE_YEAR}). '
+            f'For a long time ago, write for example "{_shown(text)} years ago".'
         )
     return MomentQuery(value)
 
 
 def _parse_era_year(text: str, number: str, era: str) -> MomentQuery:
-    era_name: Era = "BCE" if era in ("bce", "bc") else "CE"
+    era_name: Era = "BCE" if era.replace(".", "") in ("bce", "bc") else "CE"
     try:
         year = int(number.replace(",", ""))
         return MomentQuery(from_calendar(astronomical_year(year, era_name)))
     except ValueError as error:
-        raise InvalidMomentError(f'"{text}" is not a valid year: {error}') from error
+        raise InvalidMomentError(f'"{_shown(text)}" is not a valid year: {error}') from error
 
 
 def _parse_iso_date(text: str, year: str, month: str, day: str) -> MomentQuery:
     try:
         return MomentQuery(from_calendar(int(year), int(month), int(day)))
     except ValueError as error:
-        raise InvalidMomentError(f'"{text}" is not a valid date: {error}') from error
+        raise InvalidMomentError(f'"{_shown(text)}" is not a valid date: {error}') from error
 
 
 def _parse_relative(text: str, count: str, unit: str, now_year: DecimalYear | None) -> MomentQuery:
     reference = now() if now_year is None else now_year
-    years_ago = float(count.replace(",", "")) * _YEARS_PER_UNIT[unit]
-    moment = reference - years_ago
+    amount = float(count.replace(",", ""))
+    if unit in _SECONDS_PER_UNIT:
+        seconds = amount * _SECONDS_PER_UNIT[unit]
+        if not math.isfinite(seconds):
+            raise InvalidMomentError(f'"{_shown(text)}" is too large to be a moment in time.')
+        moment = subtract_seconds(reference, seconds)
+    else:
+        years = amount * _YEARS_PER_UNIT[unit]
+        if not math.isfinite(years):
+            raise InvalidMomentError(f'"{_shown(text)}" is too large to be a moment in time.')
+        moment = reference - years
     if not math.isfinite(moment):
-        raise InvalidMomentError(f'"{text}" is too large to be a moment in time.')
+        raise InvalidMomentError(f'"{_shown(text)}" is too large to be a moment in time.')
     return MomentQuery(moment)

@@ -260,7 +260,7 @@ def test_jupiter_is_a_little_over_half_an_hour_away_in_light() -> None:
 # --- Voyager 1 ---------------------------------------------------------------------------
 
 # Distance from the Sun in au, from Horizons (see module docstring). The 2026 and 2030
-# points were used to build the model; the others are independent checks.
+# points were used to build the model; the other ten are independent checks.
 VOYAGER1_HORIZONS_AU = [
     ((2012, 8, 25), 121.602494),
     ((2015, 1, 1), 130.016826),
@@ -272,6 +272,8 @@ VOYAGER1_HORIZONS_AU = [
     ((2028, 1, 1), 176.372463),
     ((2030, 1, 1), 183.495820),
     ((2032, 12, 31), 194.153902),
+    ((2034, 1, 1), 197.713173),
+    ((2035, 1, 1), 201.261959),  # the last year the model claims
 ]
 
 
@@ -399,3 +401,11 @@ def test_zone_lookback_ranges_are_valid() -> None:
         assert 0 <= r.minimum <= r.best <= r.maximum
         assert r.minimum == au_to_light_years(zone.inner_au)
         assert r.maximum == au_to_light_years(zone.outer_au)
+
+
+@pytest.mark.parametrize("name", ["earth", "pluto", "", "Mars", "sun"])
+def test_unknown_planet_names_are_rejected_with_value_error(name: str) -> None:
+    with pytest.raises(ValueError, match="unknown planet"):
+        planet_distance_au(name, 2000.0)  # pyright: ignore[reportArgumentType]
+    with pytest.raises(ValueError, match="unknown planet"):
+        planet_position_au(name, 2000.0)  # pyright: ignore[reportArgumentType]

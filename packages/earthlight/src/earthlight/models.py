@@ -1,7 +1,8 @@
 """The data shapes shared by the engine, the CLI, the API, and the web app.
 
-Every model is immutable, rejects unknown fields, and refuses infinite or NaN numbers,
-so a value that exists is a value that is valid. Field names are the JSON keys
+Every model is immutable (fields cannot be reassigned, collections are tuples or
+read-only mappings), rejects unknown fields, and refuses infinite or NaN numbers, so a
+value that exists is a value that is valid. Field names are the JSON keys
 (snake_case), and ``model_json_schema()`` of these models is the contract that the
 API publishes and the web app generates its TypeScript types from.
 
@@ -9,7 +10,9 @@ Years are decimal astronomical years (see ``earthlight.time``); lookbacks and
 uncertainties are in years.
 """
 
+from collections.abc import Mapping
 from enum import StrEnum
+from types import MappingProxyType
 from typing import Annotated, Self
 
 from pydantic import (
@@ -17,6 +20,8 @@ from pydantic import (
     ConfigDict,
     Field,
     StringConstraints,
+    field_serializer,
+    field_validator,
     model_validator,
 )
 
@@ -74,6 +79,18 @@ class VantagePoint(EarthlightModel):
     constellation: Name | None = Field(
         default=None, description="Full constellation name, for objects with a sky position."
     )
+    ra_deg: float | None = Field(
+        default=None,
+        ge=0,
+        lt=360,
+        description="Right ascension in degrees (equatorial, about J2000). Set with dec_deg.",
+    )
+    dec_deg: float | None = Field(
+        default=None,
+        ge=-90,
+        le=90,
+        description="Declination in degrees (equatorial, about J2000). Set with ra_deg.",
+    )
     fame: int = Field(
         default=0,
         ge=0,
@@ -86,9 +103,24 @@ class VantagePoint(EarthlightModel):
     wikipedia: Name | None = Field(
         default=None, description="Wikipedia article title, used to fetch an image."
     )
-    facts: dict[str, FactValue] = Field(
+    facts: Mapping[str, FactValue] = Field(
         default_factory=dict, description="Extra facts shown on the object's page."
     )
+
+    @field_validator("facts", mode="after")
+    @classmethod
+    def _freeze_facts(cls, value: Mapping[str, FactValue]) -> Mapping[str, FactValue]:
+        return MappingProxyType(dict(value))
+
+    @field_serializer("facts")
+    def _facts_as_a_plain_object(self, value: Mapping[str, FactValue]) -> dict[str, FactValue]:
+        return dict(value)
+
+    @model_validator(mode="after")
+    def _sky_position_is_complete(self) -> Self:
+        if (self.ra_deg is None) != (self.dec_deg is None):
+            raise ValueError("ra_deg and dec_deg must be given together")
+        return self
 
     @model_validator(mode="after")
     def _host_only_for_exoplanets(self) -> Self:
@@ -116,7 +148,7 @@ class ZoneInfo(EarthlightModel):
         default=None,
         ge=0,
         le=100,
-        description="Progress of the light towards Proxima Centauri. Interstellar zone only.",
+        description="Progress of the light towards Proxima Centauri, when that is meaningful.",
     )
 
     @model_validator(mode="after")
@@ -148,7 +180,7 @@ class MomentResult(EarthlightModel):
 
     moment: DecimalYear
     moment_label: Name = Field(description='The moment for people, such as "1492 CE".')
-    lookback_years: float = Field(description="Years between the moment and now.")
+    lookback_years: float = Field(ge=0, description="Years between the moment and now.")
     zone: ZoneInfo | None = Field(
         default=None, description="Set when the light is still inside or near the solar system."
     )
@@ -156,8 +188,8 @@ class MomentResult(EarthlightModel):
     exoplanet: Match | None = None
     visible_tonight: Match | None = None
     most_precise: Match | None = None
-    notes: list[str] = Field(
-        default_factory=list, description="Plain-language remarks, such as why a category is empty."
+    notes: tuple[str, ...] = Field(
+        default=(), description="Plain-language remarks, such as why a category is empty."
     )
 
 
@@ -228,6 +260,12 @@ class SnapshotLandmark(Landmark):
 
     status: LandmarkStatus
 
+    @model_validator(mode="after")
+    def _destroyed_needs_a_date(self) -> Self:
+        if self.status is LandmarkStatus.DESTROYED and self.destroyed is None:
+            raise ValueError("a destroyed landmark needs a destruction date")
+        return self
+
 
 class PopulationEstimate(EarthlightModel):
     """A world population estimate."""
@@ -246,12 +284,12 @@ class EarthSnapshot(EarthlightModel):
     earth_exists: bool = Field(
         default=True, description="False when the light is older than Earth itself."
     )
-    events: list[HistoryEvent] = Field(default_factory=list[HistoryEvent])
-    periods: list[HistoryPeriod] = Field(default_factory=list[HistoryPeriod])
-    landmarks: list[SnapshotLandmark] = Field(default_factory=list[SnapshotLandmark])
+    events: tuple[HistoryEvent, ...] = ()
+    periods: tuple[HistoryPeriod, ...] = ()
+    landmarks: tuple[SnapshotLandmark, ...] = ()
     population: PopulationEstimate | None = None
-    notes: list[str] = Field(
-        default_factory=list, description="Plain-language remarks, such as a very wide span."
+    notes: tuple[str, ...] = Field(
+        default=(), description="Plain-language remarks, such as a very wide span."
     )
 
     @model_validator(mode="after")

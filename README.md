@@ -47,7 +47,9 @@ for text in ("1492", "500 BCE", "66 mya", "fall of rome"):
     result = parse(text, now_year=NOW)
     if isinstance(result, MomentQuery):
         lookback = lookback_of(result.moment, now_year=NOW)
-        print(f"{text!r}: lookback {lookback:,.0f} years, shown as {format_year(result.moment, now_year=NOW)!r}")
+        print(
+            f"{text!r}: lookback {lookback:,.0f} years, shown as {format_year(result.moment, now_year=NOW)!r}"
+        )
     else:
         print(f"{text!r}: event query")
 

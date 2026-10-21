@@ -9,12 +9,13 @@ Planets
     "Approximate Positions of the Planets" (NASA JPL Solar System Dynamics,
     https://ssd.jpl.nasa.gov/planets/approx_pos.html), valid for 1800 AD to 2050 AD,
     with the page's step-by-step algorithm. The Earth is represented by the
-    Earth-Moon barycenter, as the page does; the Earth sits within about 4700 km of
-    it, which is far below the accuracy of the method.
+    Earth-Moon barycenter, as the page does; the Earth is on average about 4,700 km
+    from it, which is far below the accuracy of the method.
 
 Voyager 1
-    A straight-line model of its distance from the Sun, fitted to JPL Horizons
-    positions. It is accurate to about 0.2 AU between 2012 and 2035.
+    A straight line through two JPL Horizons positions (2026 and 2030), checked
+    against twelve Horizons positions from 2012 to 2035 (those two included): it is
+    within 0.12 AU of all of them.
 
 Zones
     Distance bands from the Sun out to Proxima Centauri. Their edges are
@@ -199,8 +200,11 @@ def planet_position_au(planet: Planet, moment: DecimalYear) -> tuple[float, floa
     the solar system's barycenter, so using them from the Sun adds the Sun's wobble).
 
     Raises ValueError for a moment outside 1800 AD to 2050 AD, where the elements
-    are not valid.
+    are not valid, or for a name that is not in ``PLANETS`` (the Earth is the origin,
+    not a destination).
     """
+    if planet not in PLANETS:
+        raise ValueError(f"unknown planet {planet!r}; expected one of {', '.join(PLANETS)}")
     if not TABLE_FIRST_MOMENT <= moment < TABLE_END_MOMENT:
         raise ValueError(
             f"planet positions are only available from 1800 to 2050 AD, got {moment:.2f}"
@@ -215,7 +219,7 @@ def planet_distance_au(planet: Planet, moment: DecimalYear) -> float:
     """Distance from Earth to ``planet`` at ``moment``, in astronomical units.
 
     Same accuracy and range as ``planet_position_au``, which raises ValueError for a
-    moment outside 1800 AD to 2050 AD.
+    moment outside 1800 AD to 2050 AD or an unknown planet name.
     """
     return math.hypot(*planet_position_au(planet, moment))
 
@@ -236,7 +240,7 @@ VOYAGER1_LAST_MOMENT = 2035.0
 def voyager1_distance_au(moment: DecimalYear) -> float:
     """Approximate distance of Voyager 1 from the Sun, in astronomical units.
 
-    This is a straight-line fit, accurate to about 0.2 AU between 2012 and 2035. The
+    This is a straight-line fit, within 0.12 AU of JPL Horizons between 2012 and 2035. The
     distance from *Earth* differs from this by up to 1 au (Earth's orbit), under
     1 percent. Raises ValueError outside 2012 to 2035.
     """

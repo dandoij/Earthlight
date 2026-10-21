@@ -1,5 +1,6 @@
 """Tests for the decimal-year time model."""
 
+import contextlib
 import math
 from datetime import UTC, datetime, timedelta, timezone
 
@@ -9,6 +10,7 @@ from hypothesis import strategies as st
 
 from earthlight.time import (
     MAX_CALENDAR_YEAR,
+    SECONDS_PER_JULIAN_YEAR,
     CalendarDate,
     Era,
     astronomical_year,
@@ -18,6 +20,8 @@ from earthlight.time import (
     from_datetime,
     is_leap_year,
     now,
+    seconds_between,
+    subtract_seconds,
     to_calendar,
 )
 
@@ -311,3 +315,116 @@ def test_format_never_fails_and_never_uses_dashes(moment: float) -> None:
     text = format_year(moment, now_year=NOW_YEAR)
     assert text
     assert "-" not in text
+
+
+# --- exact short spans ---------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("earlier", "later", "expected"),
+    [
+        ((2024, 2, 29, 0), (2024, 3, 1, 0), 86_400.0),
+        ((2023, 12, 31, 23), (2024, 1, 1, 0), 3_600.0),  # across New Year
+        ((2023, 3, 1, 0), (2024, 3, 1, 0), 366 * 86_400.0),  # includes 29 February 2024
+        ((2024, 3, 1, 0), (2025, 3, 1, 0), 365 * 86_400.0),
+        ((2024, 1, 1, 0), (2024, 1, 1, 0), 0.0),
+        ((2020, 1, 1, 0), (2024, 1, 1, 0), (366 + 365 + 365 + 365) * 86_400.0),
+        ((-1, 12, 31, 0), (0, 1, 1, 0), 86_400.0),  # across year 0, a leap year
+    ],
+)
+def test_seconds_between_counts_real_calendar_seconds(
+    earlier: tuple[int, int, int, int], later: tuple[int, int, int, int], expected: float
+) -> None:
+    a, b = from_calendar(*earlier), from_calendar(*later)
+    assert seconds_between(a, b) == pytest.approx(expected, abs=1e-3)
+    assert seconds_between(b, a) == pytest.approx(-expected, abs=1e-3)
+
+
+def test_seconds_between_uses_the_julian_year_for_long_spans() -> None:
+    assert seconds_between(1900.0, 2000.0) == 100 * SECONDS_PER_JULIAN_YEAR
+    assert seconds_between(-1e9, 0.0) == 1e9 * SECONDS_PER_JULIAN_YEAR
+
+
+@pytest.mark.parametrize("bad", [math.nan, math.inf, -math.inf])
+def test_second_counting_rejects_non_finite_moments(bad: float) -> None:
+    with pytest.raises(ValueError):
+        seconds_between(bad, 2000.0)
+    with pytest.raises(ValueError):
+        seconds_between(2000.0, bad)
+    with pytest.raises(ValueError):
+        subtract_seconds(bad, 1.0)
+    with pytest.raises(ValueError):
+        subtract_seconds(2000.0, bad)
+
+
+_recent_datetimes = st.datetimes(
+    min_value=datetime(1900, 1, 1), max_value=datetime(2100, 1, 1)
+).map(lambda dt: dt.replace(microsecond=0))
+
+
+@given(_recent_datetimes, st.integers(0, 99 * 365 * 86_400))
+def test_subtracting_seconds_matches_datetime_arithmetic(start: datetime, seconds: int) -> None:
+    expected = from_datetime(start - timedelta(seconds=seconds))
+    assert subtract_seconds(from_datetime(start), seconds) == pytest.approx(expected, abs=1e-9)
+
+
+@given(_recent_datetimes, st.integers(-50 * 365 * 86_400, 50 * 365 * 86_400))
+def test_subtracting_then_measuring_gives_the_seconds_back(start: datetime, seconds: int) -> None:
+    moment = from_datetime(start)
+    earlier = subtract_seconds(moment, seconds)
+    assert seconds_between(earlier, moment) == pytest.approx(seconds, abs=1e-2)
+
+
+@given(_recent_datetimes, st.integers(-99 * 365 * 86_400, 99 * 365 * 86_400))
+def test_seconds_between_matches_datetime_subtraction(a: datetime, seconds: int) -> None:
+    # Spans under 100 years are exact; longer ones deliberately use the Julian year.
+    b = a + timedelta(seconds=seconds)
+    assert seconds_between(from_datetime(a), from_datetime(b)) == pytest.approx(seconds, abs=1e-2)
+
+
+def test_spans_of_a_century_or_more_may_differ_slightly_from_real_seconds() -> None:
+    a, b = datetime(1924, 1, 1), datetime(2024, 1, 1, 0, 1)
+    difference = abs(seconds_between(from_datetime(b), from_datetime(a)) + (b - a).total_seconds())
+    assert difference < 86_400
+
+
+def test_subtracting_a_very_long_span_uses_the_julian_year() -> None:
+    assert subtract_seconds(2000.0, 66e6 * SECONDS_PER_JULIAN_YEAR) == pytest.approx(2000.0 - 66e6)
+
+
+def test_three_hours_ago_is_three_hours_in_a_leap_year() -> None:
+    # Regression: a fixed 365.25-day year made this 2 hours 59 minutes and 38 seconds.
+    reference = from_calendar(2024, 3, 1)
+    assert format_year(subtract_seconds(reference, 3 * 3600), now_year=reference) == "3 hours ago"
+    assert to_calendar(subtract_seconds(reference, 3 * 3600)) == CalendarDate(2024, 2, 29, 21, 0, 0)
+
+
+# --- edge inputs ------------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("bad", [math.nan, math.inf, -math.inf])
+def test_format_year_rejects_non_finite_values_with_value_error(bad: float) -> None:
+    with pytest.raises(ValueError, match="cannot format"):
+        format_year(bad, now_year=NOW_YEAR)
+    with pytest.raises(ValueError, match="cannot format"):
+        format_year(2000.0, now_year=bad)
+
+
+def test_format_year_rejects_a_span_too_large_to_measure() -> None:
+    # Both values are finite, but their difference overflows to infinity.
+    with pytest.raises(ValueError, match="cannot format"):
+        format_year(-1.7e308, now_year=1.7e308)
+
+
+@given(st.floats())
+def test_format_year_only_ever_raises_value_error(moment: float) -> None:
+    with contextlib.suppress(ValueError):
+        assert format_year(moment, now_year=NOW_YEAR)
+
+
+def test_from_datetime_rejects_aware_datetimes_that_leave_the_range_in_utc() -> None:
+    # Year 1 at +05:00 is year 0 in UTC, and the end of 9999 at -05:00 is year 10000.
+    with pytest.raises(ValueError, match="supported range"):
+        from_datetime(datetime(1, 1, 1, tzinfo=timezone(timedelta(hours=5))))
+    with pytest.raises(ValueError, match="supported range"):
+        from_datetime(datetime(9999, 12, 31, 23, tzinfo=timezone(timedelta(hours=-5))))

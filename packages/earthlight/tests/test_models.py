@@ -214,6 +214,8 @@ def test_vantage_point_json_shape_is_stable() -> None:
         "lookback": {"minimum": 24.9, "best": 25.0, "maximum": 25.1},
         "magnitude": 0.03,
         "constellation": "Lyra",
+        "ra_deg": None,
+        "dec_deg": None,
         "fame": 4,
         "host_id": None,
         "wikipedia": "Vega",
@@ -309,7 +311,7 @@ def test_moment_result_defaults_are_empty() -> None:
     assert (result.famous, result.exoplanet, result.visible_tonight, result.most_precise) == (
         None,
     ) * 4
-    assert result.notes == []
+    assert result.notes == ()
 
 
 def test_moment_result_holds_four_categories_and_a_zone() -> None:
@@ -323,7 +325,7 @@ def test_moment_result_holds_four_categories_and_a_zone() -> None:
         exoplanet=match,
         visible_tonight=match,
         most_precise=match,
-        notes=["No exoplanet is that close."],
+        notes=("No exoplanet is that close.",),
     )
     dumped = result.model_dump(mode="json")
     assert list(dumped) == [
@@ -500,3 +502,74 @@ def test_json_schemas_match_the_committed_snapshot() -> None:
         )
     committed = json.loads(SCHEMA_FILE.read_text("utf-8"))
     assert json.loads(json.dumps(schemas, sort_keys=True)) == committed
+
+
+# --- review fixes -----------------------------------------------------------------------------
+
+
+def test_collections_are_immutable_and_json_arrays() -> None:
+    # A list is accepted as input (JSON arrays arrive as lists) and stored as a tuple.
+    result = MomentResult.model_validate(
+        {"moment": 1.0, "moment_label": "1 CE", "lookback_years": 2025.0, "notes": ["one", "two"]}
+    )
+    assert result.notes == ("one", "two")
+    assert isinstance(result.notes, tuple)
+    assert not hasattr(result.notes, "append")
+    assert json.loads(result.model_dump_json())["notes"] == ["one", "two"]
+    item = snapshot(events=[event()])
+    assert isinstance(item.events, tuple)
+    assert isinstance(json.loads(item.model_dump_json())["events"], list)
+
+
+def test_facts_are_read_only_and_copied() -> None:
+    source: dict[str, Any] = {"spectral_type": "A0V"}
+    point = vantage(facts=source)
+    source["spectral_type"] = "changed"
+    assert point.facts["spectral_type"] == "A0V"
+    with pytest.raises(TypeError):
+        point.facts["spectral_type"] = "B"  # pyright: ignore[reportIndexIssue]
+    assert VantagePoint.model_validate_json(point.model_dump_json()) == point
+    assert point.model_dump(mode="json")["facts"] == {"spectral_type": "A0V"}
+
+
+def test_a_destroyed_landmark_needs_a_destruction_date() -> None:
+    base = landmark().model_dump()
+    with pytest.raises(ValidationError, match="destruction date"):
+        SnapshotLandmark.model_validate(base | {"status": "destroyed"})
+    ok = SnapshotLandmark.model_validate(base | {"status": "destroyed", "destroyed": -2000.0})
+    assert ok.status is LandmarkStatus.DESTROYED
+    # Standing and under-construction landmarks may or may not have a destruction date.
+    for status in ("standing", "under_construction"):
+        assert SnapshotLandmark.model_validate(base | {"status": status}).destroyed is None
+        assert SnapshotLandmark.model_validate(base | {"status": status, "destroyed": 100.0})
+
+
+def test_sky_coordinates() -> None:
+    point = vantage(ra_deg=279.23, dec_deg=38.78)
+    assert (point.ra_deg, point.dec_deg) == (279.23, 38.78)
+    assert vantage().ra_deg is None
+    assert vantage(ra_deg=0.0, dec_deg=-90.0).dec_deg == -90.0
+    assert vantage(ra_deg=359.999999, dec_deg=90.0).ra_deg == 359.999999
+    for bad in (
+        {"ra_deg": 360.0, "dec_deg": 0.0},
+        {"ra_deg": -0.1, "dec_deg": 0.0},
+        {"ra_deg": 10.0, "dec_deg": 90.1},
+        {"ra_deg": 10.0, "dec_deg": -90.1},
+    ):
+        with pytest.raises(ValidationError):
+            vantage(**bad)
+    for half in ({"ra_deg": 10.0}, {"dec_deg": 10.0}):
+        with pytest.raises(ValidationError, match="together"):
+            vantage(**half)
+
+
+def test_a_moment_result_cannot_be_about_the_future() -> None:
+    assert MomentResult(moment=2026.5, moment_label="now", lookback_years=0.0).lookback_years == 0.0
+    with pytest.raises(ValidationError):
+        MomentResult(moment=2050.0, moment_label="2050 CE", lookback_years=-23.5)
+
+
+def test_published_schema_does_not_leak_python_only_notes() -> None:
+    text = SCHEMA_FILE.read_text("utf-8")
+    assert "Raises" not in text
+    assert "ValueError" not in text

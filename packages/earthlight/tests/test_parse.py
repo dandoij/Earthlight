@@ -1,6 +1,6 @@
 """Tests for the input parser."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytest
 from hypothesis import given
@@ -15,11 +15,11 @@ from earthlight.parse import (
     ParseError,
     parse,
 )
-from earthlight.time import format_year, from_calendar, from_datetime
+from earthlight.time import format_year, from_calendar, from_datetime, to_calendar
 
 # A fixed "now" (15 June 2026, noon UTC) so relative inputs are deterministic.
-NOW_YEAR = from_datetime(datetime(2026, 6, 15, 12))
-DAYS_PER_YEAR = 365.25
+NOW_DT = datetime(2026, 6, 15, 12)
+NOW_YEAR = from_datetime(NOW_DT)
 
 
 def moment_of(text: str) -> float:
@@ -64,6 +64,11 @@ def test_bare_numbers_are_calendar_years(text: str, expected: float) -> None:
         ("  500    BCE ", -499),
         ("10,000 BCE", -9999),
         ("1,492 CE", 1492),
+        ("500 B.C.", -499),
+        ("500 b.c.", -499),
+        ("500 B.C.E.", -499),
+        ("1492 A.D.", 1492),
+        ("1492 C.E.", 1492),
     ],
 )
 def test_years_with_era(text: str, expected_astronomical_year: int) -> None:
@@ -93,18 +98,31 @@ def test_iso_dates(text: str, expected: float) -> None:
 
 
 @pytest.mark.parametrize(
+    ("text", "delta"),
+    [
+        ("0 days ago", timedelta(0)),
+        ("30 seconds ago", timedelta(seconds=30)),
+        ("1 minute ago", timedelta(minutes=1)),
+        ("3 hours ago", timedelta(hours=3)),
+        ("1 hour ago", timedelta(hours=1)),
+        ("3 days ago", timedelta(days=3)),
+        ("3 Days Ago", timedelta(days=3)),
+        ("1 day ago", timedelta(days=1)),
+        ("2 weeks ago", timedelta(weeks=2)),
+        ("1.5 hours ago", timedelta(minutes=90)),
+        ("  3   days   ago  ", timedelta(days=3)),
+        ("1 month ago", timedelta(days=30.4375)),  # a month is 1/12 of a 365.25-day year
+        ("6 months ago", timedelta(days=182.625)),
+    ],
+)
+def test_relative_times_up_to_a_month_count_real_seconds(text: str, delta: timedelta) -> None:
+    # Expected values come from real datetime arithmetic, not from the parser's own constants.
+    assert moment_of(text) == pytest.approx(from_datetime(NOW_DT - delta), abs=1e-9)
+
+
+@pytest.mark.parametrize(
     ("text", "years_ago"),
     [
-        ("0 days ago", 0.0),
-        ("30 seconds ago", 30 / (DAYS_PER_YEAR * 86_400)),
-        ("1 minute ago", 1 / (DAYS_PER_YEAR * 1_440)),
-        ("3 hours ago", 3 / (DAYS_PER_YEAR * 24)),
-        ("1 hour ago", 1 / (DAYS_PER_YEAR * 24)),
-        ("3 days ago", 3 / DAYS_PER_YEAR),
-        ("3 Days Ago", 3 / DAYS_PER_YEAR),
-        ("1 day ago", 1 / DAYS_PER_YEAR),
-        ("2 weeks ago", 14 / DAYS_PER_YEAR),
-        ("6 months ago", 0.5),
         ("1 year ago", 1.0),
         ("500 years ago", 500.0),
         ("12,000 years ago", 12_000.0),
@@ -121,11 +139,32 @@ def test_iso_dates(text: str, expected: float) -> None:
         ("4.5 gya", 4.5e9),
         ("4.54 billion years ago", 4.54e9),
         ("13.8 gya", 13.8e9),
-        ("  3   days   ago  ", 3 / DAYS_PER_YEAR),
     ],
 )
-def test_relative_times(text: str, years_ago: float) -> None:
+def test_year_scale_relative_times(text: str, years_ago: float) -> None:
     assert moment_of(text) == pytest.approx(NOW_YEAR - years_ago, abs=1e-6)
+
+
+@pytest.mark.parametrize(
+    ("now", "text", "expected"),
+    [
+        # Regression: a fixed 365.25-day year put these 3 seconds to 22 seconds off.
+        ((2024, 3, 1, 0), "1 day ago", (2024, 2, 29, 0, 0, 0)),
+        ((2024, 3, 1, 0), "3 hours ago", (2024, 2, 29, 21, 0, 0)),
+        ((2023, 3, 1, 0), "1 day ago", (2023, 2, 28, 0, 0, 0)),
+        ((2024, 1, 1, 0), "1 second ago", (2023, 12, 31, 23, 59, 59)),
+        ((2024, 1, 1, 0), "1 day ago", (2023, 12, 31, 0, 0, 0)),
+        ((2025, 1, 1, 0), "1 week ago", (2024, 12, 25, 0, 0, 0)),
+        ((2024, 12, 31, 12), "2 days ago", (2024, 12, 29, 12, 0, 0)),
+    ],
+)
+def test_short_relative_times_land_on_the_exact_calendar_moment(
+    now: tuple[int, int, int, int], text: str, expected: tuple[int, ...]
+) -> None:
+    result = parse(text, now_year=from_calendar(*now))
+    assert isinstance(result, MomentQuery)
+    date = to_calendar(result.moment)
+    assert (date.year, date.month, date.day, date.hour, date.minute, date.second) == expected
 
 
 # --- event queries ----------------------------------------------------------
@@ -147,6 +186,12 @@ def test_relative_times(text: str, years_ago: float) -> None:
         ("mya", "mya"),
         ("bce", "bce"),
         ("12:30", "12:30"),
+        ("1.5 bce", "1.5 bce"),  # looks like a moment but matches no format
+        ("+1992", "+1992"),
+        ("1e3 years ago", "1e3 years ago"),
+        ("١٩٩٢", "١٩٩٢"),  # Arabic-Indic digits
+        ("１４９２", "１４９２"),  # fullwidth digits
+        ("١٩٩٢-٠١-٠١", "١٩٩٢-٠١-٠١"),
     ],
 )
 def test_other_text_is_an_event_query(text: str, expected_text: str) -> None:
@@ -188,6 +233,23 @@ def test_empty_input(text: str) -> None:
 def test_impossible_moments_raise_with_a_helpful_message(text: str, message_part: str) -> None:
     with pytest.raises(InvalidMomentError, match=message_part):
         parse(text, now_year=NOW_YEAR)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "9" * 5000,
+        "-" + "9" * 5000,
+        "9" * 5000 + " CE",
+        "0" * 5000 + " BCE",
+        "9" * 5000 + " years ago",
+    ],
+)
+def test_error_messages_do_not_echo_huge_input(text: str) -> None:
+    with pytest.raises(InvalidMomentError) as error:
+        parse(text, now_year=NOW_YEAR)
+    assert len(str(error.value)) < 300
+    assert "..." in str(error.value) or len(text) <= 40
 
 
 def test_all_errors_share_one_base_class() -> None:
