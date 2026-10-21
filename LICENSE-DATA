@@ -1,0 +1,67 @@
+Earthlight data license
+=======================
+
+The code in this repository is licensed under the MIT License. See the file LICENSE.
+
+The bundled database (the SQLite file under packages/earthlight/src/earthlight/data/,
+built in Phase 2 of docs/PLAN.md) and the data files exported from it are licensed under:
+
+    Creative Commons Attribution-NonCommercial 3.0 IGO (CC BY-NC 3.0 IGO)
+    https://creativecommons.org/licenses/by-nc/3.0/igo/
+
+Why this license
+----------------
+
+The database is built from distances and positions that come from two missions of the
+European Space Agency, Gaia and Hipparcos. ESA distributes that data under CC BY-NC 3.0 IGO.
+A file that combines several sources follows its most restrictive one, so the whole
+database is CC BY-NC 3.0 IGO. Sources with more permissive terms (listed below) are
+credited separately and are not affected.
+
+What non-commercial means here
+------------------------------
+
+The license says You may not exercise the licensed rights "in any manner that is primarily
+intended for or directed toward commercial advantage or private monetary compensation".
+Earthlight is a free, ad-free, educational project. It has no revenue and no paid features,
+and it must stay that way. If you use the database, you must follow the same terms.
+
+Credits
+-------
+
+Gaia DR3
+    Credit: ESA, Gaia DPAC. Gaia Collaboration, Vallenari et al. 2023, Astronomy &
+    Astrophysics 674, A1, DOI 10.1051/0004-6361/202243940. License: CC BY-NC 3.0 IGO.
+
+Hipparcos
+    Credit: ESA. van Leeuwen 2007, "Validation of the new Hipparcos reduction", Astronomy &
+    Astrophysics 474, 653, DOI 10.1051/0004-6361:20078357. Accessed through the VizieR
+    service, CDS, Strasbourg (DOI 10.26093/cds/vizier). License: CC BY-NC 3.0 IGO.
+
+Bailer-Jones et al. (2021) distances
+    Bailer-Jones et al. 2021, "Estimating Distances from Parallaxes. V. Geometric and
+    Photogeometric Distances to 1.47 Billion Stars in Gaia Early Data Release 3",
+    The Astronomical Journal 161, 147, DOI 10.3847/1538-3881/abd806.
+    License: CC BY 4.0.
+
+IAU Catalog of Star Names
+    IAU Working Group on Star Names, https://www.iau.org/public/themes/naming_stars/.
+    License: Creative Commons Attribution.
+
+NASA Exoplanet Archive
+    This research has made use of the NASA Exoplanet Archive, which is operated by the
+    California Institute of Technology, under contract with the National Aeronautics and
+    Space Administration under the Exoplanet Exploration Program.
+
+NASA and JPL
+    Planet positions use the approximate orbital elements published by NASA JPL Solar System
+    Dynamics (https://ssd.jpl.nasa.gov/planets/approx_pos.html), and reference values come
+    from the JPL Horizons system. Credit: NASA/JPL. This is not an endorsement by NASA.
+
+Our own curated data
+    The curated deep-sky and history entries (pipeline/curated/) are our own work, with
+    summaries written in our own words and a source cited for each entry. They are available
+    under the MIT License in their original form in this repository; the database as a whole
+    is CC BY-NC 3.0 IGO.
+
+Exact quotes, DOIs, and how each source was checked are recorded in docs/data-sources.md.

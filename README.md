@@ -73,7 +73,7 @@ Beyond the heliopause
 ## Planned tech stack
 
 - **Core and CLI:** Python 3.12 package with Typer, Rich, and Pydantic
-- **Data:** SQLite database built from Gaia DR3, HYG, the NASA Exoplanet Archive, and hand-curated deep-sky and history lists
+- **Data:** SQLite database built from Gaia DR3 and Hipparcos star data, Bailer-Jones distances, the IAU Catalog of Star Names, the NASA Exoplanet Archive, and hand-curated deep-sky and history lists
 - **API:** FastAPI
 - **Web app:** React, TypeScript, and Vite
 - **Tooling:** uv workspace, ruff, pyright, pytest with Hypothesis, pre-commit, GitHub Actions
@@ -124,4 +124,26 @@ Node.js is not needed yet. It will be required from Phase 7, when the web app is
 
 ## License
 
-MIT. See [`LICENSE`](LICENSE). A Data Sources section crediting each dataset will be added once the data pipeline lands.
+The **code** is MIT. See [`LICENSE`](LICENSE).
+
+The **database** that Earthlight will bundle is licensed separately, as **CC BY-NC 3.0 IGO**. It is built from ESA's Gaia and Hipparcos data, which carry that non-commercial license, and a combined file follows its most restrictive source. See [`LICENSE-DATA`](LICENSE-DATA). Earthlight is a free, ad-free, educational project and does not charge for anything.
+
+## Data licenses
+
+The database is not built yet (Phase 2). This table lists every source that is, or will be, in it, and what each one requires. Exact quotes, DOIs, and how each source was checked are in [`docs/data-sources.md`](docs/data-sources.md).
+
+| Source | Used for | License or terms | Required credit |
+|---|---|---|---|
+| **Gaia DR3** (ESA) | Star positions and parallaxes | CC BY-NC 3.0 IGO | ESA, Gaia DPAC. Gaia Collaboration, Vallenari et al. 2023, A&A 674, A1 |
+| **Hipparcos** (ESA) | Distances and V magnitudes, especially for bright stars Gaia cannot measure | CC BY-NC 3.0 IGO (ESA archive terms) | ESA. van Leeuwen 2007, A&A 474, 653 |
+| **Bailer-Jones et al. (2021)** | Distance ranges for Gaia stars | CC BY 4.0 | Bailer-Jones et al. 2021, AJ 161, 147 |
+| **IAU Catalog of Star Names** | Proper names of stars | CC BY | IAU Working Group on Star Names (https://www.iau.org/public/themes/naming_stars/) |
+| **NASA Exoplanet Archive** | Exoplanets, their host stars, and distances | No license stated; acknowledgment requested | See the acknowledgment below |
+| **NASA/JPL** | Planet positions (JPL approximate orbital elements) and reference values | NASA content is generally not subject to copyright in the United States; acknowledgment requested | NASA/JPL. Not an endorsement by NASA |
+| **Curated YAML** (our own work) | Deep-sky objects and history entries | Own work, summaries written in our own words with a source cited for each entry; MIT | None required |
+
+Acknowledgment requested by the NASA Exoplanet Archive:
+
+> This research has made use of the NASA Exoplanet Archive, which is operated by the California Institute of Technology, under contract with the National Aeronautics and Space Administration under the Exoplanet Exploration Program.
+
+The Exoplanet Archive also asks users to cite its reference paper (Christiansen et al. 2025); the full citation will be added when the exoplanet data is built.

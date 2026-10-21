@@ -95,19 +95,23 @@ No database yet. Pure, heavily tested functions.
 
 ## Phase 2: Data pipeline (branch `phase-2-data`)
 
-- [ ] **2.1 Pipeline scaffolding**
+- [x] **2.1 Pipeline scaffolding**
   - **Build:** `pipeline` workspace member with astropy, astroquery, scipy (needed by astropy cosmology), pandas, pyyaml. A `earthlight-build` command with subcommands per source. Downloads cached in `pipeline/.cache/` (gitignored).
   - **Done when:** `uv run earthlight-build --help` works.
-- [ ] **2.2 Source verification**
+- [x] **2.2 Source verification**
+  - **Outcome (2026-10-20):** see `docs/data-sources.md`. Three plan changes, approved by Ian: (1) the bundled database is CC BY-NC 3.0 IGO because Gaia and Hipparcos are ESA non-commercial data (code stays MIT; `LICENSE-DATA` and the README "Data licenses" section were added in this step); (2) proper names come from the IAU Catalog of Star Names instead of HYG (HYG's CC BY-SA terms cannot be combined with non-commercial data); (3) star distances are two-tier, Gaia with Bailer-Jones ranges where matched and the Hipparcos new reduction (VizieR I/311/hip2) otherwise, because Gaia misses the famous bright stars.
   - **Build:** Investigate and document in `docs/data-sources.md`: HYG current version and columns; Gaia DR3 tables for the bright-star query; Hipparcos cross-match table; Bailer-Jones distance table name and columns; Exoplanet Archive table and distance columns; licenses and attribution text for each.
   - **Done when:** Doc is complete. **Ask Ian** about anything that differs from this plan.
 - [ ] **2.3 Database schema**
+  - **Phase 2.2 note:** `meta` also records the data license (CC BY-NC 3.0 IGO) and each source's version or retrieval date. A star's `facts` includes `distance_source` (`gaia` or `hipparcos`). Include the `VantagePoint` fields `ra_deg`, `dec_deg`, `fame`, `host_id`, and `wikipedia`.
   - **Build:** `schema.sql`: `meta` (schema_version, build date, source versions), `vantage_points` (with indexed lookback columns, kind, magnitude, constellation, ra_deg, dec_deg, fame, host_id, wikipedia, facts JSON), `exoplanets`, `events`, `periods`, `landmarks`, `population`, FTS5 tables (unicode61 for search, trigram for did-you-mean).
   - **Done when:** Schema builds an empty database and a test checks every table and index exists.
 - [ ] **2.4 Stars**
+  - **Phase 2.2 note (replaces the Gaia-only and HYG parts of Build):** the star universe is the Hipparcos catalogue (about 118,000 stars). Distances come from Gaia DR3 plus Bailer-Jones (`external.gaiaedr3_distance`, 16th to 84th percentile) for stars in `gaiadr3.hipparcos2_best_neighbour` (99,525 of them), and from Hipparcos parallaxes (`I/311/hip2`, via `lookback_range_from_parallax`) for the rest. V magnitude from `I/239/hip_main`, proper names from the IAU Catalog of Star Names through the Hipparcos number, constellation from astropy, coordinates in degrees. Stars without an IAU name are named "HIP n". Decide how to treat stars whose parallax error reaches the parallax (no upper distance limit). See `docs/data-sources.md` for table names, columns, and server quirks.
   - **Build:** Gaia DR3 query for bright stars with precise parallax (tune cutoffs to keep the final database under about 20 MB), Bailer-Jones distances to lookback ranges, HYG names via cross-match, constellation via astropy.
   - **Done when:** Stars load; spot checks (for example Betelgeuse, Vega, Polaris) have sane distances; counts and size reported to Ian.
 - [ ] **2.5 Exoplanets**
+  - **Phase 2.2 note:** use `ps` with `default_flag = 1`. 128 planets (including TRAPPIST-1) have no `sy_dist`: fall back to the host star's distance through `gaia_dr3_id` (parse the `Gaia DR3 <id>` text) or `hip_name`, otherwise omit the planet. Add the Exoplanet Archive reference paper (Christiansen et al. 2025) to the README credits once the full citation is confirmed.
   - **Build:** Exoplanet Archive query, distance ranges from the archive's error columns, link to host star vantage points where possible.
   - **Done when:** Planets load with host links; spot checks (for example Proxima Cen b, Kepler-22 b).
 - [ ] **2.6 Deep-sky objects**
@@ -127,9 +131,10 @@ No database yet. Pure, heavily tested functions.
 - [ ] **2.14 Population data**
   - **Build:** Our World in Data historical population estimates into the `population` table.
 - [ ] **2.15 Build and validate the database**
+  - **Phase 2.2 note:** the validation tests also check that `meta` records the CC BY-NC 3.0 IGO data license and that `LICENSE-DATA` exists.
   - **Build:** Full build into `packages/earthlight/src/earthlight/data/earthlight.db`. Validation tests: schema version, size limit, no duplicate ids, min <= best <= max, coverage per century from 3000 BCE to today and per era for deep time.
   - **Done when:** Tests pass; the built `.db` is committed.
-- [ ] **2.16 README update** (data sources and attribution section)
+- [ ] **2.16 README update** (data sources and attribution section): the "Data licenses" section and `LICENSE-DATA` already exist from step 2.2; update them to match what was actually built and add the Exoplanet Archive reference citation.
 - [ ] **2.17 Phase review**
 
 ---
@@ -170,7 +175,7 @@ No database yet. Pure, heavily tested functions.
 
 ## Phase 5: Packaging and release (branch `phase-5-release`)
 
-- [ ] **5.1 Wheel build**: build backend config, database included as package data, size check, `uv build`.
+- [ ] **5.1 Wheel build**: build backend config, database included as package data, size check, `uv build`. Phase 2.2 note: the package license metadata must name both licenses (MIT for code, CC BY-NC 3.0 IGO for the bundled data) and the wheel must include `LICENSE-DATA`.
 - [ ] **5.2 Install test in CI**: build the wheel, install it into a clean environment on Ubuntu and Windows, run `earthlight when 1492`.
 - [ ] **5.3 Release workflow**: on version tags, publish to TestPyPI, then PyPI, via trusted publishing. Give Ian exact instructions for configuring the trusted publisher on both sites (he does this himself).
 - [ ] **5.4 README update**: install instructions.
