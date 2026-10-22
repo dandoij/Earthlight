@@ -92,12 +92,12 @@ events:
     category: human_origins
     region: North America
     summary: >-
-      When people first arrived in the Americas is still argued. Other sites show they were
-      there by about 15,000 years ago, and fossil footprints in New Mexico may be far older,
-      though their dating is disputed.
+      When people first arrived in the Americas is still argued. Evidence widely accepted by
+      archaeologists puts people at Monte Verde in Chile by about 14,500 years ago, and earlier
+      dates, such as fossil footprints in New Mexico, are still debated.
     importance: 4
-    wikipedia: White Sands fossil footprints
-    source: https://en.wikipedia.org/wiki/White_Sands_fossil_footprints
+    wikipedia: Monte Verde
+    source: https://en.wikipedia.org/wiki/Monte_Verde
     year: -16000
     year_uncertainty: 5000
 
@@ -112,7 +112,7 @@ events:
     importance: 5
     wikipedia: Neolithic Revolution
     source: https://en.wikipedia.org/wiki/Neolithic_Revolution
-    year: -9000
+    year: -8999
     year_uncertainty: 1000
 
   - id: wheeled-vehicles

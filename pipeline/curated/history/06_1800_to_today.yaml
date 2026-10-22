@@ -171,8 +171,8 @@ events:
     region: Hiroshima, Japan
     summary: >-
       A United States aircraft dropped the first nuclear weapon used in war on the Japanese city
-      of Hiroshima, and a second was dropped on Nagasaki three days later. More than a hundred
-      thousand people had died by the end of the year.
+      of Hiroshima, and a second was dropped on Nagasaki three days later. In Hiroshima, an
+      estimated 90,000 to 166,000 people had died by the end of 1945.
     importance: 5
     wikipedia: Atomic bombings of Hiroshima and Nagasaki
     source: https://en.wikipedia.org/wiki/Atomic_bombings_of_Hiroshima_and_Nagasaki
@@ -265,8 +265,8 @@ events:
     region: CERN, Switzerland
     summary: >-
       Tim Berners-Lee proposed a system of linked pages to help scientists share information.
-      The first website opened to the public in 1991, and CERN made the technology free for
-      anyone to use in 1993.
+      The first website went live at CERN in December 1990, the web was opened to the public in
+      August 1991, and CERN made the technology free for anyone to use in 1993.
     importance: 5
     wikipedia: World Wide Web
     source: https://en.wikipedia.org/wiki/World_Wide_Web

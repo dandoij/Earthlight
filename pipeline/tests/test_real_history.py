@@ -408,3 +408,44 @@ def test_the_history_reaches_from_the_big_bang_to_the_modern_day(shipped: Histor
     assert 2021 < latest < DESCRIPTION_REFERENCE_YEAR  # the 2100 stand-in is not counted
     assert has_ongoing_period(shipped)
     assert 150 <= shipped.total <= 190
+
+
+def test_bce_years_are_stored_as_one_minus_n(shipped: HistoryData) -> None:
+    """Spot checks of the conversion that is easiest to get wrong: N BCE is 1 - N."""
+    periods = {p.id: p for p in shipped.periods}
+    events = {e.id: e.year for e in shipped.events}
+    assert periods["han-dynasty"].start == 1 - 202
+    assert periods["roman-republic"].start == 1 - 509
+    assert periods["classical-greece"].start == 1 - 480
+    assert periods["old-kingdom-of-egypt"].start == 1 - 2686
+    assert events["farming-begins"] == 1 - 9000
+    assert events["founding-of-rome"] == 1 - 753
+    assert events["first-olympic-games"] == 1 - 776
+    assert events["unification-of-egypt"] == 1 - 3150
+
+
+def test_the_colossus_is_placed_at_the_harbour_and_says_its_site_is_unknown(
+    shipped: HistoryData,
+) -> None:
+    colossus = {m.id: m for m in shipped.landmarks}["colossus-of-rhodes"]
+    assert (colossus.lat, colossus.lon) == (36.45, 28.23)
+    assert "exact location is unknown" in colossus.summary
+
+
+def test_machu_picchu_is_at_13_163_degrees_south(shipped: HistoryData) -> None:
+    machu_picchu = {m.id: m for m in shipped.landmarks}["machu-picchu"]
+    assert round(machu_picchu.lat, 3) == -13.163
+
+
+def test_wording_that_the_owner_chose_is_kept(shipped: HistoryData) -> None:
+    events = {e.id: e for e in shipped.events}
+    mammals = events["first-mammals"]
+    assert "mammaliaforms" in mammals.name and "205 million years" in mammals.summary
+    assert "an estimated 90,000 to 166,000 people had died by the end of 1945" in " ".join(
+        events["hiroshima-bombing"].summary.split()
+    )
+    web = " ".join(events["world-wide-web-proposed"].summary.split())
+    assert "December 1990" in web and "opened to the public in August 1991" in web
+    americas = " ".join(events["humans-reach-the-americas"].summary.split())
+    assert "Monte Verde" in americas and "14,500 years ago" in americas
+    assert events["humans-reach-the-americas"].year_uncertainty == 5000  # the range is kept

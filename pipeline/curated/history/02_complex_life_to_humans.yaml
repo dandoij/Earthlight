@@ -61,13 +61,13 @@ events:
     year_uncertainty: 3000000
 
   - id: first-mammals
-    name: The first mammals
+    name: The first mammal-like animals (mammaliaforms)
     category: life
     region: Global
     summary: >-
-      Small, shrew-like animals appeared in the shadow of the dinosaurs. The date depends on
-      where you draw the line between mammals and their close relatives. Counting early mammal
-      relatives such as Morganucodon, the first mammals are about 205 million years old.
+      Small, shrew-like animals such as Morganucodon appeared in the shadow of the dinosaurs
+      about 205 million years ago. These mammaliaforms are close relatives of true mammals;
+      whether to call them mammals depends on where the line is drawn.
     importance: 3
     wikipedia: Evolution of mammals
     source: https://en.wikipedia.org/wiki/Evolution_of_mammals

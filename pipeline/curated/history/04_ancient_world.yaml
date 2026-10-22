@@ -414,16 +414,16 @@ landmarks:
     region: Rhodes, Greece
     summary: >-
       A giant bronze statue of the sun god Helios, one of the Seven Wonders of the ancient
-      world. An earthquake toppled it about fifty years after it was finished. Where exactly it
-      stood is still disputed.
+      world. An earthquake toppled it about fifty years after it was finished. Its exact
+      location is unknown; the coordinates point to the harbour of Rhodes town.
     importance: 4
     wikipedia: Colossus of Rhodes
     source: https://en.wikipedia.org/wiki/Colossus_of_Rhodes
     built_start: -291
     built_end: -279
     destroyed: -225
-    lat: 36.4516
-    lon: 28.2279
+    lat: 36.45
+    lon: 28.23
 
   - id: terracotta-army
     name: Terracotta Army
