@@ -161,10 +161,11 @@ No database yet. Pure, heavily tested functions.
   - **Build:** `repository.py`: open the bundled database via `importlib.resources` in read-only URI mode; typed query functions; schema version check on open.
   - **Done when:** Tests run against the real bundled database.
   - **Done:** `Repository` (read-only URI, schema version check, thread lock) plus `default_repository()` (opened once and reused). Queries: `vantage_point`, `vantage_points_overlapping`, `max_lookback`, `events_between`, `periods_overlapping`, `landmarks_overlapping`, `population_nearest` (nearest estimate, never interpolated), `meta`. Decided with Ian: the engine uses the cached default with an optional `repository=` override.
-- [ ] **3.2 Moment to place**
+- [x] **3.2 Moment to place**
   - **Phase 1 review notes:** read the clock once per request and pass `now_year` to every helper, so one answer never mixes two "now" values. A moment after now is rejected with a friendly "that has not happened yet" error (`MomentResult.lookback_years` must be >= 0). `parse` stays unaware of the future.
   - **Build:** `engine.when(moment)`: zone or solar system handling for lookbacks under 4.2 years; candidate query by interval overlap; scoring (closeness of best estimate, narrowness of range); one winner per category (famous, exoplanet, visible tonight, most precise); graceful notes when a category has no match.
   - **Done when:** Tests for recent dates, 1492, Rome, 66 million years ago, 4.5 billion years ago, and before the first stars.
+  - **Done:** `engine.when(moment, *, now_year=None, repository=None)`. Decided with Ian: when no place's range contains the moment, the nearest place whose range comes within 5% of the lookback is shown and marked approximate in `notes`; the function for the reverse question is named `from_vantage`. Rankings: famous = highest fame, then closest best estimate; exoplanet = closest best estimate; visible tonight = naked-eye star (V <= 6) with a constellation, closest first; most precise = narrowest range. Inside the solar system (and beyond the oldest light) there are no near misses. Parsing text and event names such as "fall of rome" is left to step 3.5.
 - [ ] **3.3 Place to moment**
   - **Build:** `engine.from_(vantage_id)`: events overlapping the range, periods active, landmarks with status (standing, under construction, destroyed), population, "Earth does not exist yet" for lookbacks older than about 4.54 billion years, and a notice when the range is very wide.
   - **Done when:** Tests across all lookback scales.
