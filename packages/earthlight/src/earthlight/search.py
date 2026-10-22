@@ -57,9 +57,7 @@ def search(
     if not words or limit < 1:
         return SearchResponse(query=query)
 
-    rows = _unique(
-        [*repo.search_exact(query.lower()), *repo.search_words(_expression(words), limit)]
-    )
+    rows = _unique([*repo.search_exact(query), *repo.search_words(_expression(words), limit)])
     if rows:
         return SearchResponse(query=query, results=tuple(_result(row) for row in rows[:limit]))
     return SearchResponse(query=query, suggestions=_suggestions(repo, query, words))

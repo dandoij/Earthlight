@@ -212,3 +212,29 @@ def test_importance_beats_date_when_ordering_events(repo: Repository) -> None:
     # Da Gama (1498, importance 4) is earlier than Luther's theses (1517, importance 5).
     ids = [e.id for e in repo.events_between(1495, 1520)]
     assert ids.index("luther-ninety-five-theses") < ids.index("da-gama-reaches-india")
+
+
+# --- review fixes -----------------------------------------------------------------------------
+
+
+def test_a_relative_path_opens(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    create_empty_database(tmp_path / "rel.db")
+    monkeypatch.chdir(tmp_path)
+    with Repository(Path("rel.db")) as repository:
+        assert repository.path.is_absolute()
+
+
+def test_a_closed_repository_says_so(tmp_path: Path) -> None:
+    create_empty_database(tmp_path / "c.db")
+    repository = Repository(tmp_path / "c.db")
+    repository.close()
+    assert repository.closed
+    with pytest.raises(RepositoryError, match="has been closed"):
+        repository.vantage_point("x")
+
+
+def test_closing_the_shared_repository_does_not_break_the_next_caller() -> None:
+    first = default_repository()
+    first.close()
+    second = default_repository()
+    assert second is not first and second.vantage_point("hip-70890") is not None

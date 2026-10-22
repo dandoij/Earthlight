@@ -15,7 +15,6 @@ import sqlite3
 import threading
 from collections.abc import Collection
 from dataclasses import dataclass
-from functools import lru_cache
 from importlib import resources
 from pathlib import Path
 from types import TracebackType
@@ -111,12 +110,13 @@ class Repository:
         has a schema version other than the one this code reads.
         """
         check_sqlite_version()
-        self.path = bundled_database_path() if path is None else Path(path)
+        self.path = (bundled_database_path() if path is None else Path(path)).resolve()
         if not self.path.is_file():
             raise RepositoryError(f"no database at {self.path}")
         # check_same_thread is off because a web server may hand one connection to several
         # threads; the database is read-only and every query takes the lock below.
         self._lock = threading.Lock()
+        self._closed = False
         self._connection = sqlite3.connect(
             f"{self.path.as_uri()}?mode=ro", uri=True, check_same_thread=False
         )
@@ -140,7 +140,13 @@ class Repository:
     def close(self) -> None:
         """Close the connection. Safe to call twice."""
         with self._lock:
+            self._closed = True
             self._connection.close()
+
+    @property
+    def closed(self) -> bool:
+        """True once ``close`` has been called."""
+        return self._closed
 
     def __enter__(self) -> Self:
         return self
@@ -155,6 +161,8 @@ class Repository:
 
     def _rows(self, sql: str, params: tuple[Any, ...] | dict[str, Any] = ()) -> list[sqlite3.Row]:
         with self._lock:
+            if self._closed:
+                raise RepositoryError("this repository has been closed")
             return self._connection.execute(sql, params).fetchall()
 
     # --- meta ----------------------------------------------------------------------------
@@ -389,7 +397,17 @@ def _vantage_point(row: sqlite3.Row) -> VantagePoint:
     )
 
 
-@lru_cache(maxsize=1)
+_default: Repository | None = None
+_default_lock = threading.Lock()
+
+
 def default_repository() -> Repository:
-    """The bundled database, opened on first use and shared afterwards."""
-    return Repository()
+    """The bundled database, opened on first use and shared afterwards.
+
+    If the shared repository was closed (by a ``with`` block, say), the next call opens a new one.
+    """
+    global _default
+    with _default_lock:
+        if _default is None or _default.closed:
+            _default = Repository()
+        return _default

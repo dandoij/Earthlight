@@ -80,6 +80,27 @@ Betelgeuse
 - `search(text)` finds places and history by name; when nothing matches it offers did-you-mean guesses.
 - Every deliberate failure raises a subclass of `EarthlightError` with a message written for the person who asked (a future moment, an unknown name, text that is not a moment).
 
+## The bundled database
+
+The package ships one read-only SQLite file, `packages/earthlight/src/earthlight/data/earthlight.db` (19.9 MB or 18.9 MiB, limit 20 MiB, committed to git). It is built by the data pipeline and checked by `packages/earthlight/tests/test_bundled_database.py`. It holds:
+
+| Table | Contents |
+|---|---|
+| Stars | 40,346 Hipparcos stars with distance ranges (Gaia DR3 with Bailer-Jones where matched, otherwise Hipparcos), 409 of them with IAU proper names |
+| Exoplanets | 6,356 planets from the NASA Exoplanet Archive, 1,236 linked to a host star in the star table |
+| Deep sky | 121 curated objects: 33 star clusters, 60 galaxies, 13 galaxy clusters, 14 quasars, and the cosmic microwave background, from 154 to 13.79 billion light-years |
+| History | 160 hand-curated entries (105 events, 33 periods, 22 landmarks) from the first stars to today |
+| Population | 261 world population estimates from 10000 BCE to 2023 (Our World in Data) |
+| Search | A full-text index over names, plus a trigram index built for typo-tolerant search (used from Phase 3) |
+
+To rebuild it (this downloads every source and takes a few minutes; downloads are cached in `pipeline/.cache/`):
+
+```powershell
+uv run earthlight-build --database packages/earthlight/src/earthlight/data/earthlight.db all
+```
+
+What each source is, the real file formats, and the choices made while building are recorded in [`docs/data-sources.md`](docs/data-sources.md).
+
 ## Status
 
 **In development.** The project skeleton, tooling, and CI are in place. The core math and data models are written and tested (the time model, input parsing, lookback math, solar system positions, and the shared data shapes), and the data pipeline has built and validated the bundled database. The Python engine answers both questions from that database (`earthlight.when`, `from_vantage`, `info`, and `search`). There is no command-line tool, API, or web app yet. The full plan is in [`docs/PLAN.md`](docs/PLAN.md).

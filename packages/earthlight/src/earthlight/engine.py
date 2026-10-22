@@ -53,8 +53,11 @@ from earthlight.time import (
 )
 
 NEAR_MISS_FRACTION = 0.05
-"""When no place has a range that contains the moment, the nearest place whose best estimate is
+"""When no place has a range that contains the moment, the best place whose range comes
 within this fraction of the lookback is shown instead, marked as approximate."""
+
+MAX_LOOKBACK_YEARS = 1e15
+"""Moments further back than this are rejected (the database cannot hold a lookback this large)."""
 
 NAKED_EYE_MAGNITUDE = 6.0
 """The faintest star a person with good eyesight and a dark sky can see."""
@@ -112,6 +115,8 @@ def when(
     reference = now() if now_year is None else now_year  # the one and only clock read
     if not (math.isfinite(moment) and math.isfinite(reference)):
         raise MomentError("that moment is not a real point in time")
+    if reference - moment > MAX_LOOKBACK_YEARS:
+        raise MomentError("that moment is far older than the universe, so no light from it exists")
     if moment > reference:
         raise FutureMomentError(
             f"{format_year(moment, now_year=reference)} has not happened yet, so no light "
@@ -129,24 +134,23 @@ def when(
 
     oldest_light = repo.max_lookback()
     exact = repo.vantage_points_overlapping(lookback, lookback)
+    winners: dict[str, Match | None] = {
+        category.key: _best(category, exact, lookback) for category in _CATEGORIES
+    }
+    near_miss_notes: list[str] = []
     # Near misses make no sense inside the solar system (they would grab Proxima Centauri) or
-    # beyond the oldest light (they would pretend there is something to see).
-    near = (
-        []
-        if zone is not None or lookback > oldest_light
-        else repo.vantage_points_overlapping(
+    # beyond the oldest light (they would pretend there is something to see). The wider query
+    # is only made when some category has no exact match, because it is the slow part.
+    if None in winners.values() and zone is None and lookback <= oldest_light:
+        near = repo.vantage_points_overlapping(
             lookback * (1 - NEAR_MISS_FRACTION), lookback * (1 + NEAR_MISS_FRACTION)
         )
-    )
-    winners: dict[str, Match | None] = {}
-    near_miss_notes: list[str] = []
-    for category in _CATEGORIES:
-        match = _best(category, exact, lookback)
-        if match is None:
-            match = _best(category, near, lookback)
-            if match is not None:
-                near_miss_notes.append(_near_miss_note(category, match))
-        winners[category.key] = match
+        for category in _CATEGORIES:
+            if winners[category.key] is None:
+                match = _best(category, near, lookback)
+                if match is not None:
+                    winners[category.key] = match
+                    near_miss_notes.append(_near_miss_note(category, match))
 
     notes += _empty_notes(winners, lookback, zone, oldest_light)
     notes += near_miss_notes
@@ -189,7 +193,7 @@ def _closest_rank(point: VantagePoint, lookback: float) -> tuple[float, ...]:
 
 
 def _visible_rank(point: VantagePoint, lookback: float) -> tuple[float, ...]:
-    return (abs(point.lookback.best - lookback), point.magnitude or 0.0)
+    return (abs(point.lookback.best - lookback), point.magnitude if point.magnitude else 0.0)
 
 
 def _precise_rank(point: VantagePoint, lookback: float) -> tuple[float, ...]:
@@ -258,7 +262,10 @@ def _light_distance_text(lookback: float) -> str:
 def _solar_system_notes(lookback: float, reference: DecimalYear) -> list[str]:
     """Where the light is in our own neighbourhood: its distance, the planets, Voyager 1."""
     light_au = lookback / AU_IN_LIGHT_YEARS
-    notes = [f"This light has travelled about {_light_distance_text(lookback)} from Earth."]
+    if lookback * SECONDS_PER_JULIAN_YEAR < 1:
+        notes = ["This light has only just left Earth."]
+    else:
+        notes = [f"This light has travelled about {_light_distance_text(lookback)} from Earth."]
     if TABLE_FIRST_MOMENT <= reference < TABLE_END_MOMENT and light_au < 60:
         passed = [p for p in PLANETS if planet_distance_au(p, reference) <= light_au]
         ahead = [p for p in PLANETS if p not in passed]
@@ -285,11 +292,12 @@ def _names(planets: list[str]) -> str:
 
 def _near_miss_note(category: _Category, match: Match) -> str:
     point = match.vantage_point
-    direction = "nearer" if match.offset_years < 0 else "farther"
+    direction = "more recent" if match.offset_years < 0 else "older"
     return (
-        f"No {category.label} has a range that contains this moment, so the nearest one is "
-        f"shown: {point.name}, about {abs(match.offset_years):,.3g} years {direction} than "
-        f"this moment (an approximate match)."
+        f"No {category.label} has a range that contains this moment, so {point.name}, whose "
+        f"range comes within {NEAR_MISS_FRACTION:.0%}, is shown instead. Its best estimate is "
+        f"about {_years_text(abs(match.offset_years))} {direction} than this moment "
+        "(an approximate match)."
     )
 
 
@@ -306,6 +314,8 @@ def _empty_notes(
         )
         return notes
     if zone is not None:
+        if any(match is not None for match in winners.values()):
+            return notes  # a planet's range can start just inside the last zone
         notes.append(
             "No star is this close: the light is still crossing the Sun's own surroundings, "
             f"about {100 * lookback / _PROXIMA_LIGHT_YEARS:.3g}% of the way to the nearest star."
@@ -442,7 +452,12 @@ def _history(
 ) -> tuple[_Listed[HistoryEvent], _Listed[HistoryPeriod], _Listed[SnapshotLandmark]]:
     events = _top(repo.events_between(earliest, moments.latest))
     periods = _top(repo.periods_overlapping(earliest, moments.latest))
-    landmarks = _top(repo.landmarks_overlapping(earliest, moments.latest))
+    begun = [
+        m
+        for m in repo.landmarks_overlapping(earliest, moments.latest)
+        if m.built_start <= moments.best
+    ]
+    landmarks = _top(begun)
     return (
         events,
         periods,

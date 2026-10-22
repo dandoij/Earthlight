@@ -270,3 +270,9 @@ def test_one_except_clause_catches_every_failure(call: object) -> None:
 def test_the_public_names_are_all_importable() -> None:
     for name in earthlight.__all__:
         assert hasattr(earthlight, name), name
+
+
+def test_an_extreme_datetime_is_a_moment_error_not_a_bare_value_error() -> None:
+    extreme = datetime(1, 1, 1, tzinfo=timezone(timedelta(hours=5)))
+    with pytest.raises(MomentError):
+        when(extreme, now_year=NOW)

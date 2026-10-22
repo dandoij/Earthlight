@@ -1,6 +1,6 @@
 """Turning typed text into a place or a moment.
 
-People type names ("Betelgeuse", "fall of rome"), and the engine wants ids and decimal years.
+People type names ("Betelgeuse", "apollo 11"), and the engine wants ids and decimal years.
 This module does that translation with the help of ``search``, and says so plainly when it
 cannot: the error carries the closest guesses.
 """
@@ -40,7 +40,7 @@ def resolve_place(text: str, repo: Repository) -> VantagePoint:
         point = repo.vantage_point(cleaned) or repo.vantage_point(cleaned.lower())
         if point is not None:
             return point
-        for row in repo.search_exact(cleaned.lower()):  # best known first
+        for row in repo.search_exact(cleaned):  # best known first
             if row.type == SearchType.VANTAGE_POINT:
                 found = repo.vantage_point(row.id)
                 if found is not None:

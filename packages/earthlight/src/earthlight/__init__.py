@@ -63,7 +63,7 @@ def when(
 
     ``moment`` can be text (``"1492"``, ``"500 BCE"``, ``"2004-06-15"``, ``"3 days ago"``,
     ``"66 million years ago"``, ``"66 mya"``, or the name of an event such as
-    ``"moon landing"``), a number (a decimal year, where 2026.5 is the middle of 2026), or a
+    ``"apollo 11"``), a number (a decimal year, where 2026.5 is the middle of 2026), or a
     ``datetime`` (naive ones count as UTC). An event name uses the best match: an event's date,
     a period's start, or the year a landmark was finished, and a note says which one.
 
@@ -94,7 +94,10 @@ def when(
             resolved = resolve_history(parsed.text, repo, now_year=reference)
             year, note = resolved.moment, resolved.note
     elif isinstance(moment, datetime):
-        year = from_datetime(moment)
+        try:
+            year = from_datetime(moment)
+        except ValueError as error:
+            raise MomentError(str(error)) from error
     elif isinstance(moment, bool):
         raise TypeError("a moment must be text, a number, or a datetime, not a bool")
     else:

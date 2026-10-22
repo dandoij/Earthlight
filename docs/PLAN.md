@@ -179,7 +179,8 @@ No database yet. Pure, heavily tested functions.
   - **Done:** Decided with Ian: `when` takes text, a number (decimal year), or a `datetime`; an event name resolves to the best search hit (event date, period start, landmark completion) with a note saying so, and raises `UnresolvedNameError` with did-you-mean guesses when nothing matches; `from_vantage` and `info` take an id, name, or alias; `info` returns the new `PlaceInfo` model (with `ExoplanetDetails` and, for stars, `planet_ids`); every deliberate error derives from `EarthlightError` (`errors.py`) and keeps its older `ValueError` or `LookupError` parent. The docstring examples run as doctests. `SearchResponse`, `ExoplanetDetails`, and `PlaceInfo` joined the JSON schema snapshot. Note: `earthlight.search` is now the function, not the module (`from earthlight.search import ...` still works).
 - [x] **3.6 README update** (Python usage example)
   - **Done:** "Using it from Python" replaces "What works today"; the example is the README's tested snippet (`test_readme.py` runs it and compares the output). Status and the core-concepts text now describe the engine.
-- [ ] **3.7 Phase review**
+- [x] **3.7 Phase review**
+  - **Done:** code-reviewer over `git diff main...HEAD`; bugs and clear improvements fixed in "fix: address phase 3 review findings". Judgment calls (machine-readable flags in the schema, weak single-word event matches, event names such as "fall of rome", one shared connection) are listed for Ian.
 
 ---
 

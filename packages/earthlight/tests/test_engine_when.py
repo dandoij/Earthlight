@@ -9,7 +9,7 @@ import pytest
 
 from earthlight import engine
 from earthlight.engine import FutureMomentError, MomentError, lookback_years, when
-from earthlight.models import MomentResult
+from earthlight.models import MomentResult, VantagePoint
 from earthlight.repository import Repository, default_repository
 from earthlight.schema import create_empty_database
 from earthlight.solar_system import PROXIMA_CENTAURI_AU, au_to_light_years
@@ -345,7 +345,7 @@ def test_the_near_miss_window_is_five_percent_of_the_lookback(
     result = small_answer(small)
     assert result.famous is not None and result.famous.vantage_point.id == "just-inside"
     assert result.famous.offset_years == pytest.approx(4.5)
-    assert any("just-inside".upper() in note and "farther" in note for note in result.notes)
+    assert any("JUST-INSIDE" in note and "4.5 years older" in note for note in result.notes)
 
 
 def test_an_exact_match_beats_a_closer_best_estimate_that_does_not_contain_the_moment(
@@ -393,3 +393,58 @@ def test_ties_are_broken_by_id_whatever_order_the_candidates_arrive_in(
     for order in (twins, twins[::-1]):
         match = engine._best(category, order, 100.0)  # pyright: ignore[reportPrivateUsage]
         assert match is not None and match.vantage_point.id == "a-twin"
+
+
+# --- review fixes -----------------------------------------------------------------------------
+
+
+def test_a_planet_that_starts_inside_the_last_zone_does_not_contradict_the_zone_note() -> None:
+    result = when(2026.0 - 4.2440, now_year=2026.0)  # inside the zone and inside Proxima b's range
+    assert result.zone is not None and result.famous is not None
+    assert not any("No star is this close" in note for note in result.notes)
+
+
+def test_near_miss_notes_use_plain_numbers_not_scientific_notation() -> None:
+    for years_ago in (50_000, 1e7):
+        for note in when(2026.0 - years_ago, now_year=2026.0).notes:
+            assert "e+" not in note, note
+
+
+def test_a_near_miss_note_says_whether_the_place_is_older_or_more_recent(
+    small: tuple[sqlite3.Connection, Path],
+) -> None:
+    connection, _ = small
+    add_place(connection, "older", "star", 104, 104.5, 105, fame=3)
+    add_place(connection, "newer", "exoplanet", 95, 95.5, 96)
+    notes = " ".join(small_answer(small).notes)
+    assert "4.5 years older" in notes and "4.5 years more recent" in notes
+    assert "nearest" not in notes  # it is not always the nearest: fame or precision decides
+
+
+def test_light_from_this_very_moment_has_only_just_left_earth() -> None:
+    notes = when(NOW, now_year=NOW).notes
+    assert notes[0] == "This light has only just left Earth."
+
+
+def test_a_moment_older_than_anything_the_database_can_hold_is_rejected() -> None:
+    with pytest.raises(MomentError, match="far older than the universe"):
+        when(-1e300, now_year=NOW)
+
+
+def test_the_wider_near_miss_query_is_only_made_when_something_is_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo = default_repository()
+    asked: list[tuple[float, float]] = []
+    real = repo.vantage_points_overlapping
+
+    def spy(low: float, high: float, **kwargs: object) -> list[VantagePoint]:
+        asked.append((low, high))
+        return real(low, high)
+
+    monkeypatch.setattr(repo, "vantage_points_overlapping", spy)
+    when(1492.5, now_year=NOW, repository=repo)  # all four categories match exactly
+    assert len(asked) == 1
+    asked.clear()
+    when(NOW - 66e6, now_year=NOW, repository=repo)  # nothing matches, so look wider
+    assert len(asked) == 2

@@ -189,6 +189,7 @@ def test_landmark_status_follows_the_middle_of_the_span(world: World) -> None:
     world.landmark("fallen", 800, 850, destroyed=990)  # destroyed before 1000
     world.landmark("falls-later", 800, 850, destroyed=1010)  # still there in 1000
     world.landmark("not-yet", 1100, 1160)  # begun after the span: left out
+    world.landmark("begins-late", 1030, 1060)  # begun after the middle of the span: left out
     world.landmark("long-gone", 100, 150, destroyed=900)  # gone before the span: left out
     status = {m.id: m.status for m in world.answer().landmarks}
     assert status == {
