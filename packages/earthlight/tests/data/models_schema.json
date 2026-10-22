@@ -571,6 +571,13 @@
     "title": "Earth Exists",
     "type": "boolean"
    },
+   "event_total": {
+    "default": 0,
+    "description": "How many events fell in the span (more than are listed).",
+    "minimum": 0,
+    "title": "Event Total",
+    "type": "integer"
+   },
    "events": {
     "default": [],
     "items": {
@@ -578,6 +585,13 @@
     },
     "title": "Events",
     "type": "array"
+   },
+   "landmark_total": {
+    "default": 0,
+    "description": "How many landmarks were begun by the middle of the span.",
+    "minimum": 0,
+    "title": "Landmark Total",
+    "type": "integer"
    },
    "landmarks": {
     "default": [],
@@ -607,6 +621,13 @@
     "title": "Notes",
     "type": "array"
    },
+   "period_total": {
+    "default": 0,
+    "description": "How many periods overlapped the span.",
+    "minimum": 0,
+    "title": "Period Total",
+    "type": "integer"
+   },
    "periods": {
     "default": [],
     "items": {
@@ -628,6 +649,12 @@
    },
    "vantage_point": {
     "$ref": "#/$defs/VantagePoint"
+   },
+   "wide_span": {
+    "default": false,
+    "description": "True when the span of Earth's history is very wide (over 1,000 years).",
+    "title": "Wide Span",
+    "type": "boolean"
    }
   },
   "required": [
@@ -766,6 +793,12 @@
     "additionalProperties": false,
     "description": "A vantage point picked for a result, with how well it fits the chosen moment.",
     "properties": {
+     "approximate": {
+      "default": false,
+      "description": "True when no place's range contains the moment, so this is the best place whose range comes close (within 5%) and the match is only approximate.",
+      "title": "Approximate",
+      "type": "boolean"
+     },
      "offset_years": {
       "description": "Best lookback estimate minus the chosen lookback. Negative means nearer.",
       "title": "Offset Years",

@@ -197,8 +197,12 @@ class Repository:
         return [_vantage_point(row) for row in self._rows(sql + " ORDER BY id", params)]
 
     def max_lookback(self) -> float:
-        """The largest lookback in the database: the oldest light there is anything to see."""
-        return float(self._rows("SELECT max(lookback_max) AS m FROM vantage_points")[0]["m"])
+        """The largest lookback in the database: the oldest light there is anything to see.
+
+        0 for a database with no places.
+        """
+        value = self._rows("SELECT max(lookback_max) AS m FROM vantage_points")[0]["m"]
+        return 0.0 if value is None else float(value)
 
     def exoplanet_details(self, vantage_id: str) -> ExoplanetDetails | None:
         """The archive details of an exoplanet, or None if ``vantage_id`` is not one."""

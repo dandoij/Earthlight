@@ -12,7 +12,7 @@ appears twice in one entry (see ``curated_yaml.py``).
 """
 
 from collections import Counter
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -175,30 +175,104 @@ def _when(year: float) -> str:
     return format_year(year, now_year=max(DESCRIPTION_REFERENCE_YEAR, year + 1))
 
 
-def search_entries(data: HistoryData) -> list[SearchEntry]:
+def search_entries(
+    data: HistoryData, aliases: Mapping[str, Sequence[str]] | None = None
+) -> list[SearchEntry]:
     """One search entry for every event, period, and landmark.
 
     The description tells hits apart: "Event, 1492 CE", "Period, 3000 BCE to 30 BCE", and
-    "Landmark, built 2560 BCE".
+    "Landmark, built 2560 BCE". ``aliases`` (from ``load_aliases``) gives other names for an
+    entry by id; they are stored one per line in the entry's aliases column.
     """
+    other = aliases or {}
+
+    def names(entry_id: str) -> str:
+        return "\n".join(other.get(entry_id, ()))
+
     entries = [
-        SearchEntry("event", e.id, e.name, "", f"Event, {_when(e.year)}") for e in data.events
+        SearchEntry("event", e.id, e.name, names(e.id), f"Event, {_when(e.year)}")
+        for e in data.events
     ]
     entries += [
         SearchEntry(
             "period",
             p.id,
             p.name,
-            "",
+            names(p.id),
             f"Period, {_when(p.start)} to {'present' if p.end is None else _when(p.end)}",
         )
         for p in data.periods
     ]
     entries += [
-        SearchEntry("landmark", m.id, m.name, "", f"Landmark, built {_when(m.built_end)}")
+        SearchEntry("landmark", m.id, m.name, names(m.id), f"Landmark, built {_when(m.built_end)}")
         for m in data.landmarks
     ]
     return entries
+
+
+MAX_ALIAS_CHARS = 200
+"""The same limit as a name, because an alias is searched and shown like one."""
+
+
+def load_aliases(path: Path, data: HistoryData) -> dict[str, tuple[str, ...]]:
+    """Read the other names for history entries from ``path`` (a YAML file with an ``aliases``
+    mapping from entry id to a list of names).
+
+    Raises HistoryError listing every problem: a file that cannot be read, an id that is not in
+    ``data``, an alias that is blank, too long, ASCII-unsafe, spans two lines, repeats within an
+    entry or across entries, or is just the entry's own name.
+    """
+    try:
+        raw = load_yaml(Path(path).read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, yaml.YAMLError) as error:
+        raise HistoryError(f"{Path(path).name}: cannot be read ({error})") from error
+    if not isinstance(raw, dict) or set(raw) != {"aliases"} or not isinstance(raw["aliases"], dict):
+        raise HistoryError(f"{Path(path).name}: must be a mapping with one key, 'aliases'")
+    own_names = {entry.id: entry.name for entry in (*data.events, *data.periods, *data.landmarks)}
+    problems: list[str] = []
+    result: dict[str, tuple[str, ...]] = {}
+    owner: dict[str, str] = {}  # folded alias -> the entry that has it
+    for entry_id, names in raw["aliases"].items():
+        if entry_id not in own_names:
+            problems.append(f"{entry_id}: there is no history entry with this id")
+            continue
+        if not isinstance(names, list) or not names:
+            problems.append(f"{entry_id}: must be a non-empty list of names")
+            continue
+        kept: list[str] = []
+        for alias in names:
+            problem = _alias_problem(alias)
+            folded = alias.strip().lower() if isinstance(alias, str) else ""
+            if problem is None and folded == own_names[entry_id].lower():
+                problem = "is the entry's own name"
+            if problem is None and folded in owner:
+                problem = (
+                    "repeats an alias of the same entry"
+                    if owner[folded] == entry_id
+                    else f"is also an alias of {owner[folded]}"
+                )
+            if problem is not None:
+                problems.append(f"{entry_id}: alias {alias!r} {problem}")
+                continue
+            owner[folded] = entry_id
+            kept.append(alias.strip())
+        result[entry_id] = tuple(kept)
+    if problems:
+        raise HistoryError("\n".join(problems))
+    return result
+
+
+def _alias_problem(alias: object) -> str | None:
+    """What is wrong with one alias, or None."""
+    if not isinstance(alias, str) or not alias.strip():
+        return "is not text"
+    if len(alias.strip()) > MAX_ALIAS_CHARS:
+        return f"is longer than {MAX_ALIAS_CHARS} characters"
+    if "\n" in alias or "\r" in alias:
+        return "must be on one line"
+    if not alias.isascii():
+        return "must be plain ASCII (no accents)"
+    return None
 
 
 def years_covered(data: HistoryData) -> tuple[float, float]:

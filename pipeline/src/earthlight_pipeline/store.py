@@ -6,7 +6,7 @@ only opens a database that has it and fills it.
 
 import json
 import sqlite3
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -286,7 +286,11 @@ def _history_values(data: HistoryData) -> dict[str, list[tuple[object, ...]]]:
     }
 
 
-def replace_history(connection: sqlite3.Connection, data: HistoryData) -> None:
+def replace_history(
+    connection: sqlite3.Connection,
+    data: HistoryData,
+    aliases: Mapping[str, Sequence[str]] | None = None,
+) -> None:
     """Replace every event, period, and landmark in the database with ``data``, then rebuild
     the search indexes and vacuum the file.
 
@@ -294,7 +298,7 @@ def replace_history(connection: sqlite3.Connection, data: HistoryData) -> None:
     RuntimeError if the new rows break a rule of the database.
     """
     rows = _history_values(data)
-    searchable = search_entries(data)
+    searchable = search_entries(data, aliases)
     try:
         with connection:
             for kind, (table, columns) in _HISTORY_TABLES.items():

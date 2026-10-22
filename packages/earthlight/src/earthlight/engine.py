@@ -226,7 +226,11 @@ def _best(category: _Category, candidates: Iterable[VantagePoint], lookback: flo
     if not eligible:
         return None
     winner = min(eligible, key=lambda p: (*category.rank(p, lookback), p.id))
-    return Match(vantage_point=winner, offset_years=winner.lookback.best - lookback)
+    return Match(
+        vantage_point=winner,
+        offset_years=winner.lookback.best - lookback,
+        approximate=not winner.lookback.contains(lookback),
+    )
 
 
 # --- zones and notes ------------------------------------------------------------------------
@@ -371,7 +375,8 @@ def from_vantage(
         )
 
     width = moments.latest - moments.earliest
-    if width > WIDE_SPAN_YEARS:
+    wide = width > WIDE_SPAN_YEARS
+    if wide:
         notes.append(
             f"This place's distance is uncertain by about {_years_text(width)}, so the span of "
             "Earth's history is very wide."
@@ -396,6 +401,10 @@ def from_vantage(
         events=tuple(_chronological(events.shown, lambda e: e.year)),
         periods=tuple(_chronological(periods.shown, lambda p: p.start)),
         landmarks=tuple(_chronological(landmarks.shown, lambda m: m.built_start)),
+        event_total=events.total,
+        period_total=periods.total,
+        landmark_total=landmarks.total,
+        wide_span=wide,
         population=population,
         notes=tuple(notes),
     )

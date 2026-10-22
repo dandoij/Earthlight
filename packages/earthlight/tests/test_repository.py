@@ -238,3 +238,9 @@ def test_closing_the_shared_repository_does_not_break_the_next_caller() -> None:
     first.close()
     second = default_repository()
     assert second is not first and second.vantage_point("hip-70890") is not None
+
+
+def test_a_database_with_no_places_has_a_zero_oldest_light(tmp_path: Path) -> None:
+    create_empty_database(tmp_path / "none.db")
+    with Repository(tmp_path / "none.db") as repository:
+        assert repository.max_lookback() == 0.0

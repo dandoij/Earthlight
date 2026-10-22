@@ -52,15 +52,33 @@ def search(
     up to five did-you-mean guesses. Text with no letters or digits finds nothing.
     """
     repo = default_repository() if repository is None else repository
-    query = " ".join(text.split())[:MAX_QUERY_CHARS].strip()
+    query = tidy(text)
+    words = _WORD.findall(query)
+    rows = search_rows(text, limit=limit, repository=repo)
+    if rows or not words or limit < 1:
+        return SearchResponse(query=query, results=tuple(_result(row) for row in rows))
+    return SearchResponse(query=query, suggestions=_suggestions(repo, query, words))
+
+
+def tidy(text: str) -> str:
+    """The text with spaces tidied up and cut to ``MAX_QUERY_CHARS``."""
+    return " ".join(text.split())[:MAX_QUERY_CHARS].strip()
+
+
+def search_rows(
+    text: str, *, limit: int = DEFAULT_LIMIT, repository: Repository | None = None
+) -> list[SearchRow]:
+    """The stored entries that match ``text``, best first (at most ``limit``): the exact names,
+    then the word matches. This is ``search`` before it is turned into models, and it carries
+    each entry's other names, which a caller may want to check.
+    """
+    repo = default_repository() if repository is None else repository
+    query = tidy(text)
     words = _WORD.findall(query)
     if not words or limit < 1:
-        return SearchResponse(query=query)
-
-    rows = _unique([*repo.search_exact(query), *repo.search_words(_expression(words), limit)])
-    if rows:
-        return SearchResponse(query=query, results=tuple(_result(row) for row in rows[:limit]))
-    return SearchResponse(query=query, suggestions=_suggestions(repo, query, words))
+        return []
+    found = [*repo.search_exact(query), *repo.search_words(_expression(words), limit)]
+    return _unique(found)[:limit]
 
 
 def _unique(rows: Iterable[SearchRow]) -> list[SearchRow]:

@@ -1,5 +1,6 @@
 """Tests for the whole history build."""
 
+import shutil
 import sqlite3
 from pathlib import Path
 
@@ -130,3 +131,63 @@ def test_files_with_no_entries_stop_the_build_and_write_nothing(tmp_path: Path) 
     with pytest.raises(HistoryError, match="no history entries"):
         run(tmp_path, empty)
     assert not (tmp_path / "earthlight.db").exists()
+
+
+def test_the_aliases_file_beside_the_history_folder_is_used(tmp_path: Path) -> None:
+    folder = tmp_path / "curated"
+    shutil.copytree(SAMPLE, folder / "history")
+    (folder / "history_aliases.yaml").write_text(
+        "aliases:\n  moon-landing: [First moon landing, Man on the moon]\n", encoding="utf-8"
+    )
+    messages: list[str] = []
+    report = run_history(
+        database=tmp_path / "earthlight.db",
+        progress=messages.append,
+        history_dir=folder / "history",
+    )
+    assert report.aliases == 2
+    assert "Read 2 other names for search from history_aliases.yaml" in messages
+    connection = sqlite3.connect(tmp_path / "earthlight.db")
+    try:
+        row = connection.execute(
+            "SELECT aliases FROM search_entries WHERE id = 'moon-landing'"
+        ).fetchone()
+        found = connection.execute(
+            'SELECT count(*) FROM search_fts WHERE search_fts MATCH \'"man" "moon"*\''
+        ).fetchone()
+    finally:
+        connection.close()
+    assert row == ("First moon landing\nMan on the moon",) and found == (1,)
+
+
+def test_a_history_folder_without_an_aliases_file_builds_without_aliases(tmp_path: Path) -> None:
+    report, messages = run(tmp_path)
+    assert report.aliases == 0 and "Read 0 other names" in messages[1]
+
+
+def test_a_bad_aliases_file_stops_the_build_and_writes_nothing(tmp_path: Path) -> None:
+    folder = tmp_path / "curated"
+    shutil.copytree(SAMPLE, folder / "history")
+    (folder / "history_aliases.yaml").write_text("aliases:\n  nope: [X]\n", encoding="utf-8")
+    with pytest.raises(HistoryError, match="nope: there is no history entry"):
+        run_history(
+            database=tmp_path / "earthlight.db",
+            progress=lambda _m: None,
+            history_dir=folder / "history",
+        )
+    assert not (tmp_path / "earthlight.db").exists()
+
+
+def test_the_report_counts_the_aliases() -> None:
+    report = HistoryReport(
+        events=1,
+        periods=0,
+        landmarks=0,
+        by_category={"cosmic": 1},
+        earliest_year=0,
+        latest_year=1,
+        database=Path("earthlight.db"),
+        database_bytes=1,
+        aliases=7,
+    )
+    assert "Other names for search: 7" in format_history_report(report)

@@ -11,7 +11,9 @@ from earthlight_pipeline.history import (
     DESCRIPTION_REFERENCE_YEAR,
     HistoryData,
     has_ongoing_period,
+    load_aliases,
     load_curated_history,
+    search_entries,
     years_covered,
 )
 
@@ -449,3 +451,11 @@ def test_wording_that_the_owner_chose_is_kept(shipped: HistoryData) -> None:
     americas = " ".join(events["humans-reach-the-americas"].summary.split())
     assert "Monte Verde" in americas and "14,500 years ago" in americas
     assert events["humans-reach-the-americas"].year_uncertainty == 5000  # the range is kept
+
+
+def test_every_shipped_alias_belongs_to_a_real_entry_and_is_usable(shipped: HistoryData) -> None:
+    aliases = load_aliases(HISTORY_DIR.parent / "history_aliases.yaml", shipped)
+    assert len(aliases) > 100 and sum(len(v) for v in aliases.values()) > 250
+    assert aliases["fall-of-the-western-roman-empire"][0] == "Fall of Rome"
+    entries = {e.id: e for e in search_entries(shipped, aliases)}
+    assert "Moon landing" in entries["apollo-11-moon-landing"].aliases.splitlines()

@@ -180,7 +180,7 @@ No database yet. Pure, heavily tested functions.
 - [x] **3.6 README update** (Python usage example)
   - **Done:** "Using it from Python" replaces "What works today"; the example is the README's tested snippet (`test_readme.py` runs it and compares the output). Status and the core-concepts text now describe the engine.
 - [x] **3.7 Phase review**
-  - **Done:** code-reviewer over `git diff main...HEAD`; bugs and clear improvements fixed in "fix: address phase 3 review findings". Judgment calls (machine-readable flags in the schema, weak single-word event matches, event names such as "fall of rome", one shared connection) are listed for Ian.
+  - **Done:** code-reviewer over `git diff main...HEAD`; bugs and clear improvements fixed in "fix: address phase 3 review findings". Judgment calls decided with Ian: `Match.approximate` and `EarthSnapshot.event_total` / `period_total` / `landmark_total` / `wide_span` added; history search aliases in `pipeline/curated/history_aliases.yaml` (329 names); a hit whose name does not contain every word is called the closest match. One shared connection stays until the API step.
 
 ---
 

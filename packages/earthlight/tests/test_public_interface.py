@@ -1,7 +1,9 @@
 """Tests for the top-level functions people call: when, from_vantage, info, search."""
 
 import doctest
+import sqlite3
 from datetime import UTC, datetime, timedelta, timezone
+from pathlib import Path
 
 import pytest
 
@@ -22,7 +24,8 @@ from earthlight import (
 )
 from earthlight import engine as engine_module
 from earthlight.models import VantageKind
-from earthlight.repository import default_repository
+from earthlight.repository import Repository, default_repository
+from earthlight.schema import create_empty_database, rebuild_search_index
 from earthlight.time import from_calendar
 
 NOW = from_calendar(2026, 6, 15, 12)
@@ -137,11 +140,26 @@ def test_the_rest_of_the_answer_is_the_same_as_for_the_date() -> None:
     assert by_name.model_copy(update={"notes": ()}) == by_date.model_copy(update={"notes": ()})
 
 
+def test_names_people_actually_use_find_the_right_entry() -> None:
+    expected = {
+        "fall of rome": "The fall of the Western Roman Empire",
+        "moon landing": "Apollo 11 lands on the Moon",
+        "Titanic": "The Titanic sinks",
+        "French Revolution": "The storming of the Bastille",
+        "WW2": "World War II",
+        "pyramids": "Great Pyramid of Giza",
+        "Ice Age": "Pleistocene Epoch",
+        "dinosaur extinction": "The end of the dinosaurs",
+    }
+    for text, name in expected.items():
+        assert f"Using {name}" in when(text, now_year=NOW).notes[0], text
+
+
 def test_a_name_with_no_match_raises_with_guesses() -> None:
     with pytest.raises(UnresolvedNameError, match="Did you mean") as caught:
-        when("fall of rome", now_year=NOW)
-    assert "The fall of the Western Roman Empire" in [s.name for s in caught.value.suggestions]
-    assert caught.value.text == "fall of rome"
+        when("colosseun", now_year=NOW)
+    assert "The Colosseum" in [s.name for s in caught.value.suggestions]
+    assert caught.value.text == "colosseun"
 
 
 def test_gibberish_raises_without_guesses() -> None:
@@ -276,3 +294,30 @@ def test_an_extreme_datetime_is_a_moment_error_not_a_bare_value_error() -> None:
     extreme = datetime(1, 1, 1, tzinfo=timezone(timedelta(hours=5)))
     with pytest.raises(MomentError):
         when(extreme, now_year=NOW)
+
+
+def test_a_hit_that_does_not_name_every_word_is_called_the_closest_match(tmp_path: Path) -> None:
+    path = tmp_path / "weak.db"
+    create_empty_database(path)
+    connection = sqlite3.connect(path)
+    connection.execute(
+        "INSERT INTO events (id, name, category, region, summary, importance, source, year) "
+        "VALUES ('zed', 'Founding of Zed', 'x', 'y', 'z', 3, 'https://example.org/x', 100)"
+    )
+    connection.execute(
+        "INSERT INTO search_entries (type, id, name, aliases, description) "
+        "VALUES ('event', 'zed', 'Founding of Zed', 'Zed begins', 'Event, 100 CE, the Quux affair')"
+    )
+    connection.commit()
+    rebuild_search_index(connection)
+    connection.close()
+    with Repository(path) as repo:
+        by_name = when("founding zed", now_year=NOW, repository=repo).notes[0]
+        by_alias = when("zed begins", now_year=NOW, repository=repo).notes[0]
+        by_description = when("quux", now_year=NOW, repository=repo).notes[0]
+    assert by_name.startswith("Using ") and by_alias.startswith("Using ")
+    assert by_description.startswith("Closest match for 'quux': Founding of Zed")
+
+
+def test_an_unfinished_word_counts_as_naming_it() -> None:
+    assert when("fall of rom", now_year=NOW).notes[0].startswith("Using ")

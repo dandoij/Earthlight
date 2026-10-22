@@ -339,3 +339,34 @@ def test_every_scale_of_lookback_gives_a_valid_snapshot() -> None:
         assert len(result.periods) <= MAX_ITEMS_PER_LIST
         assert len(result.landmarks) <= MAX_ITEMS_PER_LIST
         assert EarthSnapshot.model_validate_json(result.model_dump_json()) == result
+
+
+def test_the_totals_and_the_wide_flag_are_machine_readable() -> None:
+    result = snapshot("hip-27989")
+    assert result.landmark_total > len(result.landmarks) == MAX_ITEMS_PER_LIST
+    assert result.event_total >= len(result.events) and result.period_total >= len(result.periods)
+    assert snapshot("large-magellanic-cloud").wide_span is True
+    assert result.wide_span is False and snapshot("hip-70890").wide_span is False
+
+
+def test_totals_count_everything_found_not_just_what_is_listed(world: World) -> None:
+    world.spot(900, 1000, 1100)
+    for number in range(15):
+        world.event(f"event-{number:02d}", 900 + number * 10)
+    result = world.answer()
+    assert (len(result.events), result.event_total) == (MAX_ITEMS_PER_LIST, 15)
+
+
+def test_the_wide_flag_matches_the_note(world: World) -> None:
+    world.spot(500, 1000, 1500)
+    assert world.answer().wide_span is False
+    world.connection.execute("DELETE FROM vantage_points")
+    world.spot(499, 1000, 1500)
+    result = world.answer()
+    assert result.wide_span is True and any("very wide" in n for n in result.notes)
+
+
+def test_an_empty_world_has_zero_totals(world: World) -> None:
+    world.spot(2015.5, 2016.5, 2017.5)
+    result = world.answer()
+    assert (result.event_total, result.period_total, result.landmark_total) == (0, 0, 0)

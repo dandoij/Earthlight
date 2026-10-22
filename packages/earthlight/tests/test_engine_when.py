@@ -448,3 +448,24 @@ def test_the_wider_near_miss_query_is_only_made_when_something_is_missing(
     asked.clear()
     when(NOW - 66e6, now_year=NOW, repository=repo)  # nothing matches, so look wider
     assert len(asked) == 2
+
+
+def test_a_match_is_approximate_exactly_when_its_range_misses_the_moment(
+    small: tuple[sqlite3.Connection, Path],
+) -> None:
+    connection, _ = small
+    add_place(connection, "contains", "star", 90, 100, 130, fame=2)
+    add_place(connection, "misses", "exoplanet", 104, 104.5, 105)
+    result = small_answer(small)
+    assert result.famous is not None and result.famous.approximate is False
+    assert result.exoplanet is not None and result.exoplanet.approximate is True
+    assert result.most_precise is not None and result.most_precise.approximate is False
+
+
+def test_every_real_match_agrees_with_its_range() -> None:
+    for years_ago in (500, 1000, 20_000, 3e5, 13.7e9):
+        result = when(NOW - years_ago, now_year=NOW)
+        for match in (result.famous, result.exoplanet, result.visible_tonight, result.most_precise):
+            if match is not None:
+                contains = match.vantage_point.lookback.contains(result.lookback_years)
+                assert match.approximate == (not contains)

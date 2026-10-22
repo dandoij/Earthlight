@@ -165,6 +165,11 @@ class Match(EarthlightModel):
     offset_years: float = Field(
         description="Best lookback estimate minus the chosen lookback. Negative means nearer."
     )
+    approximate: bool = Field(
+        default=False,
+        description="True when no place's range contains the moment, so this is the best place "
+        "whose range comes close (within 5%) and the match is only approximate.",
+    )
 
     @property
     def range_width_years(self) -> float:
@@ -295,10 +300,32 @@ class EarthSnapshot(EarthlightModel):
     events: tuple[HistoryEvent, ...] = ()
     periods: tuple[HistoryPeriod, ...] = ()
     landmarks: tuple[SnapshotLandmark, ...] = ()
+    event_total: int = Field(
+        default=0, ge=0, description="How many events fell in the span (more than are listed)."
+    )
+    period_total: int = Field(default=0, ge=0, description="How many periods overlapped the span.")
+    landmark_total: int = Field(
+        default=0, ge=0, description="How many landmarks were begun by the middle of the span."
+    )
+    wide_span: bool = Field(
+        default=False,
+        description="True when the span of Earth's history is very wide (over 1,000 years).",
+    )
     population: PopulationEstimate | None = None
     notes: tuple[str, ...] = Field(
         default=(), description="Plain-language remarks, such as a very wide span."
     )
+
+    @model_validator(mode="after")
+    def _totals_cover_the_lists(self) -> Self:
+        for listed, total, name in (
+            (self.events, self.event_total, "event_total"),
+            (self.periods, self.period_total, "period_total"),
+            (self.landmarks, self.landmark_total, "landmark_total"),
+        ):
+            if total < len(listed):
+                raise ValueError(f"{name} cannot be smaller than the number listed")
+        return self
 
     @model_validator(mode="after")
     def _nothing_before_earth(self) -> Self:

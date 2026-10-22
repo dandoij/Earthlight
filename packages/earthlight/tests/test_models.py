@@ -230,7 +230,8 @@ def test_match_reports_its_range_width_but_does_not_serialize_it() -> None:
     match = Match(vantage_point=vantage(), offset_years=-0.5)
     assert match.range_width_years == pytest.approx(0.2)
     dumped = match.model_dump(mode="json")
-    assert set(dumped) == {"vantage_point", "offset_years"}
+    assert set(dumped) == {"vantage_point", "offset_years", "approximate"}
+    assert match.approximate is False
     assert Match.model_validate_json(match.model_dump_json()) == match
 
 
@@ -443,6 +444,8 @@ def snapshot(**overrides: Any) -> EarthSnapshot:
 def test_snapshot_can_hold_history() -> None:
     item = snapshot(
         events=[event()],
+        event_total=1,
+        landmark_total=1,
         landmarks=[
             SnapshotLandmark.model_validate(landmark().model_dump() | {"status": "standing"})
         ],
@@ -453,11 +456,24 @@ def test_snapshot_can_hold_history() -> None:
     assert EarthSnapshot.model_validate_json(item.model_dump_json()) == item
 
 
+def test_snapshot_totals_cannot_be_smaller_than_the_lists() -> None:
+    with pytest.raises(ValidationError, match="event_total"):
+        snapshot(events=[event()])
+    with pytest.raises(ValidationError, match="landmark_total"):
+        snapshot(
+            landmarks=[
+                SnapshotLandmark.model_validate(landmark().model_dump() | {"status": "standing"})
+            ]
+        )
+    shown = snapshot(events=[event()], event_total=40, wide_span=True)
+    assert shown.event_total == 40 and shown.wide_span
+
+
 def test_snapshot_before_earth_must_be_empty() -> None:
     empty = snapshot(earth_exists=False, notes=["Earth does not exist yet."])
     assert not empty.earth_exists
     with pytest.raises(ValidationError, match="before Earth"):
-        snapshot(earth_exists=False, events=[event()])
+        snapshot(earth_exists=False, events=[event()], event_total=1)
     with pytest.raises(ValidationError, match="before Earth"):
         snapshot(earth_exists=False, population=PopulationEstimate(year=0.0, people=1))
 
@@ -564,7 +580,7 @@ def test_collections_are_immutable_and_json_arrays() -> None:
     assert isinstance(result.notes, tuple)
     assert not hasattr(result.notes, "append")
     assert json.loads(result.model_dump_json())["notes"] == ["one", "two"]
-    item = snapshot(events=[event()])
+    item = snapshot(events=[event()], event_total=1)
     assert isinstance(item.events, tuple)
     assert isinstance(json.loads(item.model_dump_json())["events"], list)
 
