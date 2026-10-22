@@ -186,7 +186,8 @@ No database yet. Pure, heavily tested functions.
 
 ## Phase 4: CLI (branch `phase-4-cli`)
 
-- [ ] **4.1 CLI skeleton**: Typer app, `earthlight` entry point, `--version`, friendly error handling with exit codes.
+- [x] **4.1 CLI skeleton**: Typer app, `earthlight` entry point, `--version`, friendly error handling with exit codes.
+  - **Done:** `earthlight.cli` (`app`, `friendly_errors`), `python -m earthlight`, and the `earthlight` console script. `typer` and `rich` are now runtime dependencies of the package (both are in the locked decisions). Exit codes: 1 for a request that cannot be answered, 2 for a mistyped command (Typer).
 - [ ] **4.2 `when` command**: smart argument plus `--year`, `--date`, `--ago`, `--event` overrides; Rich output (hero line, four category panels, zone info). Phase 1 review note: the overrides need public per-format entry points in `earthlight.parse` (for example `parse_year`, `parse_date`, `parse_ago`) so the CLI does not rebuild strings, and bare years (capped at 9999) should be reconciled with ISO years (up to 999999).
 - [ ] **4.3 `from` and `info` commands**: Earth snapshot and object facts with Rich layout.
 - [ ] **4.4 `search` command and did-you-mean** in all commands' "not found" errors.
