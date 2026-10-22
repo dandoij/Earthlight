@@ -1,11 +1,9 @@
 """The ``earthlight-build`` command: builds the Earthlight database one source at a time.
 
-Each data source is a subcommand. A source that has not been built yet is a placeholder that
-fails with the plan step that implements it (the step number is in each command's help), and
+Each data source is a subcommand (the plan step that built it is in each command's help), and
 ``all`` runs every source in order.
 """
 
-from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Annotated
@@ -16,9 +14,11 @@ from earthlight.schema import create_empty_database
 from earthlight_pipeline.build_deep_sky import format_deep_sky_report, run_deep_sky
 from earthlight_pipeline.build_exoplanets import format_exoplanets_report, run_exoplanets
 from earthlight_pipeline.build_history import format_history_report, run_history
+from earthlight_pipeline.build_population import format_population_report, run_population
 from earthlight_pipeline.build_stars import DEFAULT_MAX_VMAG, format_stars_report, run_stars
 from earthlight_pipeline.cache import DEFAULT_CACHE_DIR
 from earthlight_pipeline.history import HistoryError
+from earthlight_pipeline.population import PopulationError
 
 
 @dataclass(frozen=True)
@@ -35,7 +35,7 @@ SOURCES: tuple[Source, ...] = (
     Source("exoplanets", "2.5", "NASA Exoplanet Archive planets, linked to their host stars."),
     Source("deep-sky", "2.6", "Curated star clusters, galaxies, quasars, and the CMB."),
     Source("history", "2.7", "Hand-curated events, periods, and landmarks."),
-    Source("population", "2.14", "Our World in Data historical population estimates."),
+    Source("population", "2.14", "Our World in Data world population estimates."),
 )
 
 DEFAULT_DATABASE_NAME = "earthlight.db"
@@ -97,22 +97,6 @@ def show_config(ctx: typer.Context) -> None:
     typer.echo(f"cache directory: {options.cache_dir}")
     typer.echo(f"refresh cached files: {'yes' if options.refresh else 'no'}")
     typer.echo(f"database: {options.database}")
-
-
-def _not_implemented(source: Source) -> None:
-    typer.echo(
-        f"'{source.command}' is not implemented yet: it is built in step {source.step} "
-        "of docs/PLAN.md.",
-        err=True,
-    )
-    raise typer.Exit(code=1)
-
-
-def _make_placeholder(source: Source) -> Callable[[], None]:
-    def command() -> None:
-        _not_implemented(source)
-
-    return command
 
 
 def _build_stars(options: BuildOptions, max_vmag: float | None) -> None:
@@ -216,13 +200,28 @@ def history(ctx: typer.Context) -> None:
     _build_history(get_options(ctx))
 
 
-IMPLEMENTED = frozenset({"stars", "exoplanets", "deep-sky", "history"})
-
-for _source in SOURCES:
-    if _source.command not in IMPLEMENTED:
-        app.command(name=_source.command, help=f"{_source.summary} (step {_source.step})")(
-            _make_placeholder(_source)
+def _build_population(options: BuildOptions) -> None:
+    try:
+        report = run_population(
+            cache_dir=options.cache_dir,
+            refresh=options.refresh,
+            database=options.database,
+            progress=typer.echo,
         )
+    except PopulationError as error:
+        typer.echo(f"The population file has problems:\n{error}", err=True)
+        raise typer.Exit(code=1) from error
+    typer.echo("")
+    typer.echo(format_population_report(report))
+
+
+@app.command(
+    name="population",
+    help="World population estimates from Our World in Data. (step 2.14)",
+)
+def population(ctx: typer.Context) -> None:
+    """Build the world population table from the Our World in Data file."""
+    _build_population(get_options(ctx))
 
 
 @app.command(name="all")
@@ -236,15 +235,13 @@ def build_all(ctx: typer.Context) -> None:
     options = get_options(ctx)
     typer.echo(f"Creating a fresh database at {options.database}")
     create_empty_database(options.database, overwrite=True)
+    builders = {
+        "stars": lambda: _build_stars(options, DEFAULT_MAX_VMAG),
+        "exoplanets": lambda: _build_exoplanets(options),
+        "deep-sky": lambda: _build_deep_sky(options),
+        "history": lambda: _build_history(options),
+        "population": lambda: _build_population(options),
+    }
     for source in SOURCES:
         typer.echo(f"Building {source.command}...")
-        if source.command == "stars":
-            _build_stars(options, DEFAULT_MAX_VMAG)
-        elif source.command == "exoplanets":
-            _build_exoplanets(options)
-        elif source.command == "deep-sky":
-            _build_deep_sky(options)
-        elif source.command == "history":
-            _build_history(options)
-        else:
-            _not_implemented(source)
+        builders[source.command]()

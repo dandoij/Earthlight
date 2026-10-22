@@ -11,7 +11,13 @@ from pathlib import Path
 from typing import Any
 
 from earthlight.lookback import LookbackRange
-from earthlight.models import HistoryEvent, HistoryPeriod, Landmark, VantagePoint
+from earthlight.models import (
+    HistoryEvent,
+    HistoryPeriod,
+    Landmark,
+    PopulationEstimate,
+    VantagePoint,
+)
 from earthlight.schema import SCHEMA_VERSION, create_empty_database, rebuild_search_index
 from earthlight_pipeline.deep_sky import DeepSkyRecord
 from earthlight_pipeline.exoplanets import ExoplanetRecord
@@ -305,6 +311,32 @@ def load_history(connection: sqlite3.Connection) -> HistoryData:
 
 def _entry_fields(row: sqlite3.Row) -> dict[str, Any]:
     return {column: row[column] for column in _ENTRY_COLUMNS}
+
+
+def replace_population(
+    connection: sqlite3.Connection, estimates: Sequence[PopulationEstimate]
+) -> None:
+    """Replace every population estimate in the database with ``estimates``, then vacuum the file.
+
+    The replacement is one transaction: either all the estimates are replaced or none are.
+    Raises RuntimeError if the new rows break a rule of the database.
+    """
+    try:
+        with connection:
+            connection.execute("DELETE FROM population")
+            connection.executemany(
+                "INSERT INTO population (year, people, source) VALUES (?, ?, ?)",
+                [(e.year, e.people, e.source) for e in estimates],
+            )
+    except sqlite3.IntegrityError as error:
+        raise RuntimeError(f"could not store the population estimates ({error})") from error
+    connection.execute("VACUUM")
+
+
+def load_population(connection: sqlite3.Connection) -> list[PopulationEstimate]:
+    """Read every population estimate back as a model, oldest first."""
+    rows = connection.execute("SELECT year, people, source FROM population ORDER BY year")
+    return [PopulationEstimate(year=y, people=p, source=s) for y, p, s in rows]
 
 
 def load_deep_sky(connection: sqlite3.Connection) -> list[VantagePoint]:

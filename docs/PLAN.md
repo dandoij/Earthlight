@@ -141,8 +141,9 @@ No database yet. Pure, heavily tested functions.
 - [x] **2.12 History: 500 CE to 1800 CE**
 - [x] **2.13 History: 1800 CE to today**
   - **For 2.8 to 2.13:** Well-known dates only, a source per entry, own-words summaries. Target total about 160 across the six steps (roughly 5 / 20 / 15 / 35 / 40 / 45). Each commit lists its entries in the learning summary so Ian can spot-check quickly.
-- [ ] **2.14 Population data**
-  - **Build:** Our World in Data historical population estimates into the `population` table.
+- [x] **2.14 Population data**
+  - **Build:** Our World in Data historical population estimates into the `population` table. 261 world rows (10000 BCE to 2023) from the OWID "Population" chart, which combines HYDE 3.3, Gapminder v7, and UN WPP 2024; a `country=` filter in the address is ignored, so the whole file is downloaded and the world is picked out. BCE labels are stored as 1 - N. Projections are refused. The `population` command now exists and `all` builds every source. Details are in `docs/data-sources.md`.
+  - **Done when:** The table loads and validates, spans 10000 BCE to 2023, and the sources and licenses are recorded in `meta`.
 - [ ] **2.15 Build and validate the database**
   - **Phase 2.2 note:** the validation tests also check that `meta` records the CC BY-NC 3.0 IGO data license and that `LICENSE-DATA` exists.
   - **Phase 2.3 note:** SQLite cannot check two rules inside the schema, so the validation tests must: every `facts` value is a plain scalar (no nested objects or arrays), and every `host_id` points at a vantage point of kind `star`. The build also turns on `PRAGMA foreign_keys`, fills `search_entries` (deciding which things are searchable, for example leaving out unnamed stars to save space), and calls `rebuild_search_index()` before finishing.

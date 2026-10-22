@@ -386,3 +386,29 @@ def fetch_cosmicflows(
         retry_wait=TAP_RETRY_WAIT_SECONDS,
         notify=progress,
     )
+
+
+OWID_POPULATION_URL = (
+    "https://ourworldindata.org/grapher/population.csv?csvType=full&useColumnShortNames=false"
+)
+"""Population of every country and region, and the world, by year (Our World in Data).
+
+A ``country=`` filter in the address is ignored by the server, so the whole 1.6 MB file is
+downloaded and ``population.py`` picks out the world."""
+
+
+def fetch_owid_population(
+    cache_dir: Path | None, refresh: bool, progress: Progress = _ignore
+) -> Path:
+    """The Our World in Data population file, cached."""
+    progress("Downloading the population file from Our World in Data")
+    return cached_download(
+        OWID_POPULATION_URL,
+        "owid_population.csv",
+        cache_dir=cache_dir,
+        refresh=refresh,
+        timeout=TAP_TIMEOUT_SECONDS,
+        retries=TAP_RETRIES,
+        retry_wait=TAP_RETRY_WAIT_SECONDS,
+        notify=progress,
+    )

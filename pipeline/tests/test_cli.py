@@ -11,14 +11,15 @@ from earthlight_pipeline import cli
 from earthlight_pipeline.build_deep_sky import DeepSkyReport
 from earthlight_pipeline.build_exoplanets import ExoplanetsReport
 from earthlight_pipeline.build_history import HistoryReport
+from earthlight_pipeline.build_population import PopulationReport
 from earthlight_pipeline.build_stars import DEFAULT_MAX_VMAG, StarsReport
 from earthlight_pipeline.cache import DEFAULT_CACHE_DIR
 from earthlight_pipeline.cli import SOURCES, Source, app
 from earthlight_pipeline.history import HistoryError
+from earthlight_pipeline.population import PopulationError
 
 runner = CliRunner()
 
-UNBUILT = [source for source in SOURCES if source.command not in cli.IMPLEMENTED]
 Call = tuple[str, dict[str, object]]
 
 
@@ -60,6 +61,15 @@ def fake_deep_sky_report(database: Path) -> DeepSkyReport:
         farthest_years=13_786_000_000.0,
         database=database,
         database_bytes=200_000,
+    )
+
+
+def fake_population_report(database: Path) -> PopulationReport:
+    return PopulationReport(
+        built=261,
+        span="4.5 million in 10000 BCE to 8.09 billion in 2023 CE",
+        database=database,
+        database_bytes=250_000,
     )
 
 
@@ -109,6 +119,14 @@ def calls(monkeypatch: pytest.MonkeyPatch) -> list[Call]:
         progress("reading history...")
         return fake_history_report(Path(str(kwargs["database"])))
 
+    def fake_run_population(**kwargs: object) -> PopulationReport:
+        recorded.append(("population", kwargs))
+        progress = kwargs["progress"]
+        assert callable(progress)
+        progress("downloading population...")
+        return fake_population_report(Path(str(kwargs["database"])))
+
+    monkeypatch.setattr(cli, "run_population", fake_run_population)
     monkeypatch.setattr(cli, "run_history", fake_run_history)
     monkeypatch.setattr(cli, "run_deep_sky", fake_run_deep_sky)
     monkeypatch.setattr(cli, "run_stars", fake_run_stars)
@@ -137,7 +155,6 @@ def test_sources_are_unique_and_match_the_plan() -> None:
     assert len(set(commands)) == len(commands)
     assert commands == ["stars", "exoplanets", "deep-sky", "history", "population"]
     assert [s.step for s in SOURCES] == ["2.4", "2.5", "2.6", "2.7", "2.14"]
-    assert {"stars", "exoplanets", "deep-sky", "history"} == cli.IMPLEMENTED
 
 
 @pytest.mark.parametrize("source", SOURCES, ids=lambda s: s.command)
@@ -147,12 +164,32 @@ def test_each_source_help_names_its_plan_step(source: Source) -> None:
     assert f"step {source.step}" in " ".join(result.output.split())
 
 
-@pytest.mark.parametrize("source", UNBUILT, ids=lambda s: s.command)
-def test_unbuilt_sources_fail_clearly(source: Source) -> None:
-    result = runner.invoke(app, [source.command])
+def test_population_runs_the_build_and_prints_the_report(calls: list[Call], tmp_path: Path) -> None:
+    result = runner.invoke(app, ["--cache-dir", str(tmp_path), "--refresh", "population"])
+    assert result.exit_code == 0, result.output
+    ((name, kwargs),) = calls
+    assert name == "population"
+    assert kwargs == {
+        "cache_dir": tmp_path,
+        "refresh": True,
+        "database": tmp_path / "earthlight.db",
+        "progress": kwargs["progress"],
+    }
+    assert "downloading population..." in result.output
+    assert "Population estimates built: 261" in result.output
+
+
+def test_population_problems_are_printed_and_exit_with_an_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def broken(**_kwargs: object) -> PopulationReport:
+        raise PopulationError("year 2100: is after 2026, so it is a projection")
+
+    monkeypatch.setattr(cli, "run_population", broken)
+    result = runner.invoke(app, ["population"])
     assert result.exit_code == 1
-    assert "not implemented yet" in result.output
-    assert source.step in result.output
+    assert "The population file has problems" in result.output
+    assert "year 2100" in result.output
 
 
 def test_stars_runs_the_build_and_prints_the_report(calls: list[Call], tmp_path: Path) -> None:
@@ -267,12 +304,13 @@ def test_all_builds_every_finished_source_into_a_fresh_database(
     database = tmp_path / "earthlight.db"
     database.write_text("an old database that must not survive", encoding="utf-8")
     result = runner.invoke(app, ["--database", str(database), "all"])
-    assert result.exit_code == 1  # it stops at the first source that is not built yet
+    assert result.exit_code == 0, result.output
     assert [name for name, _ in calls] == [
         "stars",
         "exoplanets",
         "deep-sky",
         "history",
+        "population",
     ]  # planets link to stars
     assert calls[0][1]["max_vmag"] == DEFAULT_MAX_VMAG
     out = result.output
@@ -281,7 +319,7 @@ def test_all_builds_every_finished_source_into_a_fresh_database(
         for s in ("stars", "exoplanets", "deep-sky", "history", "population")
     )
     assert stars_at < planets_at < deep_at < history_at < population_at
-    assert "'population' is not implemented yet" in out
+    assert "not implemented" not in out
     # The old file was replaced by an empty database with the current schema.
     connection = sqlite3.connect(database)
     try:

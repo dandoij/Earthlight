@@ -325,6 +325,40 @@ These match the usual values (LMC about 163,000 light-years, Andromeda about 2.5
 - The build records `source.mcconnachie_2012` and `source.cosmicflows_4` in the `meta` table.
 - Citations: McConnachie, A. W. 2012, AJ 144, 4 (arXiv:1204.1562); Tully, R. B., Kourkchi, E., Courtois, H. M., et al. 2023, ApJ 944, 94 (arXiv:2209.11238).
 
+## Population build results (step 2.14)
+
+The `population` table holds **261 world population estimates**, from 4.5 million people in 10000 BCE to 8.09 billion in 2023. They come from the Our World in Data "Population" chart (https://ourworldindata.org/grapher/population), which stitches three sources together.
+
+### The real file
+
+- **Download:** `https://ourworldindata.org/grapher/population.csv?csvType=full&useColumnShortNames=false`, 1.6 MB, 58,824 rows for about 250 countries and regions. Columns: `Entity`, `Code`, `Year`, `Population`. A `country=~OWID_WRL` filter added to the address was **ignored** (the file still came back whole; the page documents no such filter), so the whole file is downloaded and the build keeps the rows with code `OWID_WRL` (entity "World"). Metadata: `.../population.metadata.json`.
+- **The world series** has 261 rows, one per year label, with no repeats and no gaps in order: every 1000 years from 10000 BCE to 1000 BCE (labels `-10000` to `-1000`), every 100 years from 0 to 1600, every 10 years from 1700 to 1790, and every year from 1800 to 2023. It ends at 2023: the series has **no projections**, although the chart's text says the UN data "include 2100 projections" (those are not in this file). The build still refuses any year after the current year, so a changed file cannot slip projections in.
+- **Sources (from OWID's metadata):** HYDE 3.3 (PBL Netherlands Environmental Assessment Agency, 2023) for 10000 BCE to 1799; Gapminder "Population" v7 (2022) for 1800 to 1949; United Nations World Population Prospects 2024 for 1950 to 2023. OWID warns that "breaks in the data may occur at the boundaries between sources". Before 1800 the world value is HYDE's; from 1800 to 1950 it is the sum of the countries; after 1950 it is the UN's.
+- **Licenses:** HYDE 3.3, CC BY 4.0 (https://doi.org/10.24416/UU01-AEZZIT); Gapminder, CC BY 4.0; UN WPP, CC BY 3.0 IGO. OWID's own processing is CC BY 4.0, and it says third-party data keep the terms of their original providers. All are compatible with the bundled database's CC BY-NC 3.0 IGO license, with credit. Suggested credit: "HYDE (2023); Gapminder (2022); UN WPP (2024), with major processing by Our World in Data".
+
+### Rules chosen in this step
+
+- **BCE labels are shifted to astronomical years.** OWID writes 10000 BCE as `-10000`. Earthlight writes N BCE as 1 - N (see the history notes), so the build stores `-9999`; the label `0` stays 0 and positive labels are unchanged. The estimates are far too coarse for one year to matter, but every year in the database now follows one rule. As a result the step from the label `-1000` to `0` is stored as 999 years.
+- **Only the world is stored**, as whole numbers of people. The table has one `source` URL per row, the chart address.
+- **The build fails loudly and lists every problem:** a missing column, no world rows, a year or population that is not a whole number, a population of zero or below, a repeated year, a year after this year, or rows out of order. A bad file stops the build before the database is touched.
+- **The database records** `source.population` in `meta`: the name, the chart URL, the date retrieved, and the three combined sources with their versions and licenses.
+- **Not done on purpose:** no interpolation between points. Whoever reads the table (Phase 3) decides how to estimate a year between two rows.
+
+### Results
+
+| Year | People |
+|---|---|
+| 10000 BCE | 4.5 million |
+| 1000 BCE | 111 million |
+| 0 | 232 million |
+| 1000 CE | 323 million |
+| 1800 | 983 million |
+| 1950 | 2.49 billion |
+| 2000 | 6.17 billion |
+| 2023 | 8.09 billion |
+
+The series is not rising every century: 1200 CE (445 million) is above 1400 CE (442 million), the time of the Black Death. Test data: `pipeline/tests/data/owid_population_snapshot.csv` holds all 261 real world rows plus a few rows each for Africa, Asia, Europe, and the United Kingdom, so tests prove that only the world is read.
+
 ## History data (steps 2.7 to 2.13)
 
 History is hand-curated, so the work is in the rules, not a download. `pipeline/curated/history/` holds one YAML file per era, each with any of `events`, `periods`, and `landmarks`. Entries are read straight into `HistoryEvent`, `HistoryPeriod`, and `Landmark` from `earthlight.models`, in strict mode (so `year: "1492"` or `importance: true` is an error).
@@ -362,6 +396,7 @@ Verified from the sources' own pages on 2026-10-20. Quotes are exact. This is a 
 | **SIMBAD** (CDS), deep-sky positions and redshifts | No license statement found; CDS asks for an acknowledgment. Used for a few hundred values under the same non-commercial, credited use as the other CDS services. | "This research has made use of the SIMBAD database, CDS, Strasbourg Astronomical Observatory, France." Cite Wenger et al. 2000, A&AS 143, 9, "The SIMBAD astronomical database" (wording from https://cds.unistra.fr/help/acknowledgement/). |
 | **Hunt and Reffert (2023)** via VizieR, star-cluster positions and distances | VizieR: free to use in a scientific context with the original authors cited; commercial use depends on the catalogue. Non-commercial use here. The catalogue's ReadMe could not be read (bot protection), so confirm it. | Hunt, E. L. and Reffert, S. 2023, A&A 673, A114, "Improving the open cluster census. II. An all-sky cluster catalogue with Gaia DR3". "This research has made use of the VizieR catalogue access tool, CDS, Strasbourg, France (DOI : 10.26093/cds/vizier)." Original VizieR description: A&AS 143, 23 (2000). |
 | **McConnachie (2012)** and **Cosmicflows-4** (Tully et al. 2023) via VizieR, nearby-galaxy positions and distance moduli | Same VizieR terms as above (free for scientific use with the authors cited; commercial use depends on the catalogue). Non-commercial use here. The catalogues' ReadMe files could not be read (bot protection), so confirm them. | McConnachie, A. W. 2012, AJ 144, 4, "The Observed Properties of Dwarf Galaxies in and around the Local Group". Tully, R. B., Kourkchi, E., Courtois, H. M., et al. 2023, ApJ 944, 94, "Cosmicflows-4". Same VizieR acknowledgement as above. |
+| **Our World in Data**, world population (combining HYDE 3.3, Gapminder v7, and UN WPP 2024) | OWID's own processing is CC BY 4.0. HYDE 3.3: CC BY 4.0. Gapminder: CC BY 4.0. UN World Population Prospects: CC BY 3.0 IGO. Credit is required. | "HYDE (2023); Gapminder (2022); UN WPP (2024), with major processing by Our World in Data", "Population, HYDE, Gapminder, UN, Long-run data" [dataset]. Original data: PBL Netherlands Environmental Assessment Agency, "History Database of the Global Environment 3.3"; Gapminder, "Population v7"; United Nations, "World Population Prospects". |
 | **Papers cited for inline redshifts** (step 2.6) | Published scientific results; only a number is taken from each, and each is cited by its arXiv URL in the curated file. | Bunker et al. (GN-z11), Castellano et al. (GHZ2), Witstok et al. (JADES-GS-z13-1-LA), Carniani et al. (JADES-GS-z14-0), Naidu et al. (MoM-z14), Wang et al. (J0313-1806), and Planck Collaboration 2018 VI (cosmology and the CMB). |
 | **Curated YAML** (deep-sky objects, history; steps 2.6 to 2.13) | Our own work. Summaries are written in our own words, and every entry cites a source URL. Wikipedia is linked, never copied. | Covered by the repository's MIT license. |
 

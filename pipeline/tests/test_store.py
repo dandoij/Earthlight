@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from earthlight.lookback import LookbackRange
-from earthlight.models import VantageKind, VantagePoint
+from earthlight.models import PopulationEstimate, VantageKind, VantagePoint
 from earthlight.schema import SCHEMA_VERSION, create_empty_database
 from earthlight_pipeline.deep_sky import CuratedObject, DeepSkyRecord, build_deep_sky
 from earthlight_pipeline.exoplanets import (
@@ -23,11 +23,13 @@ from earthlight_pipeline.store import (
     load_deep_sky,
     load_exoplanets,
     load_history,
+    load_population,
     load_stars,
     open_database,
     replace_deep_sky,
     replace_exoplanets,
     replace_history,
+    replace_population,
     replace_stars,
     set_meta,
     vantage_row,
@@ -541,3 +543,51 @@ def test_an_ongoing_period_is_stored_without_an_end_year(database: sqlite3.Conne
     stored = {p.id: p for p in load_history(database).periods}
     assert stored["holocene-epoch"] == holocene
     assert stored["cambrian"].ongoing is False and stored["cambrian"].end is not None
+
+
+def estimates(*pairs: tuple[float, int]) -> list[PopulationEstimate]:
+    return [
+        PopulationEstimate(year=year, people=people, source="https://example.org/population")
+        for year, people in pairs
+    ]
+
+
+def test_population_round_trips_through_the_database(database: sqlite3.Connection) -> None:
+    data = estimates((-9999, 4_500_000), (0, 232_000_000), (2023, 8_091_734_933))
+    replace_population(database, data)
+    assert load_population(database) == data
+
+
+def test_replacing_population_removes_what_was_there(database: sqlite3.Connection) -> None:
+    replace_population(database, estimates((0, 232_000_000), (1000, 323_000_000)))
+    replace_population(database, estimates((1800, 983_000_000)))
+    assert load_population(database) == estimates((1800, 983_000_000))
+
+
+def test_a_failed_population_replacement_changes_nothing(database: sqlite3.Connection) -> None:
+    replace_population(database, estimates((0, 232_000_000)))
+    twice = estimates((1, 5), (1, 6))  # the same year twice
+    with pytest.raises(RuntimeError, match="could not store the population estimates"):
+        replace_population(database, twice)
+    assert load_population(database) == estimates((0, 232_000_000))
+
+
+def test_population_does_not_touch_the_other_tables(database: sqlite3.Connection) -> None:
+    stars = make_stars()
+    replace_stars(database, stars, entries_for(stars))
+    replace_history(database, load_curated_history(HISTORY_SAMPLE))
+    replace_population(database, estimates((0, 232_000_000)))
+    assert [s.id for s in load_stars(database)] == sorted(s.id for s in stars)
+    assert len(load_history(database).events) == 2
+
+
+def test_replacing_population_shrinks_the_file(tmp_path: Path) -> None:
+    path = tmp_path / "earthlight.db"
+    connection = open_database(path)
+    try:
+        replace_population(connection, estimates(*((float(n), 1_000 + n) for n in range(60_000))))
+        before = path.stat().st_size
+        replace_population(connection, estimates((0, 1)))
+        assert path.stat().st_size < before
+    finally:
+        connection.close()
