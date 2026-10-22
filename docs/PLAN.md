@@ -157,9 +157,10 @@ No database yet. Pure, heavily tested functions.
 
 ## Phase 3: Engine (branch `phase-3-engine`)
 
-- [ ] **3.1 Repository layer**
+- [x] **3.1 Repository layer**
   - **Build:** `repository.py`: open the bundled database via `importlib.resources` in read-only URI mode; typed query functions; schema version check on open.
   - **Done when:** Tests run against the real bundled database.
+  - **Done:** `Repository` (read-only URI, schema version check, thread lock) plus `default_repository()` (opened once and reused). Queries: `vantage_point`, `vantage_points_overlapping`, `max_lookback`, `events_between`, `periods_overlapping`, `landmarks_overlapping`, `population_nearest` (nearest estimate, never interpolated), `meta`. Decided with Ian: the engine uses the cached default with an optional `repository=` override.
 - [ ] **3.2 Moment to place**
   - **Phase 1 review notes:** read the clock once per request and pass `now_year` to every helper, so one answer never mixes two "now" values. A moment after now is rejected with a friendly "that has not happened yet" error (`MomentResult.lookback_years` must be >= 0). `parse` stays unaware of the future.
   - **Build:** `engine.when(moment)`: zone or solar system handling for lookbacks under 4.2 years; candidate query by interval overlap; scoring (closeness of best estimate, narrowness of range); one winner per category (famous, exoplanet, visible tonight, most precise); graceful notes when a category has no match.
