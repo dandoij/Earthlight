@@ -4,14 +4,15 @@
 #   simbad:  the object's identifier in SIMBAD, which supplies position and redshift.
 #   inline:  a redshift typed here for an object SIMBAD does not hold, with the URL of the
 #            paper it came from. `error` is one standard deviation, in redshift.
-#   distance: for star clusters, which catalogue and the object's name in it
-#            (hunt_reffert_2023 on VizieR). Position and distance come from there.
+#   distance: for star clusters and nearby galaxies, which catalogue and the object's name
+#            in it (hunt_reffert_2023, mcconnachie_2012, or cosmicflows_4, all on VizieR).
+#            Position and distance come from there.
 # Give exactly one of the three. fame is 1 (known to enthusiasts) to 5 (a household name).
 # wikipedia is the exact article title, used to fetch an image.
 #
 # Objects nearer than redshift 0.01 (about 130 million light-years) cannot use a redshift: it is
-# mostly their own motion. Star clusters (step 2.6b) take a catalogue distance instead; nearby
-# galaxies will follow in step 2.6c.
+# mostly their own motion. Star clusters (step 2.6b) and nearby galaxies (step 2.6c) take a
+# catalogue distance instead.
 
 objects:
   # --- galaxies ---------------------------------------------------------------------------
@@ -672,3 +673,321 @@ objects:
       name: NGC_6838
     wikipedia: Messier 71
     aliases: [M71, NGC 6838]
+
+  # --- nearby galaxies, distances from catalogues ----------------------------------------
+  # McConnachie 2012 (Local Group): `name` is its Name column. Cosmicflows-4: `name` is the
+  # galaxy's PGC number, written PGC n, and the position comes from the same table.
+  # M81 is not here: Cosmicflows-4 lists it only as the head of a group of galaxies.
+  - id: large-magellanic-cloud
+    name: Large Magellanic Cloud
+    kind: galaxy
+    fame: 5
+    distance:
+      catalogue: mcconnachie_2012
+      name: LMC
+    wikipedia: Large Magellanic Cloud
+    aliases: [LMC, Nubecula Major]
+  - id: small-magellanic-cloud
+    name: Small Magellanic Cloud
+    kind: galaxy
+    fame: 4
+    distance:
+      catalogue: mcconnachie_2012
+      name: SMC
+    wikipedia: Small Magellanic Cloud
+    aliases: [SMC, NGC 292]
+  - id: andromeda-galaxy
+    name: Andromeda Galaxy (Messier 31)
+    kind: galaxy
+    fame: 5
+    distance:
+      catalogue: mcconnachie_2012
+      name: Andromeda
+    wikipedia: Andromeda Galaxy
+    aliases: [M31, NGC 224]
+  - id: triangulum-galaxy
+    name: Triangulum Galaxy (Messier 33)
+    kind: galaxy
+    fame: 4
+    distance:
+      catalogue: mcconnachie_2012
+      name: Triangulum
+    wikipedia: Triangulum Galaxy
+    aliases: [M33, NGC 598]
+  - id: messier-32
+    name: Messier 32
+    kind: galaxy
+    fame: 2
+    distance:
+      catalogue: mcconnachie_2012
+      name: M32
+    wikipedia: Messier 32
+    aliases: [M32, NGC 221]
+  - id: ngc-205
+    name: NGC 205 (Messier 110)
+    kind: galaxy
+    fame: 2
+    distance:
+      catalogue: mcconnachie_2012
+      name: NGC 205
+    wikipedia: Messier 110
+    aliases: [M110]
+  - id: ngc-185
+    name: NGC 185
+    kind: galaxy
+    fame: 1
+    distance:
+      catalogue: mcconnachie_2012
+      name: NGC 185
+    wikipedia: NGC 185
+  - id: ic-10
+    name: IC 10
+    kind: galaxy
+    fame: 1
+    distance:
+      catalogue: mcconnachie_2012
+      name: IC 10
+    wikipedia: IC 10
+  - id: ic-1613
+    name: IC 1613
+    kind: galaxy
+    fame: 1
+    distance:
+      catalogue: mcconnachie_2012
+      name: IC 1613
+    wikipedia: IC 1613
+  - id: ngc-6822
+    name: Barnard's Galaxy (NGC 6822)
+    kind: galaxy
+    fame: 2
+    distance:
+      catalogue: mcconnachie_2012
+      name: NGC 6822
+    wikipedia: NGC 6822
+    aliases: [Barnard's Galaxy, IC 4895]
+  - id: sagittarius-dwarf-spheroidal
+    name: Sagittarius Dwarf Spheroidal Galaxy
+    kind: galaxy
+    fame: 2
+    distance:
+      catalogue: mcconnachie_2012
+      name: Sagittarius dSph
+    wikipedia: Sagittarius Dwarf Spheroidal Galaxy
+    aliases: [Sgr dSph]
+  - id: fornax-dwarf-galaxy
+    name: Fornax Dwarf Galaxy
+    kind: galaxy
+    fame: 1
+    distance:
+      catalogue: mcconnachie_2012
+      name: Fornax
+    wikipedia: Fornax Dwarf
+  - id: sculptor-dwarf-galaxy
+    name: Sculptor Dwarf Galaxy
+    kind: galaxy
+    fame: 1
+    distance:
+      catalogue: mcconnachie_2012
+      name: Sculptor
+    wikipedia: Sculptor Dwarf Galaxy
+  - id: draco-dwarf-galaxy
+    name: Draco Dwarf Galaxy
+    kind: galaxy
+    fame: 1
+    distance:
+      catalogue: mcconnachie_2012
+      name: Draco
+    wikipedia: Draco Dwarf
+  - id: ursa-minor-dwarf-galaxy
+    name: Ursa Minor Dwarf Galaxy
+    kind: galaxy
+    fame: 1
+    distance:
+      catalogue: mcconnachie_2012
+      name: Ursa Minor
+    wikipedia: Ursa Minor Dwarf
+  - id: carina-dwarf-galaxy
+    name: Carina Dwarf Galaxy
+    kind: galaxy
+    fame: 1
+    distance:
+      catalogue: mcconnachie_2012
+      name: Carina
+    wikipedia: Carina Dwarf Spheroidal Galaxy
+  - id: messier-82
+    name: Cigar Galaxy (Messier 82)
+    kind: galaxy
+    fame: 3
+    distance:
+      catalogue: cosmicflows_4
+      name: PGC 28655
+    wikipedia: Messier 82
+    aliases: [M82, NGC 3034, Cigar Galaxy]
+  - id: messier-83
+    name: Southern Pinwheel Galaxy (Messier 83)
+    kind: galaxy
+    fame: 3
+    distance:
+      catalogue: cosmicflows_4
+      name: PGC 48082
+    wikipedia: Messier 83
+    aliases: [M83, NGC 5236, Southern Pinwheel]
+  - id: messier-87
+    name: Messier 87 (Virgo A)
+    kind: galaxy
+    fame: 4
+    distance:
+      catalogue: cosmicflows_4
+      name: PGC 41361
+    wikipedia: Messier 87
+    aliases: [M87, NGC 4486, Virgo A]
+  - id: messier-94
+    name: Messier 94
+    kind: galaxy
+    fame: 2
+    distance:
+      catalogue: cosmicflows_4
+      name: PGC 43495
+    wikipedia: Messier 94
+    aliases: [M94, NGC 4736]
+  - id: messier-101
+    name: Pinwheel Galaxy (Messier 101)
+    kind: galaxy
+    fame: 4
+    distance:
+      catalogue: cosmicflows_4
+      name: PGC 50063
+    wikipedia: Pinwheel Galaxy
+    aliases: [M101, NGC 5457, Pinwheel Galaxy]
+  - id: messier-104
+    name: Sombrero Galaxy (Messier 104)
+    kind: galaxy
+    fame: 4
+    distance:
+      catalogue: cosmicflows_4
+      name: PGC 42407
+    wikipedia: Sombrero Galaxy
+    aliases: [M104, NGC 4594, Sombrero Galaxy]
+  - id: messier-106
+    name: Messier 106
+    kind: galaxy
+    fame: 2
+    distance:
+      catalogue: cosmicflows_4
+      name: PGC 39600
+    wikipedia: Messier 106
+    aliases: [M106, NGC 4258]
+  - id: messier-51
+    name: Whirlpool Galaxy (Messier 51)
+    kind: galaxy
+    fame: 5
+    distance:
+      catalogue: cosmicflows_4
+      name: PGC 47404
+    wikipedia: Whirlpool Galaxy
+    aliases: [M51, NGC 5194, Whirlpool Galaxy]
+  - id: messier-63
+    name: Sunflower Galaxy (Messier 63)
+    kind: galaxy
+    fame: 3
+    distance:
+      catalogue: cosmicflows_4
+      name: PGC 46153
+    wikipedia: Messier 63
+    aliases: [M63, NGC 5055, Sunflower Galaxy]
+  - id: messier-64
+    name: Black Eye Galaxy (Messier 64)
+    kind: galaxy
+    fame: 3
+    distance:
+      catalogue: cosmicflows_4
+      name: PGC 44182
+    wikipedia: Black Eye Galaxy
+    aliases: [M64, NGC 4826, Black Eye Galaxy]
+  - id: messier-66
+    name: Messier 66
+    kind: galaxy
+    fame: 2
+    distance:
+      catalogue: cosmicflows_4
+      name: PGC 34695
+    wikipedia: Messier 66
+    aliases: [M66, NGC 3627]
+  - id: messier-74
+    name: Phantom Galaxy (Messier 74)
+    kind: galaxy
+    fame: 3
+    distance:
+      catalogue: cosmicflows_4
+      name: PGC 5974
+    wikipedia: Messier 74
+    aliases: [M74, NGC 628, Phantom Galaxy]
+  - id: ngc-253
+    name: Sculptor Galaxy (NGC 253)
+    kind: galaxy
+    fame: 3
+    distance:
+      catalogue: cosmicflows_4
+      name: PGC 2789
+    wikipedia: Sculptor Galaxy
+    aliases: [NGC 253, Silver Coin Galaxy]
+  - id: ngc-300
+    name: NGC 300
+    kind: galaxy
+    fame: 1
+    distance:
+      catalogue: cosmicflows_4
+      name: PGC 3238
+    wikipedia: NGC 300
+  - id: ngc-2403
+    name: NGC 2403
+    kind: galaxy
+    fame: 2
+    distance:
+      catalogue: cosmicflows_4
+      name: PGC 21396
+    wikipedia: NGC 2403
+  - id: centaurus-a
+    name: Centaurus A (NGC 5128)
+    kind: galaxy
+    fame: 4
+    distance:
+      catalogue: cosmicflows_4
+      name: PGC 46957
+    wikipedia: Centaurus A
+    aliases: [NGC 5128]
+  - id: ngc-6946
+    name: Fireworks Galaxy (NGC 6946)
+    kind: galaxy
+    fame: 3
+    distance:
+      catalogue: cosmicflows_4
+      name: PGC 65001
+    wikipedia: NGC 6946
+    aliases: [NGC 6946, Fireworks Galaxy]
+  - id: ic-342
+    name: IC 342
+    kind: galaxy
+    fame: 2
+    distance:
+      catalogue: cosmicflows_4
+      name: PGC 13826
+    wikipedia: IC 342
+  - id: ngc-4565
+    name: Needle Galaxy (NGC 4565)
+    kind: galaxy
+    fame: 3
+    distance:
+      catalogue: cosmicflows_4
+      name: PGC 42038
+    wikipedia: NGC 4565
+    aliases: [NGC 4565, Needle Galaxy]
+  - id: ngc-1365
+    name: Great Barred Spiral Galaxy (NGC 1365)
+    kind: galaxy
+    fame: 3
+    distance:
+      catalogue: cosmicflows_4
+      name: PGC 13179
+    wikipedia: NGC 1365
+    aliases: [NGC 1365]

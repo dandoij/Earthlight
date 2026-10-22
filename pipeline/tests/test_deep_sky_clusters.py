@@ -12,10 +12,13 @@ from earthlight_pipeline.deep_sky import (
     CuratedObject,
     SimbadRecord,
     build_deep_sky,
+    catalogue_names,
     cluster_names,
+    cosmicflows_numbers,
     load_curated,
     read_simbad,
 )
+from earthlight_pipeline.galaxy_distances import GalaxyRecord, read_cosmicflows, read_mcconnachie
 from earthlight_pipeline.star_clusters import ClusterRecord, read_hunt_reffert
 
 DATA = Path(__file__).parent / "data"
@@ -193,3 +196,155 @@ def test_clusters_are_not_built_without_the_catalogue_rows() -> None:
 
 def _catalogue(name: str) -> dict[str, str]:
     return {"catalogue": "hunt_reffert_2023", "name": name}
+
+
+# --- nearby galaxies (McConnachie 2012 and Cosmicflows-4) -------------------------------------
+
+
+def galaxies() -> dict[tuple[str, str], GalaxyRecord]:
+    return {
+        **read_mcconnachie([DATA / "mcconnachie_snapshot.csv"]),
+        **read_cosmicflows([DATA / "cosmicflows4_snapshot.csv"]),
+    }
+
+
+def galaxy_entry(catalogue: str, catalogue_name: str, **overrides: object) -> dict[str, object]:
+    base: dict[str, object] = {
+        "id": "a-galaxy",
+        "name": "A Galaxy",
+        "kind": "galaxy",
+        "fame": 3,
+        "distance": {"catalogue": catalogue, "name": catalogue_name},
+        "aliases": ["Alias"],
+    }
+    return base | overrides
+
+
+def galaxy_object(catalogue: str, catalogue_name: str, **overrides: object) -> CuratedObject:
+    return CuratedObject.model_validate(galaxy_entry(catalogue, catalogue_name, **overrides))
+
+
+@pytest.mark.parametrize(
+    ("entry", "message"),
+    [
+        (galaxy_entry("hunt_reffert_2023", "Melotte_22"), "star_cluster only"),
+        (galaxy_entry("mcconnachie_2012", "LMC", kind="star_cluster"), "galaxy only"),
+        (galaxy_entry("cosmicflows_4", "PGC 28655", kind="quasar"), "galaxy only"),
+        (galaxy_entry("cosmicflows_4", "M 82"), "PGC n"),
+        (galaxy_entry("cosmicflows_4", "PGC"), "PGC n"),
+        (galaxy_entry("cosmicflows_4", "PGC x1"), "PGC n"),
+    ],
+)
+def test_a_galaxy_entry_must_match_its_catalogue(entry: dict[str, object], message: str) -> None:
+    with pytest.raises(ValidationError, match=message):
+        CuratedObject.model_validate(entry)
+
+
+def test_the_same_name_in_two_catalogues_is_fine_but_twice_in_one_is_not(tmp_path: Path) -> None:
+    path = tmp_path / "deep_sky.yaml"
+    same = (
+        "objects:\n"
+        "  - {id: a, name: A, kind: galaxy, fame: 1,"
+        " distance: {catalogue: mcconnachie_2012, name: LMC}}\n"
+        "  - {id: b, name: B, kind: galaxy, fame: 1,"
+        " distance: {catalogue: mcconnachie_2012, name: LMC}}\n"
+    )
+    path.write_text(same, encoding="utf-8")
+    with pytest.raises(CuratedError, match="duplicate catalogue name: LMC in mcconnachie_2012"):
+        load_curated(path)
+    path.write_text(
+        same.replace(
+            "mcconnachie_2012, name: LMC}}\n  - {id: b", "cosmicflows_4, name: PGC 1}}\n  - {id: b"
+        ),
+        encoding="utf-8",
+    )
+    assert [o.id for o in load_curated(path)] == ["a", "b"]
+
+
+def test_the_names_to_ask_each_catalogue_for() -> None:
+    objects = [
+        galaxy_object("mcconnachie_2012", "LMC", id="lmc"),
+        galaxy_object("cosmicflows_4", "PGC 28655", id="m82"),
+        galaxy_object("cosmicflows_4", "PGC 47404", id="m51"),
+        cluster_object(),
+    ]
+    assert catalogue_names(objects, "mcconnachie_2012") == ["LMC"]
+    assert cosmicflows_numbers(objects) == [28655, 47404]
+    assert cluster_names(objects) == ["Melotte_22"]
+
+
+def test_a_local_group_galaxy_gets_a_position_and_its_distance_facts() -> None:
+    lmc = galaxy_object("mcconnachie_2012", "LMC", id="lmc", name="Large Magellanic Cloud")
+    build = build_deep_sky([lmc], {}, None, galaxies())
+    (built,) = build.records
+    point = built.point
+    assert point.kind is VantageKind.GALAXY and point.constellation == "Dorado"
+    assert point.ra_deg == pytest.approx(80.894, abs=0.001)
+    assert point.lookback.minimum < point.lookback.best < point.lookback.maximum
+    assert point.lookback.best == pytest.approx(165_000, rel=0.01)
+    assert point.facts == {
+        "distance_modulus": 18.52,
+        "distance_modulus_error_plus": 0.09,
+        "distance_modulus_error_minus": 0.09,
+        "distance_light_years": 165_000.0,
+        "distance_source": "mcconnachie_2012",
+        "catalogue_name": "LMC",
+    }
+    assert (
+        built.search.aliases == "Alias"
+        and built.search.description == "Galaxy, 165,000 light-years"
+    )
+    assert dict(build.sources) == {"mcconnachie_2012": 1}
+
+
+def test_a_cosmicflows_galaxy_is_described_in_millions_of_light_years() -> None:
+    m82 = galaxy_object("cosmicflows_4", "PGC 28655", id="messier-82", name="Messier 82")
+    (built,) = build_deep_sky([m82], {}, None, galaxies()).records
+    assert built.point.facts["catalogue_name"] == "PGC 28655"
+    assert built.point.constellation == "Ursa Major"
+    assert built.search.description == "Galaxy, 11.5 million light-years"
+
+
+def test_every_kind_of_object_keeps_its_place_in_the_list() -> None:
+    first = CuratedObject.model_validate(
+        {"id": "ngc-1275", "name": "NGC 1275", "kind": "galaxy", "fame": 3, "simbad": "NGC 1275"}
+    )
+    objects = [
+        galaxy_object("cosmicflows_4", "PGC 28655", id="m82", name="M82"),
+        first,
+        cluster_object(),
+        galaxy_object("mcconnachie_2012", "LMC", id="lmc", name="LMC"),
+    ]
+    build = build_deep_sky(objects, simbad(), clusters(), galaxies())
+    assert [r.point.id for r in build.records] == ["m82", "ngc-1275", "pleiades", "lmc"]
+    assert dict(build.sources) == {
+        "cosmicflows_4": 1,
+        "simbad": 1,
+        "hunt_reffert_2023": 1,
+        "mcconnachie_2012": 1,
+    }
+
+
+def test_every_galaxy_problem_is_listed_together() -> None:
+    records = galaxies()
+    lmc = records[("mcconnachie_2012", "LMC")]
+    records[("mcconnachie_2012", "Nowhere")] = replace(lmc, name="Nowhere", ra_deg=None)
+    records[("mcconnachie_2012", "NoErrors")] = replace(lmc, name="NoErrors", error_plus=None)
+    records[("cosmicflows_4", "PGC 99")] = replace(lmc, name="PGC 99", modulus=-5.0)
+    objects = [
+        galaxy_object("mcconnachie_2012", "Not_A_Galaxy", id="missing"),
+        galaxy_object("mcconnachie_2012", "Nowhere", id="nowhere"),
+        galaxy_object("mcconnachie_2012", "NoErrors", id="noerrors"),
+        galaxy_object("cosmicflows_4", "PGC 99", id="negative"),
+        galaxy_object("cosmicflows_4", "PGC 98", id="absent"),
+        galaxy_object("mcconnachie_2012", "LMC", id="fine"),
+    ]
+    with pytest.raises(CuratedError) as error:
+        build_deep_sky(objects, {}, None, records)
+    lines = str(error.value).splitlines()
+    assert len(lines) == 5
+    assert "missing: McConnachie 2012 has no galaxy 'Not_A_Galaxy'" in lines[0]
+    assert "nowhere: McConnachie 2012 has no position" in lines[1]
+    assert "noerrors" in lines[2] and "no distance modulus" in lines[2]
+    assert "negative" in lines[3] and "not a distance" in lines[3]
+    assert "absent: Cosmicflows-4 has no galaxy 'PGC 98'" in lines[4]

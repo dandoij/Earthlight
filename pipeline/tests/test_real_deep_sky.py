@@ -15,10 +15,13 @@ from earthlight_pipeline.deep_sky import (
     lookback_years,
     read_simbad,
 )
+from earthlight_pipeline.galaxy_distances import read_cosmicflows, read_mcconnachie
 from earthlight_pipeline.star_clusters import read_hunt_reffert
 
 SNAPSHOT = Path(__file__).parent / "data" / "simbad_snapshot.csv"
 CLUSTER_SNAPSHOT = Path(__file__).parent / "data" / "hunt_reffert_snapshot.csv"
+MCCONNACHIE_SNAPSHOT = Path(__file__).parent / "data" / "mcconnachie_snapshot.csv"
+COSMICFLOWS_SNAPSHOT = Path(__file__).parent / "data" / "cosmicflows4_snapshot.csv"
 
 
 @pytest.fixture(scope="module")
@@ -28,11 +31,16 @@ def objects():
 
 @pytest.fixture(scope="module")
 def built(objects):
-    return build_deep_sky(objects, read_simbad([SNAPSHOT]), read_hunt_reffert([CLUSTER_SNAPSHOT]))
+    return build_deep_sky(
+        objects,
+        read_simbad([SNAPSHOT]),
+        read_hunt_reffert([CLUSTER_SNAPSHOT]),
+        {**read_mcconnachie([MCCONNACHIE_SNAPSHOT]), **read_cosmicflows([COSMICFLOWS_SNAPSHOT])},
+    )
 
 
 def test_the_shipped_list_validates_and_has_a_sensible_size(objects) -> None:
-    assert 80 <= len(objects) <= 160
+    assert 100 <= len(objects) <= 200
     kinds = Counter(o.kind for o in objects)
     assert set(kinds) == {
         "star_cluster",
@@ -71,6 +79,7 @@ def test_the_whole_list_builds_from_the_snapshot(objects, built) -> None:
     assert len(built.records) == len(objects)
     assert sum(built.sources.values()) == len(objects)
     assert built.sources["hunt_reffert_2023"] == 33
+    assert built.sources["mcconnachie_2012"] == 16 and built.sources["cosmicflows_4"] == 20
     ids = [r.point.id for r in built.records]
     assert len(set(ids)) == len(ids)
 
@@ -78,10 +87,10 @@ def test_the_whole_list_builds_from_the_snapshot(objects, built) -> None:
 def test_lookbacks_span_millions_to_nearly_the_age_of_the_universe(built) -> None:
     best = sorted(r.point.lookback.best for r in built.records)
     assert 100 < best[0] < 200  # the nearest is the Hyades, about 150 years back
-    galaxies = sorted(
-        r.point.lookback.best for r in built.records if r.point.kind.value != "star_cluster"
+    redshift_objects = sorted(
+        r.point.lookback.best for r in built.records if "redshift" in r.point.facts
     )
-    assert 1e8 < galaxies[0] < 3e8  # the nearest far object is about 185 million years back
+    assert 1e8 < redshift_objects[0] < 3e8  # the nearest far object is about 185 million years back
     assert 13.7e9 < best[-1] < 13.8e9  # the cosmic microwave background
     for record in built.records:
         low, mid, high = (
@@ -117,7 +126,7 @@ def test_search_entries_are_unique_and_describe_the_object(built) -> None:
     names = [r.search.name for r in built.records]
     assert len(set(names)) == len(names)
     for record in built.records:
-        if record.point.kind.value == "star_cluster":
+        if "redshift" not in record.point.facts:  # a cluster or galaxy with a catalogue distance
             assert record.search.description.endswith("light-years"), record.point.id
         else:
             assert record.search.description.endswith(

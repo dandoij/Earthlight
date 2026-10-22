@@ -212,6 +212,9 @@ def test_a_shared_point_means_overlap(
     a: tuple[float, float], b: tuple[float, float], fraction: float
 ) -> None:
     point = a[0] + fraction * (a[1] - a[0])
+    # Rounding can push the point just outside a (a = (-1, -4e-78) and fraction 1 gives 0.0),
+    # so check that it really is in both intervals.
+    assume(a[0] <= point <= a[1])
     assume(b[0] <= point <= b[1])
     assert intervals_overlap(*a, *b)
 

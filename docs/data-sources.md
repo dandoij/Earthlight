@@ -293,6 +293,38 @@ These match the usual values (Pleiades about 440 light-years, Hyades about 150, 
 - The build records `source.hunt_reffert_2023` in the `meta` table, like `source.simbad`.
 - Test data: `pipeline/tests/data/hunt_reffert_snapshot.csv` holds the 33 real rows, fetched with the pipeline's own query.
 
+## Nearby-galaxy build results (step 2.6c)
+
+The curated list now also holds **36 nearby galaxies**: 16 from McConnachie (2012) and 20 from Cosmicflows-4. Both catalogues give a **distance modulus** (the difference between a galaxy's apparent and absolute magnitude) with an error. The build turns a modulus `m` into a distance of `10 ** (m / 5 + 1)` parsecs, takes the range from `m` minus its negative error to `m` plus its positive error, and uses the distance in light-years as the lookback. There is no extra floor: unlike Gaia parallaxes, these errors already include the calibration of the method.
+
+### The two catalogues
+
+- **McConnachie (2012)**, "The Observed Properties of Dwarf Galaxies in and around the Local Group", AJ 144, 4 (arXiv:1204.1562). VizieR `J/AJ/144/4/catalog`, 102 galaxies. Columns used: `Name`, `RAJ2000` and `DEJ2000` (**decimal degrees**, despite the description saying "hour"), `(m-M)` with `E_(m-M)` (positive error) and `e_(m-M)` (negative error); a few galaxies have different positive and negative errors, and a few have none (those are refused). Column names with brackets are double-quoted in the query. Picked: the Magellanic Clouds, Andromeda and its satellites M32, NGC 205 and NGC 185, Triangulum, IC 10, IC 1613, NGC 6822, and the Sagittarius, Fornax, Sculptor, Draco, Ursa Minor, and Carina dwarfs. "Canis Major" is in the table at 7 kpc but left out, because whether it is a galaxy at all is debated.
+- **Cosmicflows-4**, Tully et al. 2023, "Cosmicflows-4", ApJ 944, 94 (arXiv:2209.11238). VizieR `J/ApJ/944/94/table2` (distances of individual galaxies). Columns used: `PGC` (Principal Galaxies Catalogue number), `DM` and `e_DM` (modulus and uncertainty, "all methodologies"), `RAJ2000` and `DEJ2000` (decimal degrees). The curated name is `PGC n`. SIMBAD stores the same number as a `LEDA` identifier, which is how each galaxy's number was found and checked (M87 is PGC 41361, M51 is PGC 47404). The galaxies in the list are all in the table; **M81 is not** (and neither are M77, NGC 891 or NGC 4631): it appears only as the head of a group in the `groups` table, so it is not in the list.
+- Test data: `pipeline/tests/data/mcconnachie_snapshot.csv` (16 rows) and `cosmicflows4_snapshot.csv` (20 rows), fetched with the pipeline's own queries.
+
+### Results
+
+| Galaxy | Source | Lookback (best) | Half-range |
+|---|---|---|---|
+| Sagittarius Dwarf (nearest) | McConnachie | 85,800 years | 6.9% |
+| Large Magellanic Cloud | McConnachie | 165,000 years | 4.1% |
+| Small Magellanic Cloud | McConnachie | 209,000 years | 5.5% |
+| Andromeda | McConnachie | 2.56 million years | 3.2% |
+| Triangulum | McConnachie | 2.64 million years | 2.8% |
+| Centaurus A | Cosmicflows-4 | 11.9 million years | 1.8% |
+| Whirlpool (M51) | Cosmicflows-4 | 27.2 million years | 3.6% |
+| Messier 87 | Cosmicflows-4 | 55.0 million years | 1.8% |
+| NGC 1365 (farthest) | Cosmicflows-4 | 61.1 million years | 2.1% |
+
+These match the usual values (LMC about 163,000 light-years, Andromeda about 2.5 million). Draco and Ursa Minor have the same best lookback because the catalogue gives both the same distance modulus. With the clusters, the deep-sky list now spans 154 years to 13.79 billion years.
+
+### Terms and open items
+
+- Both catalogues come through VizieR, under the same terms as in step 2.6b: free to use in a scientific context with the original authors cited, commercial use depending on each catalogue. Earthlight is free and non-commercial. As for Hunt and Reffert, the CDS ReadMe files (where a copyright notice would be) could not be read because of bot protection. **Open item for Ian:** open https://cdsarc.cds.unistra.fr/ftp/J/AJ/144/4/ReadMe and https://cdsarc.cds.unistra.fr/ftp/J/ApJ/944/94/ReadMe in a browser and confirm there is no extra restriction.
+- The build records `source.mcconnachie_2012` and `source.cosmicflows_4` in the `meta` table.
+- Citations: McConnachie, A. W. 2012, AJ 144, 4 (arXiv:1204.1562); Tully, R. B., Kourkchi, E., Courtois, H. M., et al. 2023, ApJ 944, 94 (arXiv:2209.11238).
+
 ## History data (steps 2.7 to 2.13)
 
 History is hand-curated, so the work is in the rules, not a download. `pipeline/curated/history/` holds one YAML file per era, each with any of `events`, `periods`, and `landmarks`. Entries are read straight into `HistoryEvent`, `HistoryPeriod`, and `Landmark` from `earthlight.models`, in strict mode (so `year: "1492"` or `importance: true` is an error).
@@ -329,6 +361,7 @@ Verified from the sources' own pages on 2026-10-20. Quotes are exact. This is a 
 | **NASA and JPL material** (planet elements, Horizons values, Voyager facts) | NASA says its content "generally are not subject to copyright in the United States", may be used for educational or informational purposes, and "NASA should be acknowledged as the source". It must not "implicitly convey NASA's endorsement of commercial goods or services" (https://www.nasa.gov/nasa-brand-center/images-and-media/). The JPL Solar System Dynamics site states no data terms of its own. | "NASA/JPL" for the orbital elements and Horizons values. Not an endorsement by NASA. |
 | **SIMBAD** (CDS), deep-sky positions and redshifts | No license statement found; CDS asks for an acknowledgment. Used for a few hundred values under the same non-commercial, credited use as the other CDS services. | "This research has made use of the SIMBAD database, CDS, Strasbourg Astronomical Observatory, France." Cite Wenger et al. 2000, A&AS 143, 9, "The SIMBAD astronomical database" (wording from https://cds.unistra.fr/help/acknowledgement/). |
 | **Hunt and Reffert (2023)** via VizieR, star-cluster positions and distances | VizieR: free to use in a scientific context with the original authors cited; commercial use depends on the catalogue. Non-commercial use here. The catalogue's ReadMe could not be read (bot protection), so confirm it. | Hunt, E. L. and Reffert, S. 2023, A&A 673, A114, "Improving the open cluster census. II. An all-sky cluster catalogue with Gaia DR3". "This research has made use of the VizieR catalogue access tool, CDS, Strasbourg, France (DOI : 10.26093/cds/vizier)." Original VizieR description: A&AS 143, 23 (2000). |
+| **McConnachie (2012)** and **Cosmicflows-4** (Tully et al. 2023) via VizieR, nearby-galaxy positions and distance moduli | Same VizieR terms as above (free for scientific use with the authors cited; commercial use depends on the catalogue). Non-commercial use here. The catalogues' ReadMe files could not be read (bot protection), so confirm them. | McConnachie, A. W. 2012, AJ 144, 4, "The Observed Properties of Dwarf Galaxies in and around the Local Group". Tully, R. B., Kourkchi, E., Courtois, H. M., et al. 2023, ApJ 944, 94, "Cosmicflows-4". Same VizieR acknowledgement as above. |
 | **Papers cited for inline redshifts** (step 2.6) | Published scientific results; only a number is taken from each, and each is cited by its arXiv URL in the curated file. | Bunker et al. (GN-z11), Castellano et al. (GHZ2), Witstok et al. (JADES-GS-z13-1-LA), Carniani et al. (JADES-GS-z14-0), Naidu et al. (MoM-z14), Wang et al. (J0313-1806), and Planck Collaboration 2018 VI (cosmology and the CMB). |
 | **Curated YAML** (deep-sky objects, history; steps 2.6 to 2.13) | Our own work. Summaries are written in our own words, and every entry cites a source URL. Wikipedia is linked, never copied. | Covered by the repository's MIT license. |
 

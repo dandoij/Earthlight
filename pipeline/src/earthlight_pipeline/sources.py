@@ -320,3 +320,69 @@ def fetch_hunt_reffert(
         retry_wait=TAP_RETRY_WAIT_SECONDS,
         notify=progress,
     )
+
+
+MCCONNACHIE_TABLE = "J/AJ/144/4/catalog"
+"""McConnachie (2012), dwarf galaxies in and around the Local Group (VizieR)."""
+
+COSMICFLOWS_TABLE = "J/ApJ/944/94/table2"
+"""Cosmicflows-4 (Tully et al. 2023), distances of individual galaxies (VizieR)."""
+
+
+def mcconnachie_query(names: Sequence[str]) -> str:
+    """ADQL for the McConnachie rows of the given galaxy names (exact spellings)."""
+    if not names:
+        raise ValueError("at least one galaxy name is needed")
+    listed = ", ".join("'" + name.replace("'", "''") + "'" for name in names)
+    return (
+        'SELECT Name, RAJ2000, DEJ2000, "(m-M)", "E_(m-M)", "e_(m-M)" '
+        f'FROM "{MCCONNACHIE_TABLE}" WHERE Name IN ({listed})'
+    )
+
+
+def cosmicflows_query(pgc_numbers: Sequence[int]) -> str:
+    """ADQL for the Cosmicflows-4 rows of the given Principal Galaxies Catalogue numbers."""
+    if not pgc_numbers:
+        raise ValueError("at least one PGC number is needed")
+    listed = ", ".join(str(int(number)) for number in pgc_numbers)
+    return (
+        f'SELECT PGC, DM, e_DM, RAJ2000, DEJ2000 FROM "{COSMICFLOWS_TABLE}" WHERE PGC IN ({listed})'
+    )
+
+
+def fetch_mcconnachie(
+    names: Sequence[str], cache_dir: Path | None, refresh: bool, progress: Progress = _ignore
+) -> Path:
+    """The McConnachie rows for the given galaxy names, as one cached file."""
+    ordered = sorted(set(names))
+    digest = hashlib.sha256("|".join(ordered).encode()).hexdigest()[:12]
+    progress(f"Downloading {len(ordered)} galaxies from McConnachie 2012 (VizieR)")
+    return cached_download(
+        tap_url(VIZIER_TAP, mcconnachie_query(ordered)),
+        f"mcconnachie_{digest}.csv",
+        cache_dir=cache_dir,
+        refresh=refresh,
+        timeout=TAP_TIMEOUT_SECONDS,
+        retries=TAP_RETRIES,
+        retry_wait=TAP_RETRY_WAIT_SECONDS,
+        notify=progress,
+    )
+
+
+def fetch_cosmicflows(
+    pgc_numbers: Sequence[int], cache_dir: Path | None, refresh: bool, progress: Progress = _ignore
+) -> Path:
+    """The Cosmicflows-4 rows for the given PGC numbers, as one cached file."""
+    ordered = sorted(set(pgc_numbers))
+    digest = hashlib.sha256("|".join(str(n) for n in ordered).encode()).hexdigest()[:12]
+    progress(f"Downloading {len(ordered)} galaxies from Cosmicflows-4 (VizieR)")
+    return cached_download(
+        tap_url(VIZIER_TAP, cosmicflows_query(ordered)),
+        f"cosmicflows4_{digest}.csv",
+        cache_dir=cache_dir,
+        refresh=refresh,
+        timeout=TAP_TIMEOUT_SECONDS,
+        retries=TAP_RETRIES,
+        retry_wait=TAP_RETRY_WAIT_SECONDS,
+        notify=progress,
+    )

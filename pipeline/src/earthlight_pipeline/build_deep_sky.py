@@ -7,12 +7,25 @@ from pathlib import Path
 
 from earthlight_pipeline.deep_sky import (
     build_deep_sky,
+    catalogue_names,
     cluster_names,
+    cosmicflows_numbers,
     load_curated,
     read_simbad,
     simbad_identifiers,
 )
-from earthlight_pipeline.sources import Progress, fetch_hunt_reffert, fetch_simbad
+from earthlight_pipeline.galaxy_distances import (
+    MCCONNACHIE,
+    read_cosmicflows,
+    read_mcconnachie,
+)
+from earthlight_pipeline.sources import (
+    Progress,
+    fetch_cosmicflows,
+    fetch_hunt_reffert,
+    fetch_mcconnachie,
+    fetch_simbad,
+)
 from earthlight_pipeline.star_clusters import read_hunt_reffert
 from earthlight_pipeline.store import open_database, replace_deep_sky, set_meta
 
@@ -32,6 +45,31 @@ class DeepSkyReport:
     farthest_years: float
     database: Path
     database_bytes: int
+
+
+def _sources_used(
+    simbad: list[Path], clusters: list[Path], mcconnachie: list[Path], cosmicflows: list[Path]
+) -> list[tuple[str, str, list[Path]]]:
+    """The ``meta`` key, display name, and downloaded files of every source that was used."""
+    everything = [
+        ("simbad", "SIMBAD astronomical database, CDS Strasbourg", simbad),
+        (
+            "hunt_reffert_2023",
+            "Hunt and Reffert (2023) Gaia DR3 cluster catalogue, via VizieR",
+            clusters,
+        ),
+        (
+            "mcconnachie_2012",
+            "McConnachie (2012) catalogue of nearby dwarf galaxies, via VizieR",
+            mcconnachie,
+        ),
+        (
+            "cosmicflows_4",
+            "Cosmicflows-4 (Tully et al. 2023) galaxy distances, via VizieR",
+            cosmicflows,
+        ),
+    ]
+    return [(key, name, paths) for key, name, paths in everything if paths]
 
 
 def _retrieved(paths: list[Path]) -> str:
@@ -57,33 +95,36 @@ def run_deep_sky(
         if wanted_clusters
         else []
     )
-    result = build_deep_sky(objects, read_simbad(simbad_csvs), read_hunt_reffert(cluster_csvs))
+    mcconnachie_names = catalogue_names(objects, MCCONNACHIE)
+    mcconnachie_csvs = (
+        [fetch_mcconnachie(mcconnachie_names, cache_dir, refresh, progress)]
+        if mcconnachie_names
+        else []
+    )
+    cosmicflows_pgcs = cosmicflows_numbers(objects)
+    cosmicflows_csvs = (
+        [fetch_cosmicflows(cosmicflows_pgcs, cache_dir, refresh, progress)]
+        if cosmicflows_pgcs
+        else []
+    )
+    result = build_deep_sky(
+        objects,
+        read_simbad(simbad_csvs),
+        read_hunt_reffert(cluster_csvs),
+        {**read_mcconnachie(mcconnachie_csvs), **read_cosmicflows(cosmicflows_csvs)},
+    )
 
     connection = open_database(database)
     try:
         progress(f"Writing {len(result.records):,} deep-sky objects to {database}")
         replace_deep_sky(connection, result.records)
-        if simbad_csvs:
+        for key, name, paths in _sources_used(
+            simbad_csvs, cluster_csvs, mcconnachie_csvs, cosmicflows_csvs
+        ):
             set_meta(
                 connection,
-                "source.simbad",
-                json.dumps(
-                    {
-                        "name": "SIMBAD astronomical database, CDS Strasbourg",
-                        "retrieved": _retrieved(simbad_csvs),
-                    }
-                ),
-            )
-        if cluster_csvs:
-            set_meta(
-                connection,
-                "source.hunt_reffert_2023",
-                json.dumps(
-                    {
-                        "name": "Hunt and Reffert (2023) Gaia DR3 cluster catalogue, via VizieR",
-                        "retrieved": _retrieved(cluster_csvs),
-                    }
-                ),
+                f"source.{key}",
+                json.dumps({"name": name, "retrieved": _retrieved(paths)}),
             )
     finally:
         connection.close()

@@ -45,6 +45,26 @@ def clusters_snapshot_instead_of_download(monkeypatch: pytest.MonkeyPatch) -> li
     return asked
 
 
+@pytest.fixture(autouse=True)
+def galaxy_snapshots_instead_of_download(
+    monkeypatch: pytest.MonkeyPatch,
+) -> dict[str, list[object]]:
+    """McConnachie and Cosmicflows-4 (VizieR) are replaced by real-data snapshots too."""
+    asked: dict[str, list[object]] = {"mcconnachie": [], "cosmicflows": []}
+
+    def fetch_mcconnachie(names: list[str], *_args: object, **_kwargs: object) -> Path:
+        asked["mcconnachie"].extend(names)
+        return DATA / "mcconnachie_snapshot.csv"
+
+    def fetch_cosmicflows(numbers: list[int], *_args: object, **_kwargs: object) -> Path:
+        asked["cosmicflows"].extend(numbers)
+        return DATA / "cosmicflows4_snapshot.csv"
+
+    monkeypatch.setattr(build_deep_sky, "fetch_mcconnachie", fetch_mcconnachie)
+    monkeypatch.setattr(build_deep_sky, "fetch_cosmicflows", fetch_cosmicflows)
+    return asked
+
+
 def run(tmp_path: Path, **overrides: object) -> tuple[DeepSkyReport, list[str]]:
     messages: list[str] = []
     report = run_deep_sky(
@@ -59,19 +79,25 @@ def run(tmp_path: Path, **overrides: object) -> tuple[DeepSkyReport, list[str]]:
 
 def test_the_list_is_built_and_stored(tmp_path: Path) -> None:
     report, messages = run(tmp_path)
-    assert report.built == 85
+    assert report.built == 121
     assert report.by_kind == {
         "cosmic_background": 1,
-        "galaxy": 24,
+        "galaxy": 60,
         "galaxy_cluster": 13,
         "quasar": 14,
         "star_cluster": 33,
     }
-    assert report.by_source == {"simbad": 45, "inline": 7, "hunt_reffert_2023": 33}
+    assert report.by_source == {
+        "simbad": 45,
+        "inline": 7,
+        "hunt_reffert_2023": 33,
+        "mcconnachie_2012": 16,
+        "cosmicflows_4": 20,
+    }
     assert report.database_bytes == (tmp_path / "earthlight.db").stat().st_size > 0
     assert 100 < report.nearest_years < 200 and 13.7e9 < report.farthest_years < 13.8e9
-    assert messages[0] == "Read 85 curated objects from deep_sky.yaml"
-    assert any("Writing 85 deep-sky objects" in m for m in messages)
+    assert messages[0] == "Read 121 curated objects from deep_sky.yaml"
+    assert any("Writing 121 deep-sky objects" in m for m in messages)
 
 
 def test_the_stored_objects_read_back_and_are_searchable(tmp_path: Path) -> None:
@@ -79,21 +105,18 @@ def test_the_stored_objects_read_back_and_are_searchable(tmp_path: Path) -> None
     connection = open_database(tmp_path / "earthlight.db")
     try:
         points = {p.id: p for p in load_deep_sky(connection)}
-        assert len(points) == 85
+        assert len(points) == 121
         assert points["3c-273"].facts["redshift_source"] == "2022ApJS..261....2K"
         pleiades = points["pleiades"]
         assert pleiades.kind.value == "star_cluster" and pleiades.constellation == "Taurus"
         assert pleiades.facts["distance_source"] == "hunt_reffert_2023"
         assert 430 < pleiades.lookback.best < 450
-        alias_hits = connection.execute(
-            "SELECT e.id FROM search_fts JOIN search_entries e ON e.entry_id = search_fts.rowid "
-            "WHERE search_fts MATCH 'seven sisters'"
-        ).fetchall()
-        assert alias_hits == [("pleiades",)]
-        pleiades = points["pleiades"]
-        assert pleiades.kind.value == "star_cluster" and pleiades.constellation == "Taurus"
-        assert pleiades.facts["distance_source"] == "hunt_reffert_2023"
-        assert 430 < pleiades.lookback.best < 450
+        lmc = points["large-magellanic-cloud"]
+        assert lmc.kind.value == "galaxy" and lmc.constellation == "Dorado"
+        assert lmc.facts["distance_source"] == "mcconnachie_2012"
+        assert 160_000 < lmc.lookback.best < 175_000
+        assert points["messier-51"].facts["catalogue_name"] == "PGC 47404"
+        assert 25e6 < points["messier-51"].lookback.best < 30e6
         alias_hits = connection.execute(
             "SELECT e.id FROM search_fts JOIN search_entries e ON e.entry_id = search_fts.rowid "
             "WHERE search_fts MATCH 'seven sisters'"
@@ -168,6 +191,33 @@ def test_the_database_records_hunt_and_reffert_as_a_source(tmp_path: Path) -> No
         connection.close()
     info = json.loads(value)
     assert "Hunt and Reffert" in info["name"] and info["retrieved"].count("-") == 2
+
+
+def test_only_the_curated_galaxies_are_asked_of_each_catalogue(
+    tmp_path: Path, galaxy_snapshots_instead_of_download: dict[str, list[object]]
+) -> None:
+    run(tmp_path)
+    assert len(galaxy_snapshots_instead_of_download["mcconnachie"]) == 16
+    assert "LMC" in galaxy_snapshots_instead_of_download["mcconnachie"]
+    assert len(galaxy_snapshots_instead_of_download["cosmicflows"]) == 20
+    assert 47404 in galaxy_snapshots_instead_of_download["cosmicflows"]  # M51 as a plain number
+
+
+def test_the_database_records_every_distance_catalogue_as_a_source(tmp_path: Path) -> None:
+    run(tmp_path)
+    connection = sqlite3.connect(tmp_path / "earthlight.db")
+    try:
+        keys = {
+            key for (key,) in connection.execute("SELECT key FROM meta WHERE key LIKE 'source.%'")
+        }
+    finally:
+        connection.close()
+    assert keys == {
+        "source.simbad",
+        "source.hunt_reffert_2023",
+        "source.mcconnachie_2012",
+        "source.cosmicflows_4",
+    }
 
 
 def test_a_cluster_missing_from_the_catalogue_stops_the_build(tmp_path: Path) -> None:
