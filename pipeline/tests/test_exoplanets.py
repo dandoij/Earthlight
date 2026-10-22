@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from earthlight.lookback import PARSEC_IN_LIGHT_YEARS
+from earthlight.lookback import PARSEC_IN_LIGHT_YEARS, LookbackRange
 from earthlight.models import VantageKind, VantagePoint
 from earthlight_pipeline.exoplanets import (
     FAMOUS_EXOPLANETS,
@@ -390,3 +390,52 @@ def test_read_host_distances_skips_incomplete_rows(tmp_path: Path) -> None:
     )
     second = write(tmp_path / "b.csv", "source_id,r_lo_geo,r_med_geo,r_hi_geo\n999,1,2,3\n")
     assert read_host_distances([first, second]) == {123: (9.5, 10.0, 10.6), 999: (1.0, 2.0, 3.0)}
+
+
+# --- a planet should sit where its own star sits ------------------------------------------------
+
+
+def gaia_star(star_id: str, low: float, best: float, high: float) -> VantagePoint:
+    return VantagePoint(
+        id=star_id,
+        name=star_id,
+        kind=VantageKind.STAR,
+        lookback=LookbackRange(low, best, high),
+        facts={"hip": 7, "distance_source": "gaia"},
+    )
+
+
+def test_a_planet_far_from_its_gaia_host_takes_the_hosts_range() -> None:
+    index = StarIndex.from_stars([gaia_star("hip-7", 8.2, 8.3, 8.4)])
+    result = build_exoplanets([planet(hip=7)], {}, index)
+    (record,) = result.records
+    assert record.point.lookback.best == 8.3
+    assert record.point.facts["distance_source"] == "host_star"
+    assert result.sources == Counter({"host_star": 1})
+
+
+def test_a_planet_that_agrees_with_its_host_keeps_the_archive_range() -> None:
+    own = archive_range(planet())
+    assert own is not None
+    index = StarIndex.from_stars([gaia_star("hip-7", own.minimum, own.best, own.maximum)])
+    (record,) = build_exoplanets([planet(hip=7)], {}, index).records
+    assert record.point.facts["distance_source"] == "exoplanet_archive"
+    assert record.point.lookback == own
+
+
+def test_a_host_whose_distance_is_not_from_gaia_never_overrides_the_planet() -> None:
+    star = gaia_star("hip-7", 8.2, 8.3, 8.4).model_copy(
+        update={"facts": {"hip": 7, "distance_source": "hipparcos"}}
+    )
+    (record,) = build_exoplanets([planet(hip=7)], {}, StarIndex.from_stars([star])).records
+    assert record.point.facts["distance_source"] == "exoplanet_archive"
+
+
+def test_a_tiny_gap_between_precise_ranges_is_not_a_disagreement() -> None:
+    precise = planet(hip=7, error_upper_pc=0.001, error_lower_pc=-0.001)
+    own = archive_range(precise)
+    assert own is not None
+    just_above = own.maximum * 1.001
+    index = StarIndex.from_stars([gaia_star("hip-7", just_above, just_above, just_above * 1.0001)])
+    (record,) = build_exoplanets([precise], {}, index).records
+    assert record.point.facts["distance_source"] == "exoplanet_archive"

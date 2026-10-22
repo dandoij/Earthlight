@@ -33,7 +33,25 @@ from earthlight_pipeline.parsing import integer as _integer
 from earthlight_pipeline.parsing import number as _number
 from earthlight_pipeline.parsing import words as _words
 
-DistanceSource = Literal["gaia", "hipparcos"]
+DistanceSource = Literal["gaia", "hipparcos", "literature"]
+
+
+@dataclass(frozen=True)
+class ParallaxOverride:
+    """A published parallax that replaces a poor catalogue value for one star."""
+
+    parallax_mas: float
+    error_mas: float
+    reference: str
+
+
+PARALLAX_OVERRIDES: dict[int, ParallaxOverride] = {
+    # Alpha Centauri A and B orbit each other, which spoils the Hipparcos new-reduction fit
+    # (it puts Alpha Cen B at 4.09 light-years, closer than Proxima). Both stars are given the
+    # system's parallax from the orbit solution; Gaia has no usable solution for them.
+    71683: ParallaxOverride(747.17, 0.61, "Kervella et al. 2016, A&A 594, A107"),
+    71681: ParallaxOverride(747.17, 0.61, "Kervella et al. 2016, A&A 594, A107"),
+}
 
 MIN_HIPPARCOS_PARALLAX_OVER_ERROR = 5.0
 """A Hipparcos parallax must be at least this many times its error. Simple parallax inversion
@@ -195,11 +213,19 @@ def choose_distance(
     *,
     min_parallax_over_error: float = MIN_HIPPARCOS_PARALLAX_OVER_ERROR,
 ) -> Distance:
-    """Pick Gaia with Bailer-Jones if the star has them, otherwise the Hipparcos parallax.
+    """Pick a published override, else Gaia with Bailer-Jones, else the Hipparcos parallax.
 
     A Hipparcos parallax must be at least ``min_parallax_over_error`` times its error.
     Raises SkipStar when neither source gives a trustworthy distance.
     """
+    override = PARALLAX_OVERRIDES.get(star.hip)
+    if override is not None:
+        return Distance(
+            lookback=lookback_range_from_parallax(override.parallax_mas, override.error_mas),
+            source="literature",
+            parallax_mas=override.parallax_mas,
+            gaia_source_id=None,
+        )
     if match is not None and match.geo_distance_pc is not None:
         low, median, high = match.geo_distance_pc
         if 0 < low <= median <= high:

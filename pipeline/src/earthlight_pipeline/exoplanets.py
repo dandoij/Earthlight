@@ -16,13 +16,13 @@ import csv
 import re
 from collections import Counter
 from collections.abc import Iterable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal, Self
 
 from pydantic import ValidationError
 
-from earthlight.lookback import LookbackRange, parsecs_to_light_years
+from earthlight.lookback import LookbackRange, intervals_overlap, parsecs_to_light_years
 from earthlight.models import FactValue, VantageKind, VantagePoint
 from earthlight_pipeline.parsing import integer as _integer
 from earthlight_pipeline.parsing import number as _number
@@ -31,7 +31,12 @@ from earthlight_pipeline.parsing import prefixed_integer as _prefixed_integer
 from earthlight_pipeline.parsing import words as _words
 from earthlight_pipeline.stars import GaiaMatch, SearchEntry, constellation_names
 
-PlanetDistanceSource = Literal["exoplanet_archive", "bailer_jones_host"]
+PlanetDistanceSource = Literal["exoplanet_archive", "bailer_jones_host", "host_star"]
+
+HOST_DISAGREEMENT_FRACTION = 0.05
+"""A planet takes its Gaia host's distance when the two ranges do not overlap and the best
+values differ by more than this fraction. Tiny gaps between very precise ranges (Proxima
+Centauri's planets) are not disagreements."""
 
 NEARBY_LIGHT_YEARS = 12.0
 """Planets this close are treated as notable, however little is known about them."""
@@ -188,19 +193,24 @@ class StarIndex:
 
     by_hip: Mapping[int, str]
     by_gaia_id: Mapping[int, str]
+    gaia_ranges: Mapping[str, LookbackRange] = field(default_factory=dict[str, LookbackRange])
+    """Lookback ranges of the stars whose distance comes from Gaia, by star id."""
 
     @classmethod
     def from_stars(cls, stars: Iterable[VantagePoint]) -> Self:
         by_hip: dict[int, str] = {}
         by_gaia: dict[int, str] = {}
+        ranges: dict[str, LookbackRange] = {}
         for star in stars:
+            if star.facts.get("distance_source") == "gaia":
+                ranges[star.id] = star.lookback
             hip = star.facts.get("hip")
             if isinstance(hip, int):
                 by_hip[hip] = star.id
             gaia = star.facts.get("gaia_dr3_source_id")
             if isinstance(gaia, str) and gaia.isdigit():
                 by_gaia[int(gaia)] = star.id
-        return cls(by_hip, by_gaia)
+        return cls(by_hip, by_gaia, ranges)
 
     def host_of(self, planet: ArchivePlanet) -> str | None:
         """The id of the planet's host star, if that star is in the database."""
@@ -209,6 +219,23 @@ class StarIndex:
         if planet.gaia_host_id is not None:
             return self.by_gaia_id.get(planet.gaia_host_id)
         return None
+
+    def host_range_if_conflicting(
+        self, planet: ArchivePlanet, own: LookbackRange
+    ) -> LookbackRange | None:
+        """The host star's Gaia range when it exists and clearly disagrees with ``own``.
+
+        The archive's system distance sometimes disagrees with the host's Gaia distance (it can
+        come from an older catalogue), and a planet should not sit at a different place than its
+        own star. Ranges that overlap, or whose best values are within 5%, are left alone.
+        """
+        host_id = self.host_of(planet)
+        host = self.gaia_ranges.get(host_id) if host_id is not None else None
+        if host is None or intervals_overlap(own.minimum, own.maximum, host.minimum, host.maximum):
+            return None
+        if abs(own.best - host.best) <= HOST_DISAGREEMENT_FRACTION * host.best:
+            return None
+        return host
 
 
 @dataclass(frozen=True)
@@ -307,6 +334,10 @@ def build_exoplanets(
         except SkipPlanet as why:
             skipped[why.reason] += 1
             continue
+        if source == "exoplanet_archive":
+            host_range = stars.host_range_if_conflicting(planet, lookback)
+            if host_range is not None:
+                lookback, source = host_range, "host_star"
         planet_id = slugify(planet.name)
         if not planet_id or planet_id in seen_ids:
             skipped["duplicate_id"] += 1

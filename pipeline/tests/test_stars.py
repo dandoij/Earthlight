@@ -10,6 +10,7 @@ from earthlight.models import VantageKind
 from earthlight_pipeline.stars import (
     MIN_HIPPARCOS_PARALLAX_OVER_ERROR,
     MIN_NAMED_PARALLAX_OVER_ERROR,
+    PARALLAX_OVERRIDES,
     GaiaMatch,
     HipparcosStar,
     SkipStar,
@@ -500,3 +501,22 @@ def test_the_first_name_wins_when_a_star_appears_twice() -> None:
 def test_a_name_with_a_space_is_kept_whole() -> None:
     text = "\n".join([iau_header(), iau_row("Alula Australis", "55203")])
     assert parse_iau_names(text) == {55203: "Alula Australis"}
+
+
+# --- published overrides for bad catalogue parallaxes ------------------------------------------
+
+
+@pytest.mark.parametrize("hip", [71681, 71683])
+def test_alpha_centauri_uses_the_published_parallax_not_the_hipparcos_one(hip: int) -> None:
+    result = choose_distance(star(hip=hip, parallax_mas=796.92, parallax_error_mas=25.90), None)
+    assert result.source == "literature"
+    assert result.parallax_mas == 747.17
+    # 1 / 0.74717 arcsec = 1.3384 parsecs = about 4.365 light-years; Proxima is nearer (4.246).
+    assert result.lookback.best == pytest.approx(4.365, abs=0.002)
+    assert result.lookback.minimum < result.lookback.best < result.lookback.maximum
+    assert result.lookback.best > 4.2465
+
+
+def test_every_override_cites_a_reference_and_has_a_positive_parallax() -> None:
+    for override in PARALLAX_OVERRIDES.values():
+        assert override.reference and override.parallax_mas > 0 and override.error_mas > 0

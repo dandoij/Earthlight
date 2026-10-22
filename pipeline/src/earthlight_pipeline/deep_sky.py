@@ -92,6 +92,18 @@ class InlineRedshift(EarthlightModel):
     redshift: float = Field(gt=0, strict=True)
     error: float = Field(ge=0, strict=True, description="One standard deviation, in redshift.")
     source: SourceUrl
+    ra_deg: float | None = Field(
+        default=None, ge=0, lt=360, strict=True, description="Right ascension, J2000/ICRS degrees."
+    )
+    dec_deg: float | None = Field(
+        default=None, ge=-90, le=90, strict=True, description="Declination, J2000/ICRS degrees."
+    )
+
+    @model_validator(mode="after")
+    def _position_is_complete(self) -> Self:
+        if (self.ra_deg is None) != (self.dec_deg is None):
+            raise ValueError("give both ra_deg and dec_deg, or neither")
+        return self
 
 
 CATALOGUE_KINDS = {
@@ -411,7 +423,14 @@ def build_deep_sky(
     if problems:
         raise CuratedError("\n".join(problems))
 
-    positions = [(r.ra_deg, r.dec_deg) if r else (None, None) for *_, r in resolved]
+    positions = [
+        (r.ra_deg, r.dec_deg)
+        if r
+        else (item.inline.ra_deg, item.inline.dec_deg)
+        if item.inline
+        else (None, None)
+        for item, *_, r in resolved
+    ]
     with_position = [(ra, dec) for ra, dec in positions if ra is not None and dec is not None]
     names = iter(
         constellation_names([ra for ra, _ in with_position], [dec for _, dec in with_position])

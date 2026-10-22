@@ -262,3 +262,45 @@ def test_unnamed_stars_are_not_searchable(db: sqlite3.Connection) -> None:
         "WHERE s.type = 'vantage_point' AND v.kind = 'star' AND v.fame = 0",
     )
     assert unnamed_and_searchable == 0
+
+
+def test_planets_sit_where_their_gaia_host_star_sits(db: sqlite3.Connection) -> None:
+    """A planet may differ a little from its star, but never by more than 5% unless the ranges
+    overlap (the build replaces a clearly disagreeing archive distance with the star's)."""
+    rows = db.execute(
+        "SELECT p.id, p.lookback_min, p.lookback_best, p.lookback_max, "
+        "h.lookback_min, h.lookback_best, h.lookback_max "
+        "FROM vantage_points p JOIN vantage_points h ON h.id = p.host_id "
+        "WHERE p.kind = 'exoplanet' AND json_extract(h.facts, '$.distance_source') = 'gaia'"
+    ).fetchall()
+    assert len(rows) > 500
+    bad = [
+        row[0]
+        for row in rows
+        if not (row[1] <= row[6] and row[4] <= row[3]) and abs(row[2] - row[5]) > 0.05 * row[5]
+    ]
+    assert bad == []
+
+
+def test_alpha_centauri_is_farther_than_proxima(db: sqlite3.Connection) -> None:
+    proxima = scalar(db, "SELECT lookback_best FROM vantage_points WHERE id = 'hip-70890'")
+    for star in ("hip-71681", "hip-71683"):
+        best = db.execute("SELECT lookback_best FROM vantage_points WHERE id = ?", (star,))
+        assert best.fetchone()[0] > proxima
+    assert (
+        4.3
+        < db.execute("SELECT lookback_best FROM vantage_points WHERE id = 'hip-71681'").fetchone()[
+            0
+        ]
+        < 4.45
+    )
+
+
+def test_the_inline_redshift_objects_with_published_positions_have_them(
+    db: sqlite3.Connection,
+) -> None:
+    for point_id in ("j0313-1806", "jades-gs-z14-0", "mom-z14"):
+        row = db.execute(
+            "SELECT ra_deg, dec_deg, constellation FROM vantage_points WHERE id = ?", (point_id,)
+        ).fetchone()
+        assert row[0] is not None and row[1] is not None and row[2], point_id

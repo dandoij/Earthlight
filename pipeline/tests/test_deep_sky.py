@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
+from pydantic import ValidationError
 from scipy.integrate import quad
 
 from earthlight.models import VantageKind
@@ -475,3 +476,32 @@ def test_a_negative_redshift_from_a_nearby_object_is_refused_not_converted() -> 
 
 def test_the_module_exposes_its_thresholds() -> None:
     assert deep_sky.MIN_REDSHIFT == 0.01 and deep_sky.WORST_ACCEPTED_QUALITY == "D"
+
+
+def inline_object(**extra: object) -> CuratedObject:
+    inline = {"redshift": 7.6, "error": 0.01, "source": "https://a.org/x", **extra}
+    return CuratedObject.model_validate(
+        entry(id="far", name="Far", kind="quasar", simbad=None, aliases=[], inline=inline)
+    )
+
+
+def test_an_inline_object_with_a_position_gets_one_and_a_constellation() -> None:
+    (built,) = build_deep_sky([inline_object(ra_deg=48.43267, dec_deg=-18.11011)], {}).records
+    assert built.point.ra_deg == 48.43267 and built.point.dec_deg == -18.11011
+    assert built.point.constellation == "Eridanus"
+
+
+@pytest.mark.parametrize(
+    "position",
+    [
+        {"ra_deg": 10.0},
+        {"dec_deg": 10.0},
+        {"ra_deg": 360.0, "dec_deg": 0.0},
+        {"ra_deg": 10.0, "dec_deg": 91.0},
+    ],
+)
+def test_an_incomplete_or_impossible_inline_position_is_rejected(
+    position: dict[str, float],
+) -> None:
+    with pytest.raises(ValidationError):
+        inline_object(**position)

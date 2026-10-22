@@ -206,7 +206,7 @@ Run on the full archive: 6,451 default-parameter planets, of which **6,356** wer
 
 - Every built planet is searchable (6,356 entries). 58 are flagged controversial.
 - Fame: a short editorial list (51 Peg b, HD 209458 b, Proxima Cen b, TRAPPIST-1 e at 4; Kepler-22 b at 3), at least 3 within 12 light-years, otherwise 1.
-- Extra facts stored: `distance_source` (`exoplanet_archive` or `bailer_jones_host`), `planets_in_system`, `gaia_dr3_host_id`. Radius, mass, period, discovery year and method live only in the `exoplanets` table (no Pydantic model yet).
+- Extra facts stored: `distance_source` (`exoplanet_archive`, `bailer_jones_host`, or `host_star`), `planets_in_system`, `gaia_dr3_host_id`. Radius, mass, period, discovery year and method live only in the `exoplanets` table (no Pydantic model yet).
 - Database size with stars and planets: **19.6 MB**, close to the 20 MB budget.
 
 ### Spot checks
@@ -373,6 +373,12 @@ The series is not rising every century: 1200 CE (445 million) is above 1400 CE (
 | Search entries | 7,808 |
 
 The file is 19.9 MB (18.9 MiB), limit 20 MiB, checked by a test. Every century of lookback from 0 to 5,000 years, and every factor of ten from 10 years to 10 billion years, has at least one place; every century since 3000 BCE has a history entry except nine (listed in `KNOWN_HISTORY_GAPS` in the test, for Ian to decide whether to fill). The rules SQLite cannot express (plain-scalar `facts`, `host_id` pointing at a star) are checked in `packages/earthlight/tests/test_bundled_database.py`. A rebuild changes the file whenever a source updates, so the numbers above are for the build made on 2026-10-22.
+
+## Corrections made in the phase 2 review (step 2.15)
+
+- **Planets that disagree with their star.** The archive's system distance sometimes comes from an older catalogue: GJ 411 b and c were at 18.5 light-years while their host (Lalande 21185) is at 8.3 light-years in Gaia. When a planet is linked to a host whose distance comes from Gaia, and the planet's range does not overlap the host's range and the best values differ by more than 5%, the planet now takes the host's range (`distance_source` is `host_star`). 19 planets changed. Tiny gaps between very precise ranges (Proxima Centauri's planets) are left alone.
+- **Alpha Centauri.** The Hipparcos new-reduction parallax for the pair (796.92 +- 25.90 mas for Alpha Cen B) is poor because the stars orbit each other, and put Toliman at 4.09 light-years, nearer than Proxima. A short override list (`PARALLAX_OVERRIDES` in `stars.py`) gives both stars the parallax of the pair from the orbit solution, 747.17 +- 0.61 mas (1.3384 +- 0.0011 parsecs), from Kervella et al. 2016, A&A 594, A107, as quoted in Kervella, Thevenin and Lovis 2017, A&A 598, L7. Both now sit at 4.37 light-years (`distance_source` is `literature`). Any future override needs a cited published value.
+- **Deep-sky positions from the cited papers.** An inline redshift can now carry `ra_deg` and `dec_deg` copied from the same paper. Done for J0313-1806 (Wang et al., 03:13:43.84 -18:06:36.4, which matches SIMBAD), JADES-GS-z14-0 (Carniani et al., 3:32:19.905 -27:51:20.27) and MoM-z14 (Naidu et al., 150.0933255 +2.2731627, which matches SIMBAD). The papers for GN-z11 (Bunker et al.), GHZ2 (Castellano et al.) and JADES-GS-z13-1-LA (Witstok et al.) do not state a position in the text read, and SIMBAD has none under those names, so they and the CMB still have no position.
 
 ## History data (steps 2.7 to 2.13)
 

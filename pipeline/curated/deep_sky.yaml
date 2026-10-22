@@ -3,7 +3,8 @@
 # This file holds names and editorial choices only. It never holds a lookback or a distance:
 #   simbad:  the object's identifier in SIMBAD, which supplies position and redshift.
 #   inline:  a redshift typed here for an object SIMBAD does not hold, with the URL of the
-#            paper it came from. `error` is one standard deviation, in redshift.
+#            paper it came from. `error` is one standard deviation, in redshift. `ra_deg` and
+#            `dec_deg` (both or neither) give a position, copied from that same paper.
 #   distance: for star clusters and nearby galaxies, which catalogue and the object's name
 #            in it (hunt_reffert_2023, mcconnachie_2012, or cosmicflows_4, all on VizieR).
 #            Position and distance come from there.
@@ -226,6 +227,8 @@ objects:
       redshift: 7.6423
       error: 0.0013
       source: https://arxiv.org/abs/2101.03179  # Wang et al.
+      ra_deg: 48.432667  # 03:13:43.84, from the same paper
+      dec_deg: -18.110111  # -18:06:36.4
     wikipedia: J0313-1806
 
   # --- galaxy clusters --------------------------------------------------------------------
@@ -351,6 +354,8 @@ objects:
       redshift: 14.32
       error: 0.14
       source: https://arxiv.org/abs/2405.18485  # Carniani et al., symmetric average of +0.08 and -0.20
+      ra_deg: 53.082937  # 3:32:19.905, from the same paper
+      dec_deg: -27.855631  # -27:51:20.27
     wikipedia: JADES-GS-z14-0
   - id: mom-z14
     name: MoM-z14
@@ -360,6 +365,8 @@ objects:
       redshift: 14.44
       error: 0.02
       source: https://arxiv.org/abs/2505.11263  # Naidu et al.
+      ra_deg: 150.0933255  # from the same paper
+      dec_deg: 2.2731627
     wikipedia: MoM-z14
 
   # --- the oldest light -------------------------------------------------------------------
