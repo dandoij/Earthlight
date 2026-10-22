@@ -33,7 +33,11 @@ def db() -> Iterator[sqlite3.Connection]:
 
 
 def scalar(db: sqlite3.Connection, sql: str, *args: object) -> int:
-    row = db.execute(sql, args).fetchone()
+    """The first column of the first row. Pass one dict for named (:name) parameters."""
+    params = (
+        cast(dict[str, object], args[0]) if len(args) == 1 and isinstance(args[0], dict) else args
+    )
+    row = db.execute(sql, params).fetchone()
     return int(row[0])
 
 
@@ -199,12 +203,11 @@ def test_the_centuries_without_a_history_entry_are_the_known_ones(db: sqlite3.Co
         for start in range(-2999, THIS_YEAR, 100)
         if scalar(
             db,
-            "SELECT (SELECT count(*) FROM events WHERE year >= ?1 AND year < ?2) "
+            "SELECT (SELECT count(*) FROM events WHERE year >= :lo AND year < :hi) "
             "+ (SELECT count(*) FROM periods WHERE end_year IS NOT NULL "
-            "AND start_year < ?2 AND end_year >= ?1) "
-            "+ (SELECT count(*) FROM landmarks WHERE built_start >= ?1 AND built_start < ?2)",
-            start,
-            start + 100,
+            "AND start_year < :hi AND end_year >= :lo) "
+            "+ (SELECT count(*) FROM landmarks WHERE built_start >= :lo AND built_start < :hi)",
+            {"lo": start, "hi": start + 100},
         )
         == 0
     ]
