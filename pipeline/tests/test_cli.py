@@ -1,5 +1,6 @@
 """Tests for the earthlight-build command."""
 
+import re
 import sqlite3
 from pathlib import Path
 
@@ -134,15 +135,20 @@ def calls(monkeypatch: pytest.MonkeyPatch) -> list[Call]:
     return recorded
 
 
+ANSI_CODES = re.compile(r"\[[0-9;]*m")
+
+
 def test_help_lists_every_source_and_the_extra_commands() -> None:
-    result = runner.invoke(app, ["--help"])
+    # CI sets FORCE_COLOR and a narrow terminal, which colours the help and wraps option names.
+    result = runner.invoke(app, ["--help"], env={"NO_COLOR": "1", "TERMINAL_WIDTH": "200"})
     assert result.exit_code == 0
+    output = ANSI_CODES.sub("", result.output)
     for source in SOURCES:
-        assert source.command in result.output
-    assert "all" in result.output
-    assert "config" in result.output
+        assert source.command in output
+    assert "all" in output
+    assert "config" in output
     for option in ("--cache-dir", "--refresh", "--database"):
-        assert option in result.output
+        assert option in output
 
 
 def test_no_arguments_shows_help() -> None:
