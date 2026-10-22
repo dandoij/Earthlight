@@ -1,0 +1,214 @@
+# Other names people use for the history entries, so that search finds "fall of rome" or
+# "moon landing" even though the entry is titled differently.
+#
+# The key is the id of an event, period, or landmark in curated/history/. Each alias is plain
+# ASCII text (no accents: SQLite folds case for ASCII only). An alias is used by search and
+# nothing else, so it is not a claim about the entry: it only has to be a name people type.
+# An alias must not repeat across entries, and must not be the entry's own name.
+
+aliases:
+  # --- the universe, the Earth, and early life -------------------------------------------
+  big-bang: ["Birth of the universe", "Origin of the universe"]
+  first-stars: ["Cosmic dawn"]
+  solar-system-forms: ["Formation of the Solar System", "Birth of the Sun"]
+  earth-forms: ["Formation of the Earth", "Birth of the Earth", "Origin of the Earth"]
+  moon-forming-impact: ["Formation of the Moon", "Origin of the Moon", "Theia impact"]
+  oldest-fossil-life: ["Origin of life", "First life", "Earliest life"]
+  permian-triassic-extinction: ["Permian extinction"]
+  first-dinosaurs: ["Rise of the dinosaurs"]
+  end-cretaceous-extinction:
+    - "Dinosaur extinction"
+    - "Extinction of the dinosaurs"
+    - "Chicxulub impact"
+    - "K-Pg extinction"
+    - "Asteroid that killed the dinosaurs"
+  first-mammals: ["Origin of mammals", "Earliest mammals"]
+  first-flowering-plants: ["Origin of flowers", "First flowers"]
+  great-oxidation-event: ["Oxygen catastrophe", "Great Oxygenation Event"]
+  mesozoic-era: ["Age of Dinosaurs", "Age of the Dinosaurs", "Age of Reptiles"]
+  cenozoic-era: ["Age of Mammals"]
+  pleistocene-epoch: ["Ice Age", "The Ice Age", "Ice Ages"]
+  last-glacial-maximum: ["Last Ice Age", "Peak of the Ice Age"]
+
+  # --- human origins and prehistory -------------------------------------------------------
+  sahelanthropus: ["Toumai"]
+  lomekwi-stone-tools: ["First stone tools", "Earliest tools"]
+  lucy: ["Lucy fossil", "Australopithecus afarensis"]
+  early-controlled-fire: ["Discovery of fire", "First use of fire", "Taming of fire"]
+  first-homo-sapiens: ["First modern humans", "Origin of Homo sapiens", "Origin of humans"]
+  toba-eruption: ["Toba catastrophe"]
+  neanderthals-disappear: ["Neanderthal extinction", "Extinction of the Neanderthals"]
+  chauvet-cave-paintings: ["Cave paintings", "Chauvet Cave"]
+  first-pottery: ["Invention of pottery"]
+  humans-reach-the-americas:
+    - "Peopling of the Americas"
+    - "First Americans"
+    - "Settlement of the Americas"
+    - "Monte Verde"
+  farming-begins:
+    - "Agricultural revolution"
+    - "Neolithic revolution"
+    - "Invention of agriculture"
+
+  # --- the ancient world -------------------------------------------------------------------
+  wheeled-vehicles: ["Invention of the wheel", "The wheel"]
+  earliest-writing: ["Invention of writing", "Cuneiform"]
+  unification-of-egypt: ["Narmer", "First pharaoh", "Unification of Upper and Lower Egypt"]
+  indus-cities-mature:
+    - "Harappa"
+    - "Mohenjo-daro"
+    - "Indus Valley civilization"
+    - "Harappan civilization"
+  sargon-of-akkad: ["Akkadian Empire", "Sargon the Great"]
+  code-of-hammurabi: ["Hammurabi", "Laws of Hammurabi"]
+  late-bronze-age-collapse: ["Bronze Age collapse", "Sea Peoples"]
+  phoenician-alphabet: ["First alphabet", "Invention of the alphabet"]
+  first-olympic-games: ["Ancient Olympics", "Olympic Games"]
+  founding-of-rome: ["Romulus and Remus", "Foundation of Rome", "Birth of Rome"]
+  lydian-coinage: ["First coins", "Invention of money", "Invention of coins"]
+  birth-of-confucius: ["Confucius"]
+  battle-of-marathon: ["Marathon"]
+  death-of-socrates: ["Socrates trial", "Execution of Socrates"]
+  death-of-alexander: ["Death of Alexander the Great", "Alexander the Great"]
+  qin-unifies-china: ["Qin Shi Huang", "First emperor of China", "Unification of China"]
+  destruction-of-carthage: ["Fall of Carthage", "Third Punic War", "Carthage"]
+  assassination-of-caesar: ["Death of Julius Caesar", "Ides of March", "Murder of Caesar"]
+  battle-of-actium: ["Actium"]
+  vesuvius-eruption: ["Pompeii", "Eruption of Vesuvius", "Destruction of Pompeii"]
+  invention-of-paper-by-cai-lun: ["Invention of paper", "Cai Lun"]
+  old-kingdom-of-egypt: ["Age of the Pyramids", "Pyramid Age"]
+  new-kingdom-of-egypt: ["Egyptian Empire"]
+  achaemenid-empire: ["Persian Empire", "First Persian Empire"]
+  roman-republic: ["Republic of Rome"]
+  classical-greece: ["Ancient Greece", "Golden Age of Athens"]
+  han-dynasty: ["Han Empire"]
+  roman-empire-west: ["Ancient Rome", "The Roman Empire"]
+
+  # --- 500 to 1800 ---------------------------------------------------------------------------
+  founding-of-constantinople: ["Constantine founds Constantinople"]
+  fall-of-the-western-roman-empire:
+    - "Fall of Rome"
+    - "Fall of the Roman Empire"
+    - "End of the Roman Empire"
+    - "Decline of Rome"
+  hijra: ["Migration to Medina", "Islamic calendar"]
+  lindisfarne-raid: ["Start of the Viking Age", "Viking Age begins", "Lindisfarne"]
+  charlemagne-crowned: ["Coronation of Charlemagne", "Charlemagne"]
+  diamond-sutra-printed: ["Oldest printed book", "Earliest printed book"]
+  norse-in-north-america: ["Vikings in America", "Vinland", "Leif Erikson"]
+  battle-of-hastings: ["Norman conquest", "Norman Conquest of England", "Hastings"]
+  crusaders-take-jerusalem: ["First Crusade"]
+  genghis-khan-proclaimed: ["Genghis Khan", "Chinggis Khan", "Rise of the Mongols"]
+  magna-carta: ["Great Charter"]
+  mongols-take-baghdad: ["Fall of Baghdad", "Siege of Baghdad", "Sack of Baghdad"]
+  mansa-musa-hajj: ["Mansa Musa", "Mali Empire"]
+  black-death-reaches-europe: ["Black Death", "Bubonic plague", "The plague"]
+  fall-of-constantinople:
+    - "Fall of Constantinople"
+    - "Conquest of Constantinople"
+    - "End of the Byzantine Empire"
+  gutenberg-bible:
+    - "Gutenberg printing press"
+    - "Printing press"
+    - "Invention of the printing press"
+    - "Gutenberg"
+  columbus-reaches-the-americas:
+    - "Christopher Columbus"
+    - "Discovery of America"
+    - "Columbus discovers America"
+  da-gama-reaches-india: ["Vasco da Gama", "Sea route to India"]
+  luther-ninety-five-theses: ["Martin Luther", "Protestant Reformation", "Reformation"]
+  fall-of-tenochtitlan:
+    - "Fall of the Aztec Empire"
+    - "Spanish conquest of the Aztecs"
+    - "Cortes conquers the Aztecs"
+  first-circumnavigation: ["Magellan", "Magellan expedition", "Circumnavigation of the Earth"]
+  copernicus-heliocentric-model: ["Copernican revolution", "Copernicus", "Heliocentrism"]
+  galileo-starry-messenger: ["Galileo", "Galileo telescope", "Sidereus Nuncius"]
+  peace-of-westphalia: ["End of the Thirty Years War", "Treaty of Westphalia"]
+  newton-principia: ["Newton laws", "Isaac Newton", "Law of universal gravitation"]
+  byzantine-empire: ["Eastern Roman Empire", "Byzantium"]
+  tang-dynasty: ["Tang Empire"]
+  song-dynasty: ["Sung dynasty"]
+  mongol-empire: ["Mongols"]
+  ottoman-empire: ["Ottomans", "Ottoman Turks"]
+  mughal-empire: ["Mogul Empire", "Moghul Empire", "Mughals"]
+
+  # --- 1800 to today -------------------------------------------------------------------------
+  declaration-of-independence: ["American independence", "Fourth of July", "American Revolution"]
+  storming-of-the-bastille: ["French Revolution", "Fall of the Bastille", "Bastille Day"]
+  jenner-smallpox-vaccination: ["First vaccine", "Invention of vaccination", "Edward Jenner"]
+  battle-of-waterloo: ["Waterloo", "Napoleon defeated"]
+  stockton-and-darlington-railway: ["First railway", "First steam railway"]
+  origin-of-species: ["Darwin", "Theory of evolution", "Charles Darwin"]
+  emancipation-proclamation: ["Abraham Lincoln"]
+  telephone-patent: ["Invention of the telephone", "Alexander Graham Bell"]
+  first-powered-flight:
+    - "Wright brothers"
+    - "First airplane flight"
+    - "Invention of the airplane"
+    - "Kitty Hawk"
+    - "First flight"
+  special-relativity: ["Einstein", "Theory of relativity", "Albert Einstein"]
+  sinking-of-the-titanic: ["Titanic", "RMS Titanic", "Titanic disaster"]
+  october-revolution: ["Russian Revolution", "Bolshevik Revolution"]
+  influenza-pandemic-1918: ["Spanish flu", "Spanish influenza"]
+  discovery-of-penicillin: ["Penicillin", "Alexander Fleming", "First antibiotic"]
+  wall-street-crash:
+    - "Stock market crash of 1929"
+    - "Crash of 1929"
+    - "Black Tuesday"
+    - "Great Crash"
+  hiroshima-bombing: ["Atomic bomb", "Nuclear bomb", "Hiroshima"]
+  indian-independence:
+    - "Partition of India"
+    - "Independence of India"
+    - "India Pakistan partition"
+  dna-double-helix: ["Discovery of DNA", "Watson and Crick", "Double helix"]
+  sputnik-launch: ["Sputnik", "First satellite"]
+  first-human-in-space: ["Gagarin", "Yuri Gagarin", "Vostok 1", "First man in space"]
+  apollo-11-moon-landing: ["Moon landing", "First moon landing", "Man on the moon", "Neil Armstrong"]
+  chernobyl-disaster: ["Chernobyl", "Chernobyl nuclear accident"]
+  world-wide-web-proposed: ["WWW", "Tim Berners-Lee", "Invention of the web"]
+  fall-of-the-berlin-wall: ["Fall of the Berlin Wall", "Berlin Wall falls", "Berlin Wall"]
+  mandela-released: ["Nelson Mandela", "Mandela freed"]
+  hubble-space-telescope-launch: ["Hubble", "Hubble Telescope"]
+  dissolution-of-the-soviet-union:
+    - "Collapse of the Soviet Union"
+    - "Fall of the USSR"
+    - "End of the Soviet Union"
+  september-11-attacks: ["9/11", "September 11", "World Trade Center attacks"]
+  human-genome-completed: ["Human Genome Project", "Sequencing of the human genome"]
+  covid-19-pandemic-declared: ["COVID", "COVID-19", "Coronavirus pandemic"]
+  james-webb-space-telescope-launch: ["JWST", "Webb telescope", "James Webb Telescope"]
+  industrial-revolution: ["First Industrial Revolution"]
+  napoleonic-wars: ["Napoleon", "Napoleon Bonaparte", "Age of Napoleon"]
+  world-war-i: ["World War 1", "WWI", "WW1", "First World War", "The Great War"]
+  great-depression: ["The Depression", "Depression era"]
+  world-war-ii: ["World War 2", "WWII", "WW2", "Second World War"]
+  space-age: ["Space Race"]
+
+  # --- landmarks -----------------------------------------------------------------------------
+  great-pyramid-of-giza:
+    - "Pyramids"
+    - "The pyramids"
+    - "Giza"
+    - "Great Pyramid"
+    - "Pyramid of Khufu"
+    - "Egyptian pyramids"
+  parthenon: ["Acropolis"]
+  colossus-of-rhodes: ["Colossus"]
+  terracotta-army: ["Terracotta Warriors"]
+  colosseum: ["Roman Colosseum", "Flavian Amphitheatre", "Coliseum"]
+  pantheon-rome: ["Pantheon", "Pantheon of Rome"]
+  hagia-sophia: ["Haghia Sophia", "Ayasofya", "Hagia Sofia"]
+  borobudur: ["Borobudur Temple"]
+  angkor-wat: ["Angkor", "Angkor Wat temple"]
+  alhambra: ["Alhambra Palace", "Alhambra of Granada"]
+  forbidden-city: ["Imperial Palace Beijing", "Palace Museum"]
+  machu-picchu: ["Inca citadel", "Lost City of the Incas"]
+  taj-mahal: ["Taj"]
+  statue-of-liberty: ["Lady Liberty", "Liberty Enlightening the World"]
+  eiffel-tower: ["Tour Eiffel"]
+  sydney-opera-house: ["Opera House"]
+  burj-khalifa: ["Burj Dubai", "Tallest building"]

@@ -12,6 +12,7 @@ from earthlight_pipeline.history import (
     HistoryError,
     category_counts,
     has_ongoing_period,
+    load_aliases,
     load_curated_history,
     search_entries,
     years_covered,
@@ -247,3 +248,75 @@ def test_ongoing_must_agree_with_end(tmp_path: Path, old: str, new: str, message
 def test_ongoing_is_not_allowed_on_an_event(tmp_path: Path) -> None:
     text = EVENT.replace("year: 1492", "year: 1492\n    ongoing: true")
     assert "ongoing" in problems(write(tmp_path, text))
+
+
+# --- other names for search ----------------------------------------------------------------------
+
+
+def alias_file(tmp_path: Path, body: str) -> Path:
+    path = tmp_path / "aliases.yaml"
+    path.write_text(body, encoding="utf-8")
+    return path
+
+
+def alias_problems(tmp_path: Path, body: str) -> str:
+    data = load_curated_history(SAMPLE)
+    with pytest.raises(HistoryError) as error:
+        load_aliases(alias_file(tmp_path, body), data)
+    return str(error.value)
+
+
+def test_aliases_are_read_by_entry_id(tmp_path: Path) -> None:
+    data = load_curated_history(SAMPLE)
+    body = (
+        "aliases:\n  moon-landing: [First moon landing, Man on the moon]\n"
+        "  cambrian: [Cambrian Explosion]\n"
+    )
+    assert load_aliases(alias_file(tmp_path, body), data) == {
+        "moon-landing": ("First moon landing", "Man on the moon"),
+        "cambrian": ("Cambrian Explosion",),
+    }
+
+
+def test_aliases_are_stored_one_per_line_in_the_search_entries(tmp_path: Path) -> None:
+    data = load_curated_history(SAMPLE)
+    aliases = {"moon-landing": ("First moon landing", "Man on the moon")}
+    entries = {e.id: e for e in search_entries(data, aliases)}
+    assert entries["moon-landing"].aliases == "First moon landing\nMan on the moon"
+    assert entries["cambrian"].aliases == ""
+    assert all(e.aliases == "" for e in search_entries(data))
+
+
+@pytest.mark.parametrize(
+    ("body", "message"),
+    [
+        ("aliases:\n  not-an-entry: [Name]\n", "not-an-entry: there is no history entry"),
+        ("aliases:\n  cambrian: []\n", "cambrian: must be a non-empty list"),
+        ("aliases:\n  cambrian: Name\n", "cambrian: must be a non-empty list"),
+        ("aliases:\n  cambrian: ['']\n", "is not text"),
+        ("aliases:\n  cambrian: [5]\n", "is not text"),
+        ("aliases:\n  cambrian: ['Café']\n", "plain ASCII"),
+        ('aliases:\n  cambrian: ["one\\ntwo"]\n', "one line"),
+        ("aliases:\n  cambrian: ['" + "x" * 201 + "']\n", "longer than 200"),
+        ("aliases:\n  cambrian: [Cambrian]\n", "own name"),
+        ("aliases:\n  cambrian: [cambrian]\n", "own name"),
+        ("aliases:\n  cambrian: [Same, same]\n", "repeats an alias of the same entry"),
+        ("aliases:\n  cambrian: [Same]\n  moon-landing: [SAME]\n", "is also an alias of cambrian"),
+        ("other:\n  x: 1\n", "one key, 'aliases'"),
+        ("- a\n- b\n", "one key, 'aliases'"),
+        ("aliases:\n  cambrian: [A]\n  cambrian: [B]\n", "twice"),
+    ],
+)
+def test_bad_aliases_are_refused(tmp_path: Path, body: str, message: str) -> None:
+    assert message in alias_problems(tmp_path, body)
+
+
+def test_every_problem_in_the_alias_file_is_reported_together(tmp_path: Path) -> None:
+    text = alias_problems(tmp_path, "aliases:\n  nope: [A]\n  cambrian: ['']\n")
+    assert len(text.splitlines()) == 2
+
+
+def test_a_missing_alias_file_is_a_history_error(tmp_path: Path) -> None:
+    data = load_curated_history(SAMPLE)
+    with pytest.raises(HistoryError, match="cannot be read"):
+        load_aliases(tmp_path / "nope.yaml", data)

@@ -571,6 +571,13 @@
     "title": "Earth Exists",
     "type": "boolean"
    },
+   "event_total": {
+    "default": 0,
+    "description": "How many events fell in the span (more than are listed).",
+    "minimum": 0,
+    "title": "Event Total",
+    "type": "integer"
+   },
    "events": {
     "default": [],
     "items": {
@@ -578,6 +585,13 @@
     },
     "title": "Events",
     "type": "array"
+   },
+   "landmark_total": {
+    "default": 0,
+    "description": "How many landmarks were begun by the middle of the span.",
+    "minimum": 0,
+    "title": "Landmark Total",
+    "type": "integer"
    },
    "landmarks": {
     "default": [],
@@ -607,6 +621,13 @@
     "title": "Notes",
     "type": "array"
    },
+   "period_total": {
+    "default": 0,
+    "description": "How many periods overlapped the span.",
+    "minimum": 0,
+    "title": "Period Total",
+    "type": "integer"
+   },
    "periods": {
     "default": [],
     "items": {
@@ -628,6 +649,12 @@
    },
    "vantage_point": {
     "$ref": "#/$defs/VantagePoint"
+   },
+   "wide_span": {
+    "default": false,
+    "description": "True when the span of Earth's history is very wide (over 1,000 years).",
+    "title": "Wide Span",
+    "type": "boolean"
    }
   },
   "required": [
@@ -636,6 +663,103 @@
    "moments_label"
   ],
   "title": "EarthSnapshot",
+  "type": "object"
+ },
+ "ExoplanetDetails": {
+  "additionalProperties": false,
+  "description": "What the NASA Exoplanet Archive says about a planet, beyond where it is.",
+  "properties": {
+   "controversial": {
+    "default": false,
+    "description": "True when the archive flags the planet as disputed.",
+    "title": "Controversial",
+    "type": "boolean"
+   },
+   "discovery_method": {
+    "anyOf": [
+     {
+      "maxLength": 200,
+      "minLength": 1,
+      "type": "string"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "title": "Discovery Method"
+   },
+   "discovery_year": {
+    "anyOf": [
+     {
+      "type": "integer"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "title": "Discovery Year"
+   },
+   "host_name": {
+    "maxLength": 200,
+    "minLength": 1,
+    "title": "Host Name",
+    "type": "string"
+   },
+   "mass_earth": {
+    "anyOf": [
+     {
+      "exclusiveMinimum": 0,
+      "type": "number"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "description": "Mass in Earth masses (sometimes a minimum mass).",
+    "title": "Mass Earth"
+   },
+   "nasa_name": {
+    "maxLength": 200,
+    "minLength": 1,
+    "title": "Nasa Name",
+    "type": "string"
+   },
+   "orbital_period_days": {
+    "anyOf": [
+     {
+      "exclusiveMinimum": 0,
+      "type": "number"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "title": "Orbital Period Days"
+   },
+   "radius_earth": {
+    "anyOf": [
+     {
+      "exclusiveMinimum": 0,
+      "type": "number"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "description": "Radius in Earth radii, when measured.",
+    "title": "Radius Earth"
+   }
+  },
+  "required": [
+   "nasa_name",
+   "host_name"
+  ],
+  "title": "ExoplanetDetails",
   "type": "object"
  },
  "MomentResult": {
@@ -669,6 +793,12 @@
     "additionalProperties": false,
     "description": "A vantage point picked for a result, with how well it fits the chosen moment.",
     "properties": {
+     "approximate": {
+      "default": false,
+      "description": "True when no place's range contains the moment, so this is the best place whose range comes close (within 5%) and the match is only approximate.",
+      "title": "Approximate",
+      "type": "boolean"
+     },
      "offset_years": {
       "description": "Best lookback estimate minus the chosen lookback. Negative means nearer.",
       "title": "Offset Years",
@@ -1012,6 +1142,491 @@
    "lookback_years"
   ],
   "title": "MomentResult",
+  "type": "object"
+ },
+ "PlaceInfo": {
+  "$defs": {
+   "ExoplanetDetails": {
+    "additionalProperties": false,
+    "description": "What the NASA Exoplanet Archive says about a planet, beyond where it is.",
+    "properties": {
+     "controversial": {
+      "default": false,
+      "description": "True when the archive flags the planet as disputed.",
+      "title": "Controversial",
+      "type": "boolean"
+     },
+     "discovery_method": {
+      "anyOf": [
+       {
+        "maxLength": 200,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Discovery Method"
+     },
+     "discovery_year": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Discovery Year"
+     },
+     "host_name": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Host Name",
+      "type": "string"
+     },
+     "mass_earth": {
+      "anyOf": [
+       {
+        "exclusiveMinimum": 0,
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Mass in Earth masses (sometimes a minimum mass).",
+      "title": "Mass Earth"
+     },
+     "nasa_name": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Nasa Name",
+      "type": "string"
+     },
+     "orbital_period_days": {
+      "anyOf": [
+       {
+        "exclusiveMinimum": 0,
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Orbital Period Days"
+     },
+     "radius_earth": {
+      "anyOf": [
+       {
+        "exclusiveMinimum": 0,
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Radius in Earth radii, when measured.",
+      "title": "Radius Earth"
+     }
+    },
+    "required": [
+     "nasa_name",
+     "host_name"
+    ],
+    "title": "ExoplanetDetails",
+    "type": "object"
+   },
+   "LookbackRange": {
+    "additionalProperties": false,
+    "description": "A lookback in years as a low, best, and high estimate (``minimum <= best <= maximum``).",
+    "properties": {
+     "best": {
+      "title": "Best",
+      "type": "number"
+     },
+     "maximum": {
+      "title": "Maximum",
+      "type": "number"
+     },
+     "minimum": {
+      "title": "Minimum",
+      "type": "number"
+     }
+    },
+    "required": [
+     "minimum",
+     "best",
+     "maximum"
+    ],
+    "title": "LookbackRange",
+    "type": "object"
+   },
+   "VantageKind": {
+    "description": "What a vantage point is. The values are part of the JSON contract.",
+    "enum": [
+     "planet",
+     "spacecraft",
+     "zone",
+     "star",
+     "exoplanet",
+     "star_cluster",
+     "galaxy",
+     "galaxy_cluster",
+     "quasar",
+     "cosmic_background"
+    ],
+    "title": "VantageKind",
+    "type": "string"
+   },
+   "VantagePoint": {
+    "additionalProperties": false,
+    "description": "A place you can stand on and look back at Earth from.",
+    "properties": {
+     "constellation": {
+      "anyOf": [
+       {
+        "maxLength": 200,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Full constellation name, for objects with a sky position.",
+      "title": "Constellation"
+     },
+     "dec_deg": {
+      "anyOf": [
+       {
+        "maximum": 90,
+        "minimum": -90,
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Declination in degrees (equatorial, about J2000). Set with ra_deg.",
+      "title": "Dec Deg"
+     },
+     "facts": {
+      "additionalProperties": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "integer"
+        },
+        {
+         "type": "number"
+        },
+        {
+         "type": "boolean"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "description": "Extra facts shown on the object's page.",
+      "title": "Facts",
+      "type": "object"
+     },
+     "fame": {
+      "default": 0,
+      "description": "How well known the object is: 0 means not curated, 5 means a household name.",
+      "maximum": 5,
+      "minimum": 0,
+      "title": "Fame",
+      "type": "integer"
+     },
+     "host_id": {
+      "anyOf": [
+       {
+        "maxLength": 100,
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "For an exoplanet, the id of its host star's vantage point.",
+      "title": "Host Id"
+     },
+     "id": {
+      "maxLength": 100,
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "title": "Id",
+      "type": "string"
+     },
+     "kind": {
+      "$ref": "#/$defs/VantageKind"
+     },
+     "lookback": {
+      "$ref": "#/$defs/LookbackRange",
+      "description": "Years of lookback: light from Earth that left this long ago is arriving here."
+     },
+     "magnitude": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Apparent visual magnitude as seen from Earth (smaller is brighter).",
+      "title": "Magnitude"
+     },
+     "name": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+     },
+     "ra_deg": {
+      "anyOf": [
+       {
+        "exclusiveMaximum": 360,
+        "minimum": 0,
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Right ascension in degrees (equatorial, about J2000). Set with dec_deg.",
+      "title": "Ra Deg"
+     },
+     "wikipedia": {
+      "anyOf": [
+       {
+        "maxLength": 200,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Wikipedia article title, used to fetch an image.",
+      "title": "Wikipedia"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "kind",
+     "lookback"
+    ],
+    "title": "VantagePoint",
+    "type": "object"
+   }
+  },
+  "additionalProperties": false,
+  "description": "Everything known about one place: the place itself and how it connects to others.",
+  "properties": {
+   "exoplanet": {
+    "anyOf": [
+     {
+      "$ref": "#/$defs/ExoplanetDetails"
+     },
+     {
+      "type": "null"
+     }
+    ],
+    "default": null,
+    "description": "Set for an exoplanet only."
+   },
+   "planet_ids": {
+    "default": [],
+    "description": "For a star, the ids of its known planets (ordered by id).",
+    "items": {
+     "maxLength": 100,
+     "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+     "type": "string"
+    },
+    "title": "Planet Ids",
+    "type": "array"
+   },
+   "vantage_point": {
+    "$ref": "#/$defs/VantagePoint"
+   }
+  },
+  "required": [
+   "vantage_point"
+  ],
+  "title": "PlaceInfo",
+  "type": "object"
+ },
+ "SearchResponse": {
+  "$defs": {
+   "SearchResult": {
+    "additionalProperties": false,
+    "description": "One hit from a search. Results are ordered best first.",
+    "properties": {
+     "description": {
+      "anyOf": [
+       {
+        "maxLength": 1000,
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "A short line to tell hits apart.",
+      "title": "Description"
+     },
+     "id": {
+      "maxLength": 100,
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "title": "Id",
+      "type": "string"
+     },
+     "kind": {
+      "anyOf": [
+       {
+        "$ref": "#/$defs/VantageKind"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "description": "Set for vantage points only: what kind of object it is."
+     },
+     "name": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+     },
+     "type": {
+      "$ref": "#/$defs/SearchType"
+     }
+    },
+    "required": [
+     "type",
+     "id",
+     "name"
+    ],
+    "title": "SearchResult",
+    "type": "object"
+   },
+   "SearchType": {
+    "description": "What kind of thing a search result or suggestion points at.",
+    "enum": [
+     "vantage_point",
+     "event",
+     "period",
+     "landmark"
+    ],
+    "title": "SearchType",
+    "type": "string"
+   },
+   "Suggestion": {
+    "additionalProperties": false,
+    "description": "A did-you-mean guess for text that matched nothing.",
+    "properties": {
+     "id": {
+      "maxLength": 100,
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "title": "Id",
+      "type": "string"
+     },
+     "name": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+     },
+     "similarity": {
+      "description": "1 means identical text.",
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Similarity",
+      "type": "number"
+     },
+     "type": {
+      "$ref": "#/$defs/SearchType"
+     }
+    },
+    "required": [
+     "type",
+     "id",
+     "name",
+     "similarity"
+    ],
+    "title": "Suggestion",
+    "type": "object"
+   },
+   "VantageKind": {
+    "description": "What a vantage point is. The values are part of the JSON contract.",
+    "enum": [
+     "planet",
+     "spacecraft",
+     "zone",
+     "star",
+     "exoplanet",
+     "star_cluster",
+     "galaxy",
+     "galaxy_cluster",
+     "quasar",
+     "cosmic_background"
+    ],
+    "title": "VantageKind",
+    "type": "string"
+   }
+  },
+  "additionalProperties": false,
+  "description": "The answer to a search: hits best first, or guesses when nothing matched.",
+  "properties": {
+   "query": {
+    "description": "The text that was searched for, with spaces tidied up.",
+    "title": "Query",
+    "type": "string"
+   },
+   "results": {
+    "default": [],
+    "items": {
+     "$ref": "#/$defs/SearchResult"
+    },
+    "title": "Results",
+    "type": "array"
+   },
+   "suggestions": {
+    "default": [],
+    "description": "Did-you-mean guesses, best first. Only given when results is empty.",
+    "items": {
+     "$ref": "#/$defs/Suggestion"
+    },
+    "title": "Suggestions",
+    "type": "array"
+   }
+  },
+  "required": [
+   "query"
+  ],
+  "title": "SearchResponse",
   "type": "object"
  },
  "SearchResult": {

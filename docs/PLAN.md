@@ -157,23 +157,30 @@ No database yet. Pure, heavily tested functions.
 
 ## Phase 3: Engine (branch `phase-3-engine`)
 
-- [ ] **3.1 Repository layer**
+- [x] **3.1 Repository layer**
   - **Build:** `repository.py`: open the bundled database via `importlib.resources` in read-only URI mode; typed query functions; schema version check on open.
   - **Done when:** Tests run against the real bundled database.
-- [ ] **3.2 Moment to place**
+  - **Done:** `Repository` (read-only URI, schema version check, thread lock) plus `default_repository()` (opened once and reused). Queries: `vantage_point`, `vantage_points_overlapping`, `max_lookback`, `events_between`, `periods_overlapping`, `landmarks_overlapping`, `population_nearest` (nearest estimate, never interpolated), `meta`. Decided with Ian: the engine uses the cached default with an optional `repository=` override.
+- [x] **3.2 Moment to place**
   - **Phase 1 review notes:** read the clock once per request and pass `now_year` to every helper, so one answer never mixes two "now" values. A moment after now is rejected with a friendly "that has not happened yet" error (`MomentResult.lookback_years` must be >= 0). `parse` stays unaware of the future.
   - **Build:** `engine.when(moment)`: zone or solar system handling for lookbacks under 4.2 years; candidate query by interval overlap; scoring (closeness of best estimate, narrowness of range); one winner per category (famous, exoplanet, visible tonight, most precise); graceful notes when a category has no match.
   - **Done when:** Tests for recent dates, 1492, Rome, 66 million years ago, 4.5 billion years ago, and before the first stars.
-- [ ] **3.3 Place to moment**
+  - **Done:** `engine.when(moment, *, now_year=None, repository=None)`. Decided with Ian: when no place's range contains the moment, the nearest place whose range comes within 5% of the lookback is shown and marked approximate in `notes`; the function for the reverse question is named `from_vantage`. Rankings: famous = highest fame, then closest best estimate; exoplanet = closest best estimate; visible tonight = naked-eye star (V <= 6) with a constellation, closest first; most precise = narrowest range. Inside the solar system (and beyond the oldest light) there are no near misses. Parsing text and event names such as "fall of rome" is left to step 3.5.
+- [x] **3.3 Place to moment**
   - **Build:** `engine.from_(vantage_id)`: events overlapping the range, periods active, landmarks with status (standing, under construction, destroyed), population, "Earth does not exist yet" for lookbacks older than about 4.54 billion years, and a notice when the range is very wide.
   - **Done when:** Tests across all lookback scales.
-- [ ] **3.4 Search and did-you-mean**
+  - **Done:** `engine.from_vantage(vantage_id, *, now_year=None, repository=None)` (name chosen with Ian) returns an `EarthSnapshot`. At most 10 events, periods, and landmarks (the most important, shown oldest first) with a note giving the total; a span wider than 1,000 years is flagged; landmark status is judged at the middle of the span (destroyed, under construction, standing); population is the nearest stored estimate (never interpolated) and is left out outside 10000 BCE to 5 years past the newest estimate; light older than Earth (best lookback over 4.54 billion years) gives `earth_exists = False` and no history; a span that straddles Earth's formation is clipped to the time since. Unknown ids raise `UnknownVantageError`.
+- [x] **3.4 Search and did-you-mean**
   - **Build:** `search.py`: FTS5 search over vantage points and events, exact matches first; trigram candidates plus difflib for suggestions.
   - **Done when:** Tests including typos ("Betelguese", "andromedia", "fall of rom").
-- [ ] **3.5 Public interface**
+  - **Done:** `search.search(text, *, limit=10, repository=None)` returns a `SearchResponse` (new model: `query`, `results`, `suggestions`). Exact names and aliases first, then FTS5 word search (every word must match, the last may be unfinished, name matches rank above description matches, better known first on ties). Only when nothing matches: trigram candidates scored by `difflib` (names compared whole and in same-length word runs, accents folded, cutoff 0.7, at most 5). User text is cut into plain words and quoted, so FTS5 syntax characters cannot change the query. "fall of rom" finds the Roman Empire event directly as an unfinished phrase.
+- [x] **3.5 Public interface**
   - **Build:** Clean top-level functions in `earthlight/__init__.py` (`when`, `from_vantage`, `info`, `search`) with docstrings and examples.
-- [ ] **3.6 README update** (Python usage example)
-- [ ] **3.7 Phase review**
+  - **Done:** Decided with Ian: `when` takes text, a number (decimal year), or a `datetime`; an event name resolves to the best search hit (event date, period start, landmark completion) with a note saying so, and raises `UnresolvedNameError` with did-you-mean guesses when nothing matches; `from_vantage` and `info` take an id, name, or alias; `info` returns the new `PlaceInfo` model (with `ExoplanetDetails` and, for stars, `planet_ids`); every deliberate error derives from `EarthlightError` (`errors.py`) and keeps its older `ValueError` or `LookupError` parent. The docstring examples run as doctests. `SearchResponse`, `ExoplanetDetails`, and `PlaceInfo` joined the JSON schema snapshot. Note: `earthlight.search` is now the function, not the module (`from earthlight.search import ...` still works).
+- [x] **3.6 README update** (Python usage example)
+  - **Done:** "Using it from Python" replaces "What works today"; the example is the README's tested snippet (`test_readme.py` runs it and compares the output). Status and the core-concepts text now describe the engine.
+- [x] **3.7 Phase review**
+  - **Done:** code-reviewer over `git diff main...HEAD`; bugs and clear improvements fixed in "fix: address phase 3 review findings". Judgment calls decided with Ian: `Match.approximate` and `EarthSnapshot.event_total` / `period_total` / `landmark_total` / `wide_span` added; history search aliases in `pipeline/curated/history_aliases.yaml` (329 names); a hit whose name does not contain every word is called the closest match. One shared connection stays until the API step.
 
 ---
 

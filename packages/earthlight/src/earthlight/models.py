@@ -165,6 +165,11 @@ class Match(EarthlightModel):
     offset_years: float = Field(
         description="Best lookback estimate minus the chosen lookback. Negative means nearer."
     )
+    approximate: bool = Field(
+        default=False,
+        description="True when no place's range contains the moment, so this is the best place "
+        "whose range comes close (within 5%) and the match is only approximate.",
+    )
 
     @property
     def range_width_years(self) -> float:
@@ -295,10 +300,32 @@ class EarthSnapshot(EarthlightModel):
     events: tuple[HistoryEvent, ...] = ()
     periods: tuple[HistoryPeriod, ...] = ()
     landmarks: tuple[SnapshotLandmark, ...] = ()
+    event_total: int = Field(
+        default=0, ge=0, description="How many events fell in the span (more than are listed)."
+    )
+    period_total: int = Field(default=0, ge=0, description="How many periods overlapped the span.")
+    landmark_total: int = Field(
+        default=0, ge=0, description="How many landmarks were begun by the middle of the span."
+    )
+    wide_span: bool = Field(
+        default=False,
+        description="True when the span of Earth's history is very wide (over 1,000 years).",
+    )
     population: PopulationEstimate | None = None
     notes: tuple[str, ...] = Field(
         default=(), description="Plain-language remarks, such as a very wide span."
     )
+
+    @model_validator(mode="after")
+    def _totals_cover_the_lists(self) -> Self:
+        for listed, total, name in (
+            (self.events, self.event_total, "event_total"),
+            (self.periods, self.period_total, "period_total"),
+            (self.landmarks, self.landmark_total, "landmark_total"),
+        ):
+            if total < len(listed):
+                raise ValueError(f"{name} cannot be smaller than the number listed")
+        return self
 
     @model_validator(mode="after")
     def _nothing_before_earth(self) -> Self:
@@ -345,3 +372,57 @@ class Suggestion(EarthlightModel):
     id: Slug
     name: Name
     similarity: float = Field(ge=0, le=1, description="1 means identical text.")
+
+
+class SearchResponse(EarthlightModel):
+    """The answer to a search: hits best first, or guesses when nothing matched."""
+
+    query: str = Field(description="The text that was searched for, with spaces tidied up.")
+    results: tuple[SearchResult, ...] = ()
+    suggestions: tuple[Suggestion, ...] = Field(
+        default=(),
+        description="Did-you-mean guesses, best first. Only given when results is empty.",
+    )
+
+
+# --- place details ----------------------------------------------------------------------------
+
+
+class ExoplanetDetails(EarthlightModel):
+    """What the NASA Exoplanet Archive says about a planet, beyond where it is."""
+
+    nasa_name: Name
+    host_name: Name
+    discovery_year: int | None = None
+    discovery_method: Name | None = None
+    radius_earth: float | None = Field(
+        default=None, gt=0, description="Radius in Earth radii, when measured."
+    )
+    mass_earth: float | None = Field(
+        default=None, gt=0, description="Mass in Earth masses (sometimes a minimum mass)."
+    )
+    orbital_period_days: float | None = Field(default=None, gt=0)
+    controversial: bool = Field(
+        default=False, description="True when the archive flags the planet as disputed."
+    )
+
+
+class PlaceInfo(EarthlightModel):
+    """Everything known about one place: the place itself and how it connects to others."""
+
+    vantage_point: VantagePoint
+    exoplanet: ExoplanetDetails | None = Field(
+        default=None, description="Set for an exoplanet only."
+    )
+    planet_ids: tuple[Slug, ...] = Field(
+        default=(), description="For a star, the ids of its known planets (ordered by id)."
+    )
+
+    @model_validator(mode="after")
+    def _details_match_the_kind(self) -> Self:
+        is_planet = self.vantage_point.kind is VantageKind.EXOPLANET
+        if self.exoplanet is not None and not is_planet:
+            raise ValueError("exoplanet details belong to an exoplanet only")
+        if self.planet_ids and self.vantage_point.kind is not VantageKind.STAR:
+            raise ValueError("only a star has planet_ids")
+        return self

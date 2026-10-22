@@ -34,6 +34,7 @@ import math
 import re
 from dataclasses import dataclass
 
+from earthlight.errors import EarthlightError
 from earthlight.time import (
     SECONDS_PER_DAY,
     SECONDS_PER_JULIAN_YEAR,
@@ -51,7 +52,7 @@ MAX_BARE_YEAR = 9999
 _MAX_ECHOED_CHARS = 40
 
 
-class ParseError(ValueError):
+class ParseError(EarthlightError, ValueError):
     """Base class for every error raised by ``parse``."""
 
 
