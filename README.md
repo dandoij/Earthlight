@@ -18,7 +18,7 @@ Light travels exactly one light-year per year, so every star, planet, and galaxy
 
 **Lookback ranges.** Distances are never exact, so every place has a low, a best, and a high lookback. Matching is interval arithmetic on those ranges, and the one with the narrowest range is the most precise match.
 
-**Moments are decimal years.** 2026.5 is about the middle of 2026. Years use astronomical numbering, so there is a year 0: 1 BCE is 0, 2 BCE is -1, and so on. Python's `datetime` cannot go before year 1, so Earthlight has its own small calendar. Text input can be a bare calendar year (`1492`), a year with an era (`500 BCE`), an ISO date (`2004-06-15`), a time ago (`3 days ago`, `66 million years ago`, `66 mya`), or an event name (`fall of rome`).
+**Moments are decimal years.** 2026.5 is about the middle of 2026. Years use astronomical numbering, so there is a year 0: 1 BCE is 0, 2 BCE is -1, and so on. Python's `datetime` cannot go before year 1, so Earthlight has its own small calendar. Text input can be a bare calendar year (`1492`), a year with an era (`500 BCE`), an ISO date (`2004-06-15`), a time ago (`3 days ago`, `66 million years ago`, `66 mya`), or an event name (`apollo 11`, `world war ii`).
 
 **Where the light is.** For recent moments the light is still crossing our own neighborhood. Planet positions come from JPL's approximate orbital formulas, and the zones beyond them use conventional boundaries (the Oort Cloud edges in particular are approximate, because published values disagree).
 
@@ -28,68 +28,61 @@ Light travels exactly one light-year per year, so every star, planet, and galaxy
 | About 17 hours | Passing the heliopause, 121.6 au out, where Voyager 1 left the Sun's bubble in 2012 |
 | 12 days to 1.6 years | Crossing the Oort Cloud (about 2,000 to 100,000 au) |
 | About 4.2 years | Reaching Proxima Centauri, the nearest star |
-| Longer | Passing stars, then galaxies (the places are in the bundled database; looking them up arrives in Phase 3) |
+| Longer | Passing stars, then galaxies, found in the bundled database |
 
 Sources for every number are in [`docs/data-sources.md`](docs/data-sources.md).
 
-### What works today
+### Using it from Python
 
-The building blocks below are written and tested. They are internal modules for now; the clean top-level interface (`earthlight.when(...)`) arrives in Phase 3. This snippet runs as shown (`now_year` is passed only so the output is repeatable; by default the current time is used):
+The package answers both questions with four functions: `when`, `from_vantage`, `info`, and `search`. This snippet runs as shown (`now_year` is passed only so the output is repeatable; by default the current time is used):
 
 ```python
-from earthlight.lookback import lookback_of
-from earthlight.parse import MomentQuery, parse
-from earthlight.solar_system import planet_distance_au, zone_for_lookback
-from earthlight.time import format_year, from_calendar
+import earthlight
 
-NOW = 2026.0
-for text in ("1492", "500 BCE", "66 mya", "fall of rome"):
-    result = parse(text, now_year=NOW)
-    if isinstance(result, MomentQuery):
-        lookback = lookback_of(result.moment, now_year=NOW)
-        print(
-            f"{text!r}: lookback {lookback:,.0f} years, shown as {format_year(result.moment, now_year=NOW)!r}"
-        )
-    else:
-        print(f"{text!r}: event query")
+NOW = 2026.0  # fixed only so the output is repeatable; by default the current time is used
 
-print(round(planet_distance_au("mars", from_calendar(2026, 1, 1)), 3), "au to Mars on 1 Jan 2026")
-print(zone_for_lookback(1 / 365.25).name)  # light from one day ago
+# Moment to place: where is the light from 1492 arriving now?
+answer = earthlight.when("1492", now_year=NOW)
+print(f"{answer.moment_label}: {answer.lookback_years:,.0f} years of lookback")
+print("famous:", answer.famous.vantage_point.name)
+print("visible tonight:", answer.visible_tonight.vantage_point.name)
+
+# Recent light is still crossing our own neighbourhood.
+print(earthlight.when("3 hours ago", now_year=NOW).zone.name)
+
+# Place to moment: what does Earth look like from Betelgeuse?
+snapshot = earthlight.from_vantage("Betelgeuse", now_year=NOW)
+print(snapshot.moments_label)
+print([event.name for event in snapshot.events][:3])
+
+# Names, with did-you-mean for typos.
+print(earthlight.search("Betelguese").suggestions[0].name)
+try:
+    earthlight.when("2100", now_year=NOW)
+except earthlight.EarthlightError as error:
+    print(error)
 ```
 
 ```text
-'1492': lookback 534 years, shown as '1492 CE'
-'500 BCE': lookback 2,525 years, shown as '500 BCE'
-'66 mya': lookback 66,000,000 years, shown as '66 million years ago'
-'fall of rome': event query
-2.411 au to Mars on 1 Jan 2026
-Beyond the heliopause
+1492 CE: 534 years of lookback
+famous: Antares
+visible tonight: HIP 9132
+Inside the heliosphere
+1455 CE to 1584 CE
+['Columbus reaches the Americas', 'Vasco da Gama reaches India by sea', "Luther's Ninety-five Theses"]
+Betelgeuse
+2100 CE has not happened yet, so no light from it exists. Pick a moment in the past.
 ```
 
-## The bundled database
-
-The package ships one read-only SQLite file, `packages/earthlight/src/earthlight/data/earthlight.db` (19.9 MB or 18.9 MiB, limit 20 MiB, committed to git). It is built by the data pipeline and checked by `packages/earthlight/tests/test_bundled_database.py`. It holds:
-
-| Table | Contents |
-|---|---|
-| Stars | 40,346 Hipparcos stars with distance ranges (Gaia DR3 with Bailer-Jones where matched, otherwise Hipparcos), 409 of them with IAU proper names |
-| Exoplanets | 6,356 planets from the NASA Exoplanet Archive, 1,236 linked to a host star in the star table |
-| Deep sky | 121 curated objects: 33 star clusters, 60 galaxies, 13 galaxy clusters, 14 quasars, and the cosmic microwave background, from 154 to 13.79 billion light-years |
-| History | 160 hand-curated entries (105 events, 33 periods, 22 landmarks) from the first stars to today |
-| Population | 261 world population estimates from 10000 BCE to 2023 (Our World in Data) |
-| Search | A full-text index over names, plus a trigram index built for typo-tolerant search (used from Phase 3) |
-
-To rebuild it (this downloads every source and takes a few minutes; downloads are cached in `pipeline/.cache/`):
-
-```powershell
-uv run earthlight-build --database packages/earthlight/src/earthlight/data/earthlight.db all
-```
-
-What each source is, the real file formats, and the choices made while building are recorded in [`docs/data-sources.md`](docs/data-sources.md).
+- `when(moment)` takes text (`"1492"`, `"500 BCE"`, `"2004-06-15"`, `"3 days ago"`, `"66 mya"`, or an event name such as `"apollo 11"`), a number (a decimal year), or a `datetime`. It returns one winner for each of four categories (famous, exoplanet, visible tonight, most precise), or the zone of space the light is crossing for very recent moments. When no place's range contains the moment exactly, the nearest place within 5% is shown and marked as approximate in the `notes`.
+- `from_vantage(place)` takes an id (`"hip-27989"`) or a name (`"Betelgeuse"`, `"M31"`) and lists the most important events, periods, and landmarks in the span of Earth's history whose light is arriving there, with the world population. Light older than Earth reports that Earth does not exist yet.
+- `info(place)` gives the place itself, the NASA archive details for an exoplanet, and the planets of a star.
+- `search(text)` finds places and history by name; when nothing matches it offers did-you-mean guesses.
+- Every deliberate failure raises a subclass of `EarthlightError` with a message written for the person who asked (a future moment, an unknown name, text that is not a moment).
 
 ## Status
 
-**In development.** The project skeleton, tooling, and CI are in place. The core math and data models are written and tested (the time model, input parsing, lookback math, solar system positions, and the shared data shapes), and the data pipeline has built and validated the bundled database. There is no engine that queries the database yet, and no CLI, API, or web app. The full plan is in [`docs/PLAN.md`](docs/PLAN.md).
+**In development.** The project skeleton, tooling, and CI are in place. The core math and data models are written and tested (the time model, input parsing, lookback math, solar system positions, and the shared data shapes), and the data pipeline has built and validated the bundled database. The Python engine answers both questions from that database (`earthlight.when`, `from_vantage`, `info`, and `search`). There is no command-line tool, API, or web app yet. The full plan is in [`docs/PLAN.md`](docs/PLAN.md).
 
 ## Planned tech stack
 

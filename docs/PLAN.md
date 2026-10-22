@@ -177,7 +177,8 @@ No database yet. Pure, heavily tested functions.
 - [x] **3.5 Public interface**
   - **Build:** Clean top-level functions in `earthlight/__init__.py` (`when`, `from_vantage`, `info`, `search`) with docstrings and examples.
   - **Done:** Decided with Ian: `when` takes text, a number (decimal year), or a `datetime`; an event name resolves to the best search hit (event date, period start, landmark completion) with a note saying so, and raises `UnresolvedNameError` with did-you-mean guesses when nothing matches; `from_vantage` and `info` take an id, name, or alias; `info` returns the new `PlaceInfo` model (with `ExoplanetDetails` and, for stars, `planet_ids`); every deliberate error derives from `EarthlightError` (`errors.py`) and keeps its older `ValueError` or `LookupError` parent. The docstring examples run as doctests. `SearchResponse`, `ExoplanetDetails`, and `PlaceInfo` joined the JSON schema snapshot. Note: `earthlight.search` is now the function, not the module (`from earthlight.search import ...` still works).
-- [ ] **3.6 README update** (Python usage example)
+- [x] **3.6 README update** (Python usage example)
+  - **Done:** "Using it from Python" replaces "What works today"; the example is the README's tested snippet (`test_readme.py` runs it and compares the output). Status and the core-concepts text now describe the engine.
 - [ ] **3.7 Phase review**
 
 ---
