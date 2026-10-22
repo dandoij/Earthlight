@@ -1,7 +1,8 @@
 """The engine: answers the two questions the project exists for.
 
 ``when(moment)`` answers "where in the universe is the light from this moment arriving right
-now?". ``from_vantage(vantage_id)`` (added in the next step) answers the reverse.
+now?". ``from_vantage(vantage_id)`` answers the reverse: "what did Earth look like in the
+light arriving at this place?".
 
 Both read the clock once and use that one "now" for every calculation, so a single answer never
 mixes two slightly different present moments.
@@ -11,7 +12,21 @@ import math
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 
-from earthlight.models import Match, MomentResult, VantageKind, VantagePoint, ZoneInfo
+from earthlight.lookback import MomentRange
+from earthlight.models import (
+    EarthSnapshot,
+    HistoryEvent,
+    HistoryPeriod,
+    Landmark,
+    LandmarkStatus,
+    Match,
+    MomentResult,
+    PopulationEstimate,
+    SnapshotLandmark,
+    VantageKind,
+    VantagePoint,
+    ZoneInfo,
+)
 from earthlight.repository import Repository, default_repository
 from earthlight.solar_system import (
     AU_IN_LIGHT_YEARS,
@@ -33,6 +48,7 @@ from earthlight.time import (
     format_year,
     now,
     seconds_between,
+    subtract_seconds,
 )
 
 NEAR_MISS_FRACTION = 0.05
@@ -44,6 +60,20 @@ NAKED_EYE_MAGNITUDE = 6.0
 
 _PROXIMA_LIGHT_YEARS = au_to_light_years(PROXIMA_CENTAURI_AU)
 
+EARTH_AGE_YEARS = 4.54e9
+"""Earth formed about 4.54 billion years ago (the same figure as the ``earth-forms`` history
+entry, https://en.wikipedia.org/wiki/Age_of_Earth). Light older than this left a place where
+Earth did not exist yet."""
+
+MAX_ITEMS_PER_LIST = 10
+"""A snapshot lists at most this many events, periods, and landmarks (the most important)."""
+
+WIDE_SPAN_YEARS = 1000.0
+"""A span of Earth's history wider than this is flagged as very wide."""
+
+POPULATION_GRACE_YEARS = 5.0
+"""A population estimate is shown up to this many years after the newest one in the database."""
+
 
 class MomentError(ValueError):
     """The moment cannot be answered. The message is written for the person who typed it."""
@@ -51,6 +81,10 @@ class MomentError(ValueError):
 
 class FutureMomentError(MomentError):
     """The moment has not happened yet, so no light from it exists."""
+
+
+class UnknownVantageError(LookupError):
+    """No place in the database has this id."""
 
 
 def lookback_years(moment: DecimalYear, now_year: DecimalYear) -> float:
@@ -283,3 +317,179 @@ def _empty_notes(
                 "of this moment."
             )
     return notes
+
+
+# --- place to moment ------------------------------------------------------------------------
+
+
+def from_vantage(
+    vantage_id: str,
+    *,
+    now_year: DecimalYear | None = None,
+    repository: Repository | None = None,
+) -> EarthSnapshot:
+    """What did Earth look like in the light that is arriving at this place right now?
+
+    The place's lookback range becomes a span of Earth's history. The snapshot lists the most
+    important events, periods, and landmarks in that span (at most ten of each, oldest first),
+    the world population nearest the middle of the span, and notes about anything unusual.
+    Raises ``UnknownVantageError`` if no place has this id.
+    """
+    reference = now() if now_year is None else now_year  # the one and only clock read
+    repo = default_repository() if repository is None else repository
+    point = repo.vantage_point(vantage_id)
+    if point is None:
+        raise UnknownVantageError(f"there is no place with the id '{vantage_id}'")
+
+    moments = _moments_for(point, reference)
+    label = _span_label(moments, reference)
+    notes: list[str] = []
+
+    if point.lookback.best > EARTH_AGE_YEARS:
+        notes.append(
+            f"The light arriving at {point.name} left about {_years_text(point.lookback.best)} "
+            f"ago. Earth formed only about {_years_text(EARTH_AGE_YEARS)} ago, so in this light "
+            "Earth does not exist yet."
+        )
+        return EarthSnapshot(
+            vantage_point=point,
+            moments=moments,
+            moments_label=label,
+            earth_exists=False,
+            notes=tuple(notes),
+        )
+
+    width = moments.latest - moments.earliest
+    if width > WIDE_SPAN_YEARS:
+        notes.append(
+            f"This place's distance is uncertain by about {_years_text(width)}, so the span of "
+            "Earth's history is very wide."
+        )
+
+    earliest = moments.earliest
+    earth_formed = subtract_seconds(reference, EARTH_AGE_YEARS * SECONDS_PER_JULIAN_YEAR)
+    if earliest < earth_formed:
+        earliest = earth_formed
+        notes.append(
+            "Part of this span is older than Earth, so only the time since Earth formed is shown."
+        )
+
+    events, periods, landmarks = _history(repo, earliest, moments)
+    notes += _truncation_notes(events, periods, landmarks)
+    population, population_notes = _population(repo, moments.best, reference)
+    notes += population_notes
+    return EarthSnapshot(
+        vantage_point=point,
+        moments=moments,
+        moments_label=label,
+        events=tuple(_chronological(events.shown, lambda e: e.year)),
+        periods=tuple(_chronological(periods.shown, lambda p: p.start)),
+        landmarks=tuple(_chronological(landmarks.shown, lambda m: m.built_start)),
+        population=population,
+        notes=tuple(notes),
+    )
+
+
+def _moments_for(point: VantagePoint, reference: DecimalYear) -> MomentRange:
+    """The span of moments whose light is arriving at ``point`` (older light, larger lookback)."""
+
+    def moment(lookback: float) -> DecimalYear:
+        return subtract_seconds(reference, lookback * SECONDS_PER_JULIAN_YEAR)
+
+    return MomentRange(
+        earliest=moment(point.lookback.maximum),
+        best=moment(point.lookback.best),
+        latest=moment(point.lookback.minimum),
+    )
+
+
+def _span_label(moments: MomentRange, reference: DecimalYear) -> str:
+    first = format_year(moments.earliest, now_year=reference)
+    last = format_year(moments.latest, now_year=reference)
+    return first if first == last else f"{first} to {last}"
+
+
+def _years_text(years: float) -> str:
+    """A span of years for people: '3 years', '12,000 years', '4.54 billion years'."""
+    for size, unit in ((1e9, "billion"), (1e6, "million")):
+        if years >= size:
+            return f"{years / size:.3g} {unit} years"
+    return f"{years:,.0f} years" if years >= 10 else f"{years:.3g} years"
+
+
+@dataclass(frozen=True)
+class _Listed[T]:
+    """Everything found in a span (``total``), and the most important few that are shown."""
+
+    shown: list[T]
+    total: int
+
+
+def _top[T](found: list[T]) -> _Listed[T]:
+    """``found`` arrives most important first, so the shown ones are its first few."""
+    return _Listed(found[:MAX_ITEMS_PER_LIST], len(found))
+
+
+def _chronological[T: HistoryEvent | HistoryPeriod | SnapshotLandmark](
+    items: Iterable[T], moment_of: Callable[[T], float]
+) -> list[T]:
+    return sorted(items, key=lambda item: (moment_of(item), item.id))
+
+
+def _history(
+    repo: Repository, earliest: DecimalYear, moments: MomentRange
+) -> tuple[_Listed[HistoryEvent], _Listed[HistoryPeriod], _Listed[SnapshotLandmark]]:
+    events = _top(repo.events_between(earliest, moments.latest))
+    periods = _top(repo.periods_overlapping(earliest, moments.latest))
+    landmarks = _top(repo.landmarks_overlapping(earliest, moments.latest))
+    return (
+        events,
+        periods,
+        _Listed([_with_status(m, moments.best) for m in landmarks.shown], landmarks.total),
+    )
+
+
+def _with_status(landmark: Landmark, best_moment: DecimalYear) -> SnapshotLandmark:
+    """Where the landmark stood at the middle of the span: destroyed, still being built, or
+    standing."""
+    if landmark.destroyed is not None and landmark.destroyed <= best_moment:
+        status = LandmarkStatus.DESTROYED
+    elif landmark.built_end > best_moment:
+        status = LandmarkStatus.UNDER_CONSTRUCTION
+    else:
+        status = LandmarkStatus.STANDING
+    return SnapshotLandmark(**landmark.model_dump(), status=status)
+
+
+def _truncation_notes(
+    events: _Listed[HistoryEvent],
+    periods: _Listed[HistoryPeriod],
+    landmarks: _Listed[SnapshotLandmark],
+) -> list[str]:
+    notes: list[str] = []
+    for label, listed in (("events", events), ("periods", periods), ("landmarks", landmarks)):
+        if listed.total > len(listed.shown):
+            notes.append(
+                f"Showing the {len(listed.shown)} most important of {listed.total:,} {label} "
+                "in this span."
+            )
+    return notes
+
+
+def _population(
+    repo: Repository, best_moment: DecimalYear, reference: DecimalYear
+) -> tuple[PopulationEstimate | None, list[str]]:
+    """The world population nearest the middle of the span, if the data reaches that far."""
+    years = repo.population_years()
+    if years is None or not years[0] <= best_moment <= years[1] + POPULATION_GRACE_YEARS:
+        return None, []
+    estimate = repo.population_nearest(best_moment)
+    if estimate is None:
+        return None, []
+    notes: list[str] = []
+    if abs(estimate.year - best_moment) > 1:
+        notes.append(
+            "The world population shown is the nearest estimate, for "
+            f"{format_year(estimate.year, now_year=reference)}; there is none for the exact year."
+        )
+    return estimate, notes

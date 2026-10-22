@@ -215,6 +215,11 @@ class Repository:
 
     # --- population ----------------------------------------------------------------------
 
+    def population_years(self) -> tuple[DecimalYear, DecimalYear] | None:
+        """The first and last year with a population estimate, or None if there are none."""
+        row = self._rows("SELECT min(year) AS first, max(year) AS last FROM population")[0]
+        return None if row["first"] is None else (row["first"], row["last"])
+
     def population_nearest(self, year: DecimalYear) -> PopulationEstimate | None:
         """The stored world population estimate closest in time to ``year``, or None.
 
