@@ -28,7 +28,7 @@ Light travels exactly one light-year per year, so every star, planet, and galaxy
 | About 17 hours | Passing the heliopause, 121.6 au out, where Voyager 1 left the Sun's bubble in 2012 |
 | 12 days to 1.6 years | Crossing the Oort Cloud (about 2,000 to 100,000 au) |
 | About 4.2 years | Reaching Proxima Centauri, the nearest star |
-| Longer | Passing stars, then galaxies (data not built yet) |
+| Longer | Passing stars, then galaxies (the places are in the bundled database; looking them up arrives in Phase 3) |
 
 Sources for every number are in [`docs/data-sources.md`](docs/data-sources.md).
 
@@ -66,14 +66,35 @@ print(zone_for_lookback(1 / 365.25).name)  # light from one day ago
 Beyond the heliopause
 ```
 
+## The bundled database
+
+The package ships one read-only SQLite file, `packages/earthlight/src/earthlight/data/earthlight.db` (19.9 MB or 18.9 MiB, limit 20 MiB, committed to git). It is built by the data pipeline and checked by `packages/earthlight/tests/test_bundled_database.py`. It holds:
+
+| Table | Contents |
+|---|---|
+| Stars | 40,346 Hipparcos stars with distance ranges (Gaia DR3 with Bailer-Jones where matched, otherwise Hipparcos), 409 of them with IAU proper names |
+| Exoplanets | 6,356 planets from the NASA Exoplanet Archive, 1,236 linked to a host star in the star table |
+| Deep sky | 121 curated objects: 33 star clusters, 60 galaxies, 13 galaxy clusters, 14 quasars, and the cosmic microwave background, from 154 to 13.79 billion light-years |
+| History | 160 hand-curated entries (105 events, 33 periods, 22 landmarks) from the first stars to today |
+| Population | 261 world population estimates from 10000 BCE to 2023 (Our World in Data) |
+| Search | A full-text index over names, plus a trigram index built for typo-tolerant search (used from Phase 3) |
+
+To rebuild it (this downloads every source and takes a few minutes; downloads are cached in `pipeline/.cache/`):
+
+```powershell
+uv run earthlight-build --database packages/earthlight/src/earthlight/data/earthlight.db all
+```
+
+What each source is, the real file formats, and the choices made while building are recorded in [`docs/data-sources.md`](docs/data-sources.md).
+
 ## Status
 
-**In development.** The project skeleton, tooling, and CI are in place, and the core math and data models are written and tested: the time model, input parsing, lookback math, solar system positions, and the shared data shapes. There is no database, search engine, CLI, API, or web app yet. The full plan is in [`docs/PLAN.md`](docs/PLAN.md).
+**In development.** The project skeleton, tooling, and CI are in place. The core math and data models are written and tested (the time model, input parsing, lookback math, solar system positions, and the shared data shapes), and the data pipeline has built and validated the bundled database. There is no engine that queries the database yet, and no CLI, API, or web app. The full plan is in [`docs/PLAN.md`](docs/PLAN.md).
 
 ## Planned tech stack
 
 - **Core and CLI:** Python 3.12 package with Typer, Rich, and Pydantic
-- **Data:** SQLite database built from Gaia DR3 and Hipparcos star data, Bailer-Jones distances, the IAU Catalog of Star Names, the NASA Exoplanet Archive, and hand-curated deep-sky and history lists
+- **Data:** SQLite database built from Gaia DR3 and Hipparcos star data, Bailer-Jones distances, the IAU Catalog of Star Names, the NASA Exoplanet Archive, and hand-curated deep-sky and history lists (built; see above)
 - **API:** FastAPI
 - **Web app:** React, TypeScript, and Vite
 - **Tooling:** uv workspace, ruff, pyright, pytest with Hypothesis, pre-commit, GitHub Actions
@@ -82,7 +103,7 @@ Beyond the heliopause
 
 ```
 packages/earthlight/   the shipped Python package (core engine and CLI)
-pipeline/              data build scripts (never shipped)
+pipeline/              data build scripts and the curated YAML lists (never shipped)
 apps/api/              FastAPI service (placeholder)
 apps/web/              React app (placeholder)
 docs/                  plan, dev setup notes, data sources
@@ -126,11 +147,11 @@ Node.js is not needed yet. It will be required from Phase 7, when the web app is
 
 The **code** is MIT. See [`LICENSE`](LICENSE).
 
-The **database** that Earthlight will bundle is licensed separately, as **CC BY-NC 3.0 IGO**. It is built from ESA's Gaia and Hipparcos data, which carry that non-commercial license, and a combined file follows its most restrictive source. See [`LICENSE-DATA`](LICENSE-DATA). Earthlight is a free, ad-free, educational project and does not charge for anything.
+The **database** that Earthlight bundles is licensed separately, as **CC BY-NC 3.0 IGO**. It is built from ESA's Gaia and Hipparcos data, which carry that non-commercial license, and a combined file follows its most restrictive source. See [`LICENSE-DATA`](LICENSE-DATA). Earthlight is a free, ad-free, educational project and does not charge for anything.
 
 ## Data licenses
 
-The database is not built yet (Phase 2). This table lists every source that is, or will be, in it, and what each one requires. Exact quotes, DOIs, and how each source was checked are in [`docs/data-sources.md`](docs/data-sources.md).
+This table lists every source in the database and what each one requires. Exact quotes, DOIs, and how each source was checked are in [`docs/data-sources.md`](docs/data-sources.md). The license is also stored inside the database (the `data_license` entry in its `meta` table).
 
 | Source | Used for | License or terms | Required credit |
 |---|---|---|---|
@@ -140,10 +161,23 @@ The database is not built yet (Phase 2). This table lists every source that is, 
 | **IAU Catalog of Star Names** | Proper names of stars | CC BY | IAU Working Group on Star Names (https://www.iau.org/public/themes/naming_stars/) |
 | **NASA Exoplanet Archive** | Exoplanets, their host stars, and distances | No license stated; acknowledgment requested | See the acknowledgment below |
 | **NASA/JPL** | Planet positions (JPL approximate orbital elements) and reference values | NASA content is generally not subject to copyright in the United States; acknowledgment requested | NASA/JPL. Not an endorsement by NASA |
+| **SIMBAD** (CDS) | Positions and redshifts of deep-sky objects | No license statement found; acknowledgment requested | See the acknowledgment below. Wenger et al. 2000, A&AS 143, 9 |
+| **Hunt and Reffert (2023)**, via VizieR | Star-cluster positions and distances | Free for scientific use with the authors cited (VizieR terms); used here non-commercially | Hunt, E. L. and Reffert, S. 2023, A&A 673, A114 |
+| **McConnachie (2012)** and **Cosmicflows-4** (Tully et al. 2023), via VizieR | Nearby-galaxy positions and distances | Same VizieR terms; used here non-commercially | McConnachie, A. W. 2012, AJ 144, 4. Tully, R. B., et al. 2023, ApJ 944, 94 |
+| **Our World in Data** (HYDE 3.3, Gapminder v7, UN WPP 2024) | World population estimates | OWID processing CC BY 4.0; HYDE CC BY 4.0; Gapminder CC BY 4.0; UN WPP CC BY 3.0 IGO | "HYDE (2023); Gapminder (2022); UN WPP (2024), with major processing by Our World in Data" |
+| **Papers cited for redshifts** | A redshift for a few record-holding objects (for example GN-z11 and JADES-GS-z14-0) | Published results; only a number is taken from each | Cited by arXiv link in `pipeline/curated/deep_sky.yaml` |
 | **Curated YAML** (our own work) | Deep-sky objects and history entries | Own work, summaries written in our own words with a source cited for each entry; MIT | None required |
 
 Acknowledgment requested by the NASA Exoplanet Archive:
 
 > This research has made use of the NASA Exoplanet Archive, which is operated by the California Institute of Technology, under contract with the National Aeronautics and Space Administration under the Exoplanet Exploration Program.
 
-The Exoplanet Archive also asks users to cite its reference paper (Christiansen et al. 2025); the full citation will be added when the exoplanet data is built.
+The Exoplanet Archive also asks users to cite its reference paper: Christiansen et al. 2025, "The NASA Exoplanet Archive and Exoplanet Follow-up Observing Program: Data, Tools, and Usage", Planetary Science Journal 6, 186, DOI 10.3847/PSJ/ade3c2 (arXiv:2506.03299).
+
+Acknowledgments requested by CDS for SIMBAD and VizieR:
+
+> This research has made use of the SIMBAD database, CDS, Strasbourg Astronomical Observatory, France.
+>
+> This research has made use of the VizieR catalogue access tool, CDS, Strasbourg, France (DOI: 10.26093/cds/vizier).
+
+The Hipparcos and Gaia distances are credited to ESA ("Credit: ESA" and "Credit: ESA, Gaia DPAC"); see the table above for the papers to cite.

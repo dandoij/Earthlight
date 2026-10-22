@@ -323,10 +323,31 @@ def test_all_builds_every_finished_source_into_a_fresh_database(
     # The old file was replaced by an empty database with the current schema.
     connection = sqlite3.connect(database)
     try:
+        assert connection.execute(
+            "SELECT value FROM meta WHERE key = 'data_license'"
+        ).fetchone() == ("CC BY-NC 3.0 IGO",)
+        assert connection.execute(
+            "SELECT count(*) FROM meta WHERE key = 'build_date'"
+        ).fetchone() == (1,)
         assert connection.execute("PRAGMA user_version").fetchone() == (SCHEMA_VERSION,)
         assert connection.execute("SELECT count(*) FROM vantage_points").fetchone() == (0,)
     finally:
         connection.close()
+
+
+def test_a_failed_all_build_leaves_the_old_database_untouched(
+    calls: list[Call], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    def broken(**_kwargs: object) -> DeepSkyReport:
+        raise RuntimeError("SIMBAD is down")
+
+    monkeypatch.setattr(cli, "run_deep_sky", broken)
+    database = tmp_path / "earthlight.db"
+    database.write_text("the old database", encoding="utf-8")
+    result = runner.invoke(app, ["--database", str(database), "all"])
+    assert result.exit_code != 0
+    assert database.read_text(encoding="utf-8") == "the old database"
+    assert list(tmp_path.iterdir()) == [database]  # the temporary file was cleaned up
 
 
 def test_config_shows_the_defaults() -> None:

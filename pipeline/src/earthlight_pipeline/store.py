@@ -7,6 +7,7 @@ only opens a database that has it and fills it.
 import json
 import sqlite3
 from collections.abc import Iterable, Sequence
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -18,7 +19,12 @@ from earthlight.models import (
     PopulationEstimate,
     VantagePoint,
 )
-from earthlight.schema import SCHEMA_VERSION, create_empty_database, rebuild_search_index
+from earthlight.schema import (
+    SCHEMA_VERSION,
+    SEARCH_INDEXES,
+    create_empty_database,
+    rebuild_search_index,
+)
 from earthlight_pipeline.deep_sky import DeepSkyRecord
 from earthlight_pipeline.exoplanets import ExoplanetRecord
 from earthlight_pipeline.history import HistoryData, search_entries
@@ -47,6 +53,47 @@ def set_meta(connection: sqlite3.Connection, key: str, value: str) -> None:
     """Set a ``meta`` value, replacing any earlier one."""
     with connection:
         connection.execute("INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)", (key, value))
+
+
+DATA_LICENSE = "CC BY-NC 3.0 IGO"
+DATA_LICENSE_URL = "https://creativecommons.org/licenses/by-nc/3.0/igo/"
+
+
+def record_build_info(connection: sqlite3.Connection) -> None:
+    """Write the license (the text is in LICENSE-DATA) and the build date into ``meta``."""
+    set_meta(connection, "data_license", DATA_LICENSE)
+    set_meta(connection, "data_license_url", DATA_LICENSE_URL)
+    set_meta(connection, "build_date", datetime.now(UTC).date().isoformat())
+
+
+def finish_database(connection: sqlite3.Connection) -> None:
+    """Last step of a full build: check the file is sound, rebuild the search index, shrink it.
+
+    Raises ValueError if SQLite finds corruption, a search index that disagrees with its
+    table, a row that points at a missing parent, or a host that is not a star.
+    """
+    rebuild_search_index(connection)
+    for index in SEARCH_INDEXES:
+        try:
+            # rank 1 also compares the index with the content table (external-content tables)
+            connection.execute(f"INSERT INTO {index}({index}, rank) VALUES('integrity-check', 1)")
+        except sqlite3.DatabaseError as error:
+            raise ValueError(f"the search index {index} failed its integrity check") from error
+    connection.commit()  # the checks above leave a transaction open, and VACUUM needs none
+    if connection.execute("PRAGMA integrity_check").fetchone() != ("ok",):
+        raise ValueError("the finished database failed SQLite's integrity check")
+    not_stars = connection.execute(
+        "SELECT p.id FROM vantage_points AS p JOIN vantage_points AS h ON h.id = p.host_id "
+        "WHERE h.kind != 'star'"
+    ).fetchall()
+    if not_stars:
+        raise ValueError(
+            f"{len(not_stars)} host_id values do not point at a star, e.g. {not_stars[0]}"
+        )
+    broken = connection.execute("PRAGMA foreign_key_check").fetchall()
+    if broken:
+        raise ValueError(f"{len(broken)} rows point at a missing parent row, e.g. {broken[0]}")
+    connection.execute("VACUUM")
 
 
 def vantage_row(point: VantagePoint) -> dict[str, object]:

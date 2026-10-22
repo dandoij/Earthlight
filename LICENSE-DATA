@@ -52,6 +52,36 @@ NASA Exoplanet Archive
     This research has made use of the NASA Exoplanet Archive, which is operated by the
     California Institute of Technology, under contract with the National Aeronautics and
     Space Administration under the Exoplanet Exploration Program.
+    Reference paper: Christiansen et al. 2025, "The NASA Exoplanet Archive and Exoplanet
+    Follow-up Observing Program: Data, Tools, and Usage", Planetary Science Journal 6, 186,
+    DOI 10.3847/PSJ/ade3c2.
+
+SIMBAD and VizieR (CDS)
+    This research has made use of the SIMBAD database, CDS, Strasbourg Astronomical
+    Observatory, France. Wenger et al. 2000, A&AS 143, 9, "The SIMBAD astronomical database".
+    This research has made use of the VizieR catalogue access tool, CDS, Strasbourg, France
+    (DOI 10.26093/cds/vizier). No license statement was found for SIMBAD; CDS asks for the
+    acknowledgments above.
+
+Hunt and Reffert (2023)
+    Hunt, E. L. and Reffert, S. 2023, Astronomy & Astrophysics 673, A114. Star-cluster
+    positions and distances, accessed through VizieR. Free for scientific use with the authors
+    cited (VizieR terms); used here non-commercially.
+
+McConnachie (2012) and Cosmicflows-4
+    McConnachie, A. W. 2012, The Astronomical Journal 144, 4. Tully, R. B., et al. 2023,
+    The Astrophysical Journal 944, 94. Nearby-galaxy positions and distances, accessed through
+    VizieR. Same VizieR terms; used here non-commercially.
+
+Our World in Data (HYDE 3.3, Gapminder v7, UN WPP 2024)
+    World population estimates. "HYDE (2023); Gapminder (2022); UN WPP (2024), with major
+    processing by Our World in Data". Licenses: Our World in Data processing CC BY 4.0, HYDE
+    CC BY 4.0, Gapminder CC BY 4.0, UN WPP CC BY 3.0 IGO.
+
+Papers cited for redshifts
+    A redshift for a few record-holding objects (for example GN-z11 and JADES-GS-z14-0) comes
+    from published papers, cited by arXiv link in pipeline/curated/deep_sky.yaml. Only a number
+    is taken from each. The cosmology and the CMB redshift are from Planck Collaboration 2018 VI.
 
 NASA and JPL
     Planet positions use the approximate orbital elements published by NASA JPL Solar System

@@ -3,13 +3,15 @@
 import json
 import sqlite3
 from collections.abc import Iterator
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
 
 from earthlight.lookback import LookbackRange
 from earthlight.models import PopulationEstimate, VantageKind, VantagePoint
-from earthlight.schema import SCHEMA_VERSION, create_empty_database
+from earthlight.schema import SCHEMA_VERSION, create_empty_database, rebuild_search_index
+from earthlight_pipeline import store
 from earthlight_pipeline.deep_sky import CuratedObject, DeepSkyRecord, build_deep_sky
 from earthlight_pipeline.exoplanets import (
     ArchivePlanet,
@@ -20,12 +22,14 @@ from earthlight_pipeline.exoplanets import (
 from earthlight_pipeline.history import load_curated_history
 from earthlight_pipeline.stars import HipparcosStar, SearchEntry, build_stars, search_entry
 from earthlight_pipeline.store import (
+    finish_database,
     load_deep_sky,
     load_exoplanets,
     load_history,
     load_population,
     load_stars,
     open_database,
+    record_build_info,
     replace_deep_sky,
     replace_exoplanets,
     replace_history,
@@ -591,3 +595,56 @@ def test_replacing_population_shrinks_the_file(tmp_path: Path) -> None:
         assert path.stat().st_size < before
     finally:
         connection.close()
+
+
+def test_record_build_info_writes_the_license_and_build_date_into_meta(
+    database: sqlite3.Connection,
+) -> None:
+    record_build_info(database)
+    meta = dict(database.execute("SELECT key, value FROM meta").fetchall())
+    assert meta["data_license"] == "CC BY-NC 3.0 IGO"
+    assert meta["data_license_url"].startswith("https://creativecommons.org/")
+    assert meta["build_date"] == datetime.now(UTC).date().isoformat()
+
+
+def test_finish_database_rejects_a_host_that_is_not_a_star(database: sqlite3.Connection) -> None:
+    replace_stars(database, make_stars(), entries_for(make_stars()))
+    insert = (
+        "INSERT INTO vantage_points (id, name, kind, lookback_min, lookback_best, lookback_max, "
+        "host_id) VALUES (?, ?, ?, 1, 1, 1, ?)"
+    )
+    database.execute(insert, ("planet-a", "A", "exoplanet", "hip-27989"))
+    database.execute(insert, ("planet-b", "B", "exoplanet", "planet-a"))
+    database.commit()
+    with pytest.raises(ValueError, match="do not point at a star"):
+        finish_database(database)
+
+
+def test_finish_database_rejects_a_search_index_that_disagrees_with_its_table(
+    database: sqlite3.Connection, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def damaged_rebuild(connection: sqlite3.Connection) -> None:
+        rebuild_search_index(connection)
+        connection.execute("INSERT INTO search_fts(search_fts) VALUES('delete-all')")
+        connection.commit()
+
+    replace_stars(database, make_stars(), entries_for(make_stars()))
+    monkeypatch.setattr(store, "rebuild_search_index", damaged_rebuild)
+    with pytest.raises(ValueError, match="search_fts failed its integrity check"):
+        finish_database(database)
+
+
+def test_finish_database_accepts_a_sound_database(database: sqlite3.Connection) -> None:
+    finish_database(database)
+    assert database.execute("PRAGMA integrity_check").fetchone() == ("ok",)
+
+
+def test_finish_database_rejects_a_row_without_its_parent(database: sqlite3.Connection) -> None:
+    database.execute("PRAGMA foreign_keys = OFF")
+    database.execute(
+        "INSERT INTO vantage_points (id, name, kind, lookback_min, lookback_best, lookback_max, "
+        "host_id) VALUES ('p', 'P', 'exoplanet', 1, 1, 1, 'missing-host')"
+    )
+    database.commit()
+    with pytest.raises(ValueError, match="missing parent"):
+        finish_database(database)

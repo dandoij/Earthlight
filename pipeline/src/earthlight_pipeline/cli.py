@@ -4,7 +4,8 @@ Each data source is a subcommand (the plan step that built it is in each command
 ``all`` runs every source in order.
 """
 
-from dataclasses import dataclass
+import os
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Annotated
 
@@ -19,6 +20,7 @@ from earthlight_pipeline.build_stars import DEFAULT_MAX_VMAG, format_stars_repor
 from earthlight_pipeline.cache import DEFAULT_CACHE_DIR
 from earthlight_pipeline.history import HistoryError
 from earthlight_pipeline.population import PopulationError
+from earthlight_pipeline.store import finish_database, open_database, record_build_info
 
 
 @dataclass(frozen=True)
@@ -233,15 +235,30 @@ def build_all(ctx: typer.Context) -> None:
     way to get a database that is consistent from top to bottom.
     """
     options = get_options(ctx)
-    typer.echo(f"Creating a fresh database at {options.database}")
-    create_empty_database(options.database, overwrite=True)
+    target = options.database
+    temporary = target.with_name(target.name + ".tmp")
+    build = replace(options, database=temporary)
+    typer.echo(f"Creating a fresh database at {temporary} (it replaces {target} when done)")
     builders = {
-        "stars": lambda: _build_stars(options, DEFAULT_MAX_VMAG),
-        "exoplanets": lambda: _build_exoplanets(options),
-        "deep-sky": lambda: _build_deep_sky(options),
-        "history": lambda: _build_history(options),
-        "population": lambda: _build_population(options),
+        "stars": lambda: _build_stars(build, DEFAULT_MAX_VMAG),
+        "exoplanets": lambda: _build_exoplanets(build),
+        "deep-sky": lambda: _build_deep_sky(build),
+        "history": lambda: _build_history(build),
+        "population": lambda: _build_population(build),
     }
-    for source in SOURCES:
-        typer.echo(f"Building {source.command}...")
-        builders[source.command]()
+    try:
+        create_empty_database(temporary, overwrite=True)
+        for source in SOURCES:
+            typer.echo(f"Building {source.command}...")
+            builders[source.command]()
+        connection = open_database(temporary)
+        try:
+            record_build_info(connection)
+            finish_database(connection)
+        finally:
+            connection.close()
+        os.replace(temporary, target)
+    except BaseException:
+        temporary.unlink(missing_ok=True)
+        raise
+    typer.echo(f"Finished {target}")

@@ -359,6 +359,21 @@ The `population` table holds **261 world population estimates**, from 4.5 millio
 
 The series is not rising every century: 1200 CE (445 million) is above 1400 CE (442 million), the time of the Black Death. Test data: `pipeline/tests/data/owid_population_snapshot.csv` holds all 261 real world rows plus a few rows each for Africa, Asia, Europe, and the United Kingdom, so tests prove that only the world is read.
 
+## Full build results (step 2.15)
+
+`earthlight-build all` recreates the database, runs every source in order, then records the license (`meta` keys `data_license` and `data_license_url`), rebuilds the search index, runs SQLite's integrity and foreign-key checks, and compacts the file. The result is committed at `packages/earthlight/src/earthlight/data/earthlight.db`.
+
+| Table | Rows |
+|---|---|
+| Stars | 40,346 |
+| Exoplanets | 6,356 |
+| Deep-sky objects | 121 |
+| History | 105 events, 33 periods, 22 landmarks |
+| Population | 261 |
+| Search entries | 7,808 |
+
+The file is 19.9 MB (18.9 MiB), limit 20 MiB, checked by a test. Every century of lookback from 0 to 5,000 years, and every factor of ten from 10 years to 10 billion years, has at least one place; every century since 3000 BCE has a history entry except nine (listed in `KNOWN_HISTORY_GAPS` in the test, for Ian to decide whether to fill). The rules SQLite cannot express (plain-scalar `facts`, `host_id` pointing at a star) are checked in `packages/earthlight/tests/test_bundled_database.py`. A rebuild changes the file whenever a source updates, so the numbers above are for the build made on 2026-10-22.
+
 ## History data (steps 2.7 to 2.13)
 
 History is hand-curated, so the work is in the rules, not a download. `pipeline/curated/history/` holds one YAML file per era, each with any of `events`, `periods`, and `landmarks`. Entries are read straight into `HistoryEvent`, `HistoryPeriod`, and `Landmark` from `earthlight.models`, in strict mode (so `year: "1492"` or `importance: true` is an error).
@@ -390,7 +405,7 @@ Verified from the sources' own pages on 2026-10-20. Quotes are exact. This is a 
 | **Gaia DR3** (ESA) | "Gaia data are distributed under the CC BY-NC 3.0 IGO license." (https://www.cosmos.esa.int/web/gaia-users/license). ESA's terms: data are "open and free to use ... subject to proper acknowledgment", and "Prior to any commercial use ... including any use or application that directly or indirectly generates a financial gain, a detailed request for authorisation/licence shall be made ... to data.licences@esa.int" (https://www.cosmos.esa.int/web/esdc/terms-and-conditions). | Credit line: "Credit: ESA, Gaia DPAC". Cite Gaia Collaboration, Vallenari et al. 2023, A&A 674, A1, DOI 10.1051/0004-6361/202243940. Gaia's per-release acknowledgement text is linked from https://www.cosmos.esa.int/web/gaia-users/credits. |
 | **Bailer-Jones distances** | CC BY 4.0, as stated by the GAVO data center (see the Bailer-Jones section above). | Credit separately: cite Bailer-Jones et al. 2021, AJ 161, 147, DOI 10.3847/1538-3881/abd806. |
 | **Hipparcos** (ESA), via VizieR | ESA lists Hipparcos with the same archive terms (CC BY-NC 3.0 IGO). VizieR says its data are free "in a scientific context" and that "commercial usage of the data is subject to rules depending of the origin". Treated as non-commercial. | ESA credit line: "Credit: ESA". Cite van Leeuwen 2007, A&A 474, 653, DOI 10.1051/0004-6361:20078357. Acknowledge VizieR: DOI 10.26093/cds/vizier. |
-| **NASA Exoplanet Archive** | No license or terms statement on its acknowledgement page, only a request for credit. | "This research has made use of the NASA Exoplanet Archive, which is operated by the California Institute of Technology, under contract with the National Aeronautics and Space Administration under the Exoplanet Exploration Program." The page also asks users to cite Christiansen et al. (2025) as the reference paper; the full citation is to be confirmed in step 2.16. |
+| **NASA Exoplanet Archive** | No license or terms statement on its acknowledgement page, only a request for credit. | "This research has made use of the NASA Exoplanet Archive, which is operated by the California Institute of Technology, under contract with the National Aeronautics and Space Administration under the Exoplanet Exploration Program." The page also asks users to cite Christiansen et al. (2025) as the reference paper; the full citation (confirmed in step 2.16 through the arXiv and IPAC listings; the DOI came from the DOAJ record, so check it on the publisher page before citing formally): Christiansen et al. 2025, "The NASA Exoplanet Archive and Exoplanet Follow-up Observing Program: Data, Tools, and Usage", Planetary Science Journal 6, 186, DOI 10.3847/PSJ/ade3c2, arXiv:2506.03299. |
 | **IAU Catalog of Star Names** | "All IAU-produced products (Images, Videos, Texts) are released under Creative Commons Attribution (i.e. free to use in all perpetuity, world-wide, as long as the source is mentioned)." | Cite the IAU WGSN and https://www.iau.org/public/themes/naming_stars/. |
 | **NASA and JPL material** (planet elements, Horizons values, Voyager facts) | NASA says its content "generally are not subject to copyright in the United States", may be used for educational or informational purposes, and "NASA should be acknowledged as the source". It must not "implicitly convey NASA's endorsement of commercial goods or services" (https://www.nasa.gov/nasa-brand-center/images-and-media/). The JPL Solar System Dynamics site states no data terms of its own. | "NASA/JPL" for the orbital elements and Horizons values. Not an endorsement by NASA. |
 | **SIMBAD** (CDS), deep-sky positions and redshifts | No license statement found; CDS asks for an acknowledgment. Used for a few hundred values under the same non-commercial, credited use as the other CDS services. | "This research has made use of the SIMBAD database, CDS, Strasbourg Astronomical Observatory, France." Cite Wenger et al. 2000, A&AS 143, 9, "The SIMBAD astronomical database" (wording from https://cds.unistra.fr/help/acknowledgement/). |
