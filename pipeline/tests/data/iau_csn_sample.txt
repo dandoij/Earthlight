@@ -1,0 +1,37 @@
+# "IAU Catalog of Star Names (IAU-CSN)"
+# IAU Division C Working Group on Star Names (WGSN) https://www.iau.org/science/scientific_bodies/working_groups/280/
+# WGSN Chair: Susanne Hoffmann. WGSN Secretary: Eric Mamajek. Email questions or comments to: starnames@exopla.net
+# Last updated 2022-04-04 (see notes on latest edits at end of file)
+#
+# For use of the contents of the data of this file, we encourage users to cite the official IAU version of the data at:
+$ https://www.iau.org/public/themes/naming_stars/. At times there may be a time delay between the posting of names in this file and what
+# is posted on the IAU website. All IAU-produced products (Images, Videos, Texts) are released under Creative Commons Attribution
+# (i.e. free to use in all perpetuity, world-wide, as long as the source is mentioned). Rows (2) and (5) require UTF-8 encoding
+# (For Firefox browser, set > View > Repair Text Encoding).  WGSN is working to add brief summaries of etymological information
+# to future editions of this table.
+#(1)              (2)               (3)          (4)   (5)   (6) (7)  (8)         (9)  (10) (11)   (12) (13)       (14)       (15)       (16)    
+#Name/ASCII       Name/Diacritics   Designation  ID    ID    Con #    WDS_J       mag  bnd  HIP     HD  RA(J2000)  Dec(J2000) Date       Notes
+Absolutno         Absolutno         XO-5         _     _     Lyn _    _          11.95  G      _      _ 116.716506  39.094572 2019-12-17 
+Aldebaran         Aldebaran         HR 1457      alf   α     Tau _    04359+1631  0.87  V  21421  29139  68.980163  16.509302 2016-06-30 
+Alnilam           Alnilam           HR 1903      eps   ε     Ori _    05362-0112  1.69  V  26311  37128  84.053389  -1.201919 2016-07-20 
+Aludra            Aludra            HR 2827      eta   η     CMa _    07241-2918  2.45  V  35904  58350 111.023760 -29.303106 2016-07-20 
+Alula Australis   Alula Australis   HR 4375      ksi   ξ     UMa Aa   11182+3132  4.41  V  55203  98231 169.545423  31.529161 2016-07-20 
+Alula Borealis    Alula Borealis    HR 4377      nu    ν     UMa _    11185+3306  3.49  V  55219  98262 169.619737  33.094305 2016-07-20 
+Antares           Antares           HR 6134      alf   α     Sco A    16294-2626  1.06  V  80763 148478 247.351915 -26.432003 2016-06-30 
+Arcturus          Arcturus          HR 5340      alf   α     Boo _    14157+1911 -0.05  V  69673 124897 213.915300  19.182409 2016-06-30 
+Belenos           Bélénos           HD 8574      _     _     Psc _    _           7.12  V   6643   8574 021.302148  28.566695 2019-12-17 
+Betelgeuse        Betelgeuse        HR 2061      alf   α     Ori Aa   05552+0724  0.45  V  27989  39801  88.792939   7.407064 2016-06-30 
+Chason            Chasoň            HAT-P-5      _     _     Lyr _    18176+3637 11.82  G      _      _ 274.405470  36.621436 2019-12-17 
+Deneb             Deneb             HR 7924      alf   α     Cyg _    20414+4517  1.25  V 102098 197345 310.357980  45.280339 2016-06-30 
+Deneb Algedi      Deneb Algedi      HR 8322      del   δ     Cap Aa   21470-1608  2.85  V 107556 207098 326.760184 -16.127287 2017-02-01 
+Denebola          Denebola          HR 4534      bet   β     Leo _    11491+1434  2.14  V  57632 102647 177.264910  14.572058 2016-06-30 
+Monch             Mönch             HD 130322    _     _     Vir _    14475-0017  8.04  V  72339 130322 221.886361 -00.281474 2019-12-17 
+Polaris           Polaris           HR 424       alf   α     UMi Aa   02318+8916  2.13  V  11767   8890  37.954561  89.264109 2016-06-30 
+Polaris Australis Polaris Australis HR 7228      sig   σ     Oct _    _           5.45  V 104382 177482 317.195164 -88.956499 2017-09-05 
+Polis             Polis             HR 6812      mu    μ     Sgr Aa   18138-2104  3.84  V  89341 166937 273.440870 -21.058832 2017-09-05 
+Pollux            Pollux            HR 2990      bet   β     Gem _    07453+2802  1.16  V  37826  62509 116.328958  28.026199 2015-12-15 
+Procyon           Procyon           HR 2943      alf   α     CMi A    07393+0514  0.40  V  37279  61421 114.825493   5.224993 2016-06-30 
+Proxima Centauri  Proxima Centauri  GJ 551       alf   α     Cen C    14396-6050 11.01  V  70890 999999 217.428953 -62.679484 2016-08-21 * 
+Rigel             Rigel             HR 1713      bet   β     Ori A    05145-0812  0.18  V  24436  34085  78.634467  -8.201638 2016-06-30 
+Sirius            Sirius            HR 2491      alf   α     CMa A    06451-1643 -1.45  V  32349  48915 101.287155 -16.716116 2016-06-30 
+Vega              Vega              HR 7001      alf   α     Lyr _    18369+3846  0.03  V  91262 172167 279.234735  38.783689 2016-06-30 

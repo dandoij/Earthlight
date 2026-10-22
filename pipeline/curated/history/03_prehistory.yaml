@@ -1,0 +1,226 @@
+# Prehistory: about 300,000 years ago to 3000 BCE.
+# Years are astronomical decimal years (1 BCE is 0, so N BCE is written as -(N-1)).
+# Dates given as "N years ago" are converted as 2026 minus N and rounded to the precision of the
+# source; dates given as BP (before 1950) as 1950 minus N; the ICS Holocene start is 11,700 years
+# before 2000 CE. Where sources disagree the year is the middle of the range and year_uncertainty
+# covers it. A period that has not ended says `ongoing: true` and has no `end`.
+events:
+  - id: first-homo-sapiens
+    name: The oldest known Homo sapiens
+    category: human_origins
+    region: Jebel Irhoud, Morocco
+    summary: >-
+      Skulls and tools from a cave in Morocco belong to early members of our species, with
+      faces much like ours but longer, lower braincases. Heated flints put their age at about
+      315,000 years, far earlier than the long-held East African date.
+    importance: 5
+    wikipedia: Jebel Irhoud
+    source: https://en.wikipedia.org/wiki/Jebel_Irhoud
+    year: -313000
+    year_uncertainty: 34000
+
+  - id: out-of-africa
+    name: Modern humans spread out of Africa
+    category: human_origins
+    region: Africa and Asia
+    summary: >-
+      The ancestors of nearly everyone living outside Africa today left the continent in a main
+      wave between about 70,000 and 50,000 years ago. Smaller, earlier journeys may have
+      reached the Middle East and Greece but left little or no mark on people today.
+    importance: 5
+    wikipedia: Recent African origin of modern humans
+    source: https://en.wikipedia.org/wiki/Recent_African_origin_of_modern_humans
+    year: -58000
+    year_uncertainty: 10000
+
+  - id: toba-eruption
+    name: The Toba supereruption
+    category: geological
+    region: Sumatra, Indonesia
+    summary: >-
+      One of the largest volcanic eruptions of the last few million years. Whether it caused a
+      long volcanic winter that nearly wiped out early humans is now widely doubted.
+    importance: 3
+    wikipedia: Youngest Toba eruption
+    source: https://en.wikipedia.org/wiki/Youngest_Toba_eruption
+    year: -71850
+    year_uncertainty: 400
+
+  - id: neanderthals-disappear
+    name: Neanderthals disappear
+    category: human_origins
+    region: Europe
+    summary: >-
+      Radiocarbon dating of their tools places the end of the Neanderthals in Europe about
+      40,000 years ago. Competition, mixing with modern humans, and a changing climate all
+      likely played a part.
+    importance: 4
+    wikipedia: Neanderthal extinction
+    source: https://en.wikipedia.org/wiki/Neanderthal_extinction
+    year: -38200
+    year_uncertainty: 1000
+
+  - id: chauvet-cave-paintings
+    name: The Chauvet Cave paintings
+    category: culture
+    region: Ardeche, France
+    summary: >-
+      Horses, lions, rhinoceroses, and bears were painted on the walls of a French cave tens of
+      thousands of years ago, among the oldest and best preserved cave art known. The cave was
+      sealed by a rockfall and found again in 1994.
+    importance: 4
+    wikipedia: Chauvet Cave
+    source: https://en.wikipedia.org/wiki/Chauvet_Cave
+    year: -33000
+    year_uncertainty: 2500
+
+  - id: first-pottery
+    name: The oldest known pottery
+    category: technology
+    region: Jiangxi, China
+    summary: >-
+      Fired clay vessels were made by hunter-gatherers in southern China long before farming
+      began. Pieces from Xianrendong Cave are the oldest dated so far.
+    importance: 3
+    wikipedia: Xianrendong Cave
+    source: https://en.wikipedia.org/wiki/Xianrendong_Cave
+    year: -18000
+    year_uncertainty: 1000
+
+  - id: humans-reach-the-americas
+    name: People reach the Americas
+    category: human_origins
+    region: North America
+    summary: >-
+      When people first arrived in the Americas is still argued. Evidence widely accepted by
+      archaeologists puts people at Monte Verde in Chile by about 14,500 years ago, and earlier
+      dates, such as fossil footprints in New Mexico, are still debated.
+    importance: 4
+    wikipedia: Monte Verde
+    source: https://en.wikipedia.org/wiki/Monte_Verde
+    year: -16000
+    year_uncertainty: 5000
+
+  - id: farming-begins
+    name: Farming begins
+    category: civilization
+    region: Fertile Crescent, West Asia
+    summary: >-
+      People in the lands around the eastern Mediterranean and Mesopotamia began planting wheat
+      and barley and herding animals. Over centuries this changed how people lived, ate, and
+      settled.
+    importance: 5
+    wikipedia: Neolithic Revolution
+    source: https://en.wikipedia.org/wiki/Neolithic_Revolution
+    year: -8999
+    year_uncertainty: 1000
+
+  - id: wheeled-vehicles
+    name: Wheeled vehicles appear
+    category: technology
+    region: Mesopotamia and Europe
+    summary: >-
+      Pictures of wagons in Mesopotamia and wheel finds in Europe show that carts were in use by
+      the middle of the fourth millennium BCE. The earliest wheels may be older still.
+    importance: 4
+    wikipedia: Wheel
+    source: https://en.wikipedia.org/wiki/Wheel
+    year: -3299
+    year_uncertainty: 250
+
+  - id: earliest-writing
+    name: The earliest writing
+    category: civilization
+    region: Uruk, Mesopotamia
+    summary: >-
+      Clay tablets from the city of Uruk carry the first clear written records, used to count
+      goods and rations. This script grew into cuneiform.
+    importance: 5
+    wikipedia: Cuneiform
+    source: https://en.wikipedia.org/wiki/Cuneiform
+    year: -3299
+    year_uncertainty: 150
+
+  - id: otzi-the-iceman
+    name: Otzi the Iceman
+    category: culture
+    region: Otztal Alps, Italy and Austria
+    summary: >-
+      A man who died high in the Alps was preserved in ice with his clothes, tools, and last
+      meal. He was found by hikers in 1991 and is among the best-studied people of his time.
+    importance: 3
+    wikipedia: Ötzi
+    source: https://en.wikipedia.org/wiki/%C3%96tzi
+    year: -3227
+    year_uncertainty: 125
+
+periods:
+  - id: last-glacial-maximum
+    name: Last Glacial Maximum
+    category: geological
+    region: Earth
+    summary: >-
+      The time when ice sheets covered the most land in the last ice age and sea level stood
+      more than 100 metres lower than today. There is no single agreed start and end.
+    importance: 3
+    wikipedia: Last Glacial Maximum
+    source: https://en.wikipedia.org/wiki/Last_Glacial_Maximum
+    start: -24000
+    end: -18000
+
+  - id: younger-dryas
+    name: Younger Dryas
+    category: geological
+    region: Northern Hemisphere
+    summary: >-
+      A sudden return of near-glacial cold as the ice age was ending, which lasted over a
+      thousand years. Its end marks the start of the Holocene.
+    importance: 3
+    wikipedia: Younger Dryas
+    source: https://en.wikipedia.org/wiki/Younger_Dryas
+    start: -10900
+    end: -9700
+
+  - id: holocene-epoch
+    name: Holocene Epoch
+    category: geological
+    region: Earth
+    summary: >-
+      The warm period since the last ice age, in which farming, cities, writing, and all of
+      recorded history happened. It is still going.
+    importance: 4
+    wikipedia: Holocene
+    source: https://stratigraphy.org/chart
+    start: -9700
+    ongoing: true
+
+landmarks:
+  - id: gobekli-tepe
+    name: Gobekli Tepe
+    category: civilization
+    region: Turkey
+    summary: >-
+      Rings of huge carved stone pillars on a hilltop in south-eastern Turkey, built by people
+      who had not yet taken up farming. It is the oldest known monumental stonework.
+    importance: 4
+    wikipedia: Göbekli Tepe
+    source: https://en.wikipedia.org/wiki/G%C3%B6bekli_Tepe
+    built_start: -9499
+    built_end: -7999
+    lat: 37.2236
+    lon: 38.9217
+
+  - id: stonehenge
+    name: Stonehenge
+    category: civilization
+    region: England
+    summary: >-
+      A ring of standing stones on Salisbury Plain, begun as a ditch and bank and rebuilt in
+      stages over about 1,500 years. Its exact purpose is still debated.
+    importance: 5
+    wikipedia: Stonehenge
+    source: https://en.wikipedia.org/wiki/Stonehenge
+    built_start: -3099
+    built_end: -1599
+    lat: 51.1789
+    lon: -1.8261

@@ -1,0 +1,581 @@
+# 1800 CE to today.
+# Years are decimal calendar years. A date known to the day is converted with
+# earthlight.time.from_calendar (Gregorian), so 18 June 1815 is 1815.46. Periods that have not
+# ended say `ongoing: true` and have no `end`. The Great Depression's start and end are year
+# labels only (1929.0 and 1939.0), because sources date it by year.
+events:
+  - id: battle-of-waterloo
+    name: The Battle of Waterloo
+    category: war_politics
+    region: Waterloo, Belgium
+    summary: >-
+      An allied army under Wellington and a Prussian army under Blucher defeated Napoleon. His
+      second reign as emperor ended within days and he was exiled for good.
+    importance: 4
+    wikipedia: Battle of Waterloo
+    source: https://en.wikipedia.org/wiki/Battle_of_Waterloo
+    year: 1815.46
+    year_uncertainty: 0.01
+
+  - id: stockton-and-darlington-railway
+    name: The first public steam railway opens
+    category: technology
+    region: County Durham, England
+    summary: >-
+      The Stockton and Darlington Railway, built to carry coal, was the first public line to use
+      steam locomotives. Railways soon spread across the world and changed travel and trade.
+    importance: 4
+    wikipedia: Stockton and Darlington Railway
+    source: https://en.wikipedia.org/wiki/Stockton_and_Darlington_Railway
+    year: 1825.737
+    year_uncertainty: 0.01
+
+  - id: origin-of-species
+    name: Darwin publishes On the Origin of Species
+    category: science
+    region: London, England
+    summary: >-
+      Charles Darwin set out the theory of evolution by natural selection, backed by years of
+      evidence from his travels and studies. The first printing sold out in a day.
+    importance: 5
+    wikipedia: On the Origin of Species
+    source: https://en.wikipedia.org/wiki/On_the_Origin_of_Species
+    year: 1859.896
+    year_uncertainty: 0.01
+
+  - id: emancipation-proclamation
+    name: The Emancipation Proclamation
+    category: war_politics
+    region: United States
+    summary: >-
+      During the Civil War, President Lincoln declared that enslaved people in the states in
+      rebellion were free. It did not end slavery everywhere, but it made abolition a goal of
+      the war and let Black men join the Union army.
+    importance: 4
+    wikipedia: Emancipation Proclamation
+    source: https://en.wikipedia.org/wiki/Emancipation_Proclamation
+    year: 1863.0
+    year_uncertainty: 0.01
+
+  - id: telephone-patent
+    name: Bell is granted a telephone patent
+    category: technology
+    region: United States
+    summary: >-
+      Alexander Graham Bell was granted the patent for sending speech by electricity, and three
+      days later made the first clear voice call. Who invented the telephone has been disputed
+      ever since.
+    importance: 4
+    wikipedia: Telephone
+    source: https://en.wikipedia.org/wiki/Telephone
+    year: 1876.18
+    year_uncertainty: 0.01
+
+  - id: first-powered-flight
+    name: The Wright brothers fly
+    category: technology
+    region: Kitty Hawk, United States
+    summary: >-
+      Orville and Wilbur Wright made the first powered, controlled flights in a heavier-than-air
+      machine, on the sands of North Carolina. The longest of the day lasted under a minute.
+    importance: 5
+    wikipedia: Wright brothers
+    source: https://en.wikipedia.org/wiki/Wright_brothers
+    year: 1903.959
+    year_uncertainty: 0.01
+
+  - id: special-relativity
+    name: Einstein publishes special relativity
+    category: science
+    region: Bern, Switzerland
+    summary: >-
+      Albert Einstein was working as a patent clerk. Starting from the idea that light moves
+      at the same speed for every observer, he showed that time and space are linked. It was
+      one of several landmark papers he wrote in 1905.
+    importance: 5
+    wikipedia: Annus mirabilis papers
+    source: https://en.wikipedia.org/wiki/Annus_mirabilis_papers
+    year: 1905.734
+    year_uncertainty: 0.02
+
+  - id: sinking-of-the-titanic
+    name: The Titanic sinks
+    category: civilization
+    region: North Atlantic Ocean
+    summary: >-
+      The largest liner in the world struck an iceberg on her first voyage and sank, with about
+      1,500 people lost. The disaster led to new rules on lifeboats and radio watch.
+    importance: 4
+    wikipedia: Sinking of the Titanic
+    source: https://en.wikipedia.org/wiki/Sinking_of_the_Titanic
+    year: 1912.287
+    year_uncertainty: 0.01
+
+  - id: october-revolution
+    name: The October Revolution
+    category: war_politics
+    region: Petrograd, Russia
+    summary: >-
+      Bolshevik forces led by Lenin seized power in Petrograd and overthrew the provisional
+      government. It was 25 October on the Russian calendar then in use and 7 November on the
+      calendar used elsewhere.
+    importance: 5
+    wikipedia: October Revolution
+    source: https://en.wikipedia.org/wiki/October_Revolution
+    year: 1917.849
+    year_uncertainty: 0.01
+
+  - id: influenza-pandemic-1918
+    name: The 1918 influenza pandemic
+    category: life
+    region: Global
+    summary: >-
+      A new influenza virus spread around the world in several waves between 1918 and 1920 and
+      killed tens of millions of people. The usual start is a case recorded in March 1918, though
+      its origin is uncertain.
+    importance: 4
+    wikipedia: Spanish flu
+    source: https://en.wikipedia.org/wiki/Spanish_flu
+    year: 1918.17
+    year_uncertainty: 0.2
+
+  - id: discovery-of-penicillin
+    name: Fleming notices penicillin
+    category: science
+    region: London, England
+    summary: >-
+      Alexander Fleming saw that a mould had killed bacteria around it on a culture plate.
+      Other researchers later turned penicillin into the first widely used antibiotic.
+    importance: 4
+    wikipedia: Alexander Fleming
+    source: https://en.wikipedia.org/wiki/Alexander_Fleming
+    year: 1928.74
+    year_uncertainty: 0.1
+
+  - id: wall-street-crash
+    name: The Wall Street Crash
+    category: civilization
+    region: New York, United States
+    summary: >-
+      Share prices on the New York stock market fell sharply over several days in October 1929,
+      with panic selling peaking on 28 and 29 October. The crash came at the start of the Great Depression.
+    importance: 4
+    wikipedia: Wall Street crash of 1929
+    source: https://en.wikipedia.org/wiki/Wall_Street_crash_of_1929
+    year: 1929.825
+    year_uncertainty: 0.01
+
+  - id: hiroshima-bombing
+    name: The atomic bomb is used on Hiroshima
+    category: war_politics
+    region: Hiroshima, Japan
+    summary: >-
+      A United States aircraft dropped the first nuclear weapon used in war on the Japanese city
+      of Hiroshima, and a second was dropped on Nagasaki three days later. In Hiroshima, an
+      estimated 90,000 to 166,000 people had died by the end of 1945.
+    importance: 5
+    wikipedia: Atomic bombings of Hiroshima and Nagasaki
+    source: https://en.wikipedia.org/wiki/Atomic_bombings_of_Hiroshima_and_Nagasaki
+    year: 1945.595
+    year_uncertainty: 0.01
+
+  - id: indian-independence
+    name: India and Pakistan become independent
+    category: war_politics
+    region: South Asia
+    summary: >-
+      British rule ended and the subcontinent was divided into the two new states of India and
+      Pakistan. Partition displaced millions of people and caused great loss of life.
+    importance: 5
+    wikipedia: Indian Independence Act 1947
+    source: https://en.wikipedia.org/wiki/Indian_Independence_Act_1947
+    year: 1947.619
+    year_uncertainty: 0.01
+
+  - id: dna-double-helix
+    name: The structure of DNA is published
+    category: science
+    region: Cambridge, England
+    summary: >-
+      James Watson and Francis Crick described DNA as a double helix, building on X-ray images
+      taken by Rosalind Franklin and Raymond Gosling. The shape showed how genetic information is
+      copied.
+    importance: 5
+    wikipedia: Nucleic acid double helix
+    source: https://en.wikipedia.org/wiki/Nucleic_acid_double_helix
+    year: 1953.312
+    year_uncertainty: 0.05
+
+  - id: sputnik-launch
+    name: Sputnik 1 is launched
+    category: technology
+    region: Baikonur, Kazakhstan
+    summary: >-
+      The Soviet Union put the first artificial satellite into orbit around the Earth, a metal
+      sphere that beeped as it passed overhead. It began the Space Age.
+    importance: 5
+    wikipedia: Sputnik 1
+    source: https://en.wikipedia.org/wiki/Sputnik_1
+    year: 1957.756
+    year_uncertainty: 0.01
+
+  - id: first-human-in-space
+    name: Yuri Gagarin orbits the Earth
+    category: technology
+    region: Earth orbit
+    summary: >-
+      Soviet pilot Yuri Gagarin became the first person in space and the first to orbit the
+      Earth, in a flight that lasted 108 minutes.
+    importance: 5
+    wikipedia: Yuri Gagarin
+    source: https://en.wikipedia.org/wiki/Yuri_Gagarin
+    year: 1961.277
+    year_uncertainty: 0.01
+
+  - id: apollo-11-moon-landing
+    name: Apollo 11 lands on the Moon
+    category: technology
+    region: Moon
+    summary: >-
+      Neil Armstrong and Buzz Aldrin landed the lunar module in the Sea of Tranquility, and
+      Armstrong became the first person to walk on the Moon a few hours later.
+    importance: 5
+    wikipedia: Apollo 11
+    source: https://en.wikipedia.org/wiki/Apollo_11
+    year: 1969.548
+    year_uncertainty: 0.01
+
+  - id: chernobyl-disaster
+    name: The Chernobyl disaster
+    category: civilization
+    region: Pripyat, Ukraine
+    summary: >-
+      Reactor 4 of the Chernobyl nuclear plant exploded and burned, spreading radioactive
+      material over a large part of Europe. A wide area around the plant is still closed to
+      people.
+    importance: 4
+    wikipedia: Chernobyl disaster
+    source: https://en.wikipedia.org/wiki/Chernobyl_disaster
+    year: 1986.315
+    year_uncertainty: 0.01
+
+  - id: world-wide-web-proposed
+    name: The World Wide Web is proposed
+    category: technology
+    region: CERN, Switzerland
+    summary: >-
+      Tim Berners-Lee proposed a system of linked pages to help scientists share information.
+      The first website went live at CERN in December 1990, the web was opened to the public in
+      August 1991, and CERN made the technology free for anyone to use in 1993.
+    importance: 5
+    wikipedia: World Wide Web
+    source: https://en.wikipedia.org/wiki/World_Wide_Web
+    year: 1989.2
+    year_uncertainty: 0.1
+
+  - id: fall-of-the-berlin-wall
+    name: The Berlin Wall opens
+    category: war_politics
+    region: Berlin, Germany
+    summary: >-
+      East Germany opened its border and crowds crossed the wall that had divided Berlin since
+      1961. Germany was reunited the following year.
+    importance: 5
+    wikipedia: Fall of the Berlin Wall
+    source: https://en.wikipedia.org/wiki/Fall_of_the_Berlin_Wall
+    year: 1989.855
+    year_uncertainty: 0.01
+
+  - id: mandela-released
+    name: Nelson Mandela is released from prison
+    category: war_politics
+    region: South Africa
+    summary: >-
+      After about 27 years in prison, Mandela walked free. He then helped negotiate an end to
+      apartheid and became South Africa's president in 1994.
+    importance: 4
+    wikipedia: Nelson Mandela
+    source: https://en.wikipedia.org/wiki/Nelson_Mandela
+    year: 1990.112
+    year_uncertainty: 0.01
+
+  - id: hubble-space-telescope-launch
+    name: The Hubble Space Telescope is launched
+    category: science
+    region: Earth orbit
+    summary: >-
+      The space shuttle Discovery carried Hubble into orbit. Its main mirror was flawed, and a
+      repair mission in 1993 added corrective optics to make up for it. It has since made some
+      of the most famous images of the universe.
+    importance: 4
+    wikipedia: Hubble Space Telescope
+    source: https://en.wikipedia.org/wiki/Hubble_Space_Telescope
+    year: 1990.31
+    year_uncertainty: 0.01
+
+  - id: dissolution-of-the-soviet-union
+    name: The Soviet Union is dissolved
+    category: war_politics
+    region: Soviet Union
+    summary: >-
+      The Soviet Union formally ended a day after Gorbachev resigned, leaving fifteen
+      independent countries and ending the Cold War.
+    importance: 5
+    wikipedia: Dissolution of the Soviet Union
+    source: https://en.wikipedia.org/wiki/Dissolution_of_the_Soviet_Union
+    year: 1991.984
+    year_uncertainty: 0.01
+
+  - id: september-11-attacks
+    name: The September 11 attacks
+    category: war_politics
+    region: United States
+    summary: >-
+      Hijackers crashed airliners into the World Trade Center in New York and the Pentagon, and
+      a fourth plane came down in Pennsylvania. About three thousand people were killed. The
+      attacks shaped world politics for years afterwards.
+    importance: 5
+    wikipedia: September 11 attacks
+    source: https://en.wikipedia.org/wiki/September_11_attacks
+    year: 2001.693
+    year_uncertainty: 0.01
+
+  - id: human-genome-completed
+    name: The Human Genome Project is declared complete
+    category: science
+    region: Global
+    summary: >-
+      An international team announced that it had read nearly all of the human genome. A
+      draft version had been published in 2001, and a nearly complete, gap-free sequence
+      followed in 2022.
+    importance: 4
+    wikipedia: Human Genome Project
+    source: https://en.wikipedia.org/wiki/Human_Genome_Project
+    year: 2003.282
+    year_uncertainty: 0.01
+
+  - id: covid-19-pandemic-declared
+    name: The WHO calls COVID-19 a pandemic
+    category: life
+    region: Global
+    summary: >-
+      The World Health Organization described the spread of COVID-19, first seen in Wuhan in
+      December 2019, as a pandemic. It declared the global health emergency over in May 2023.
+    importance: 5
+    wikipedia: COVID-19 pandemic
+    source: https://en.wikipedia.org/wiki/COVID-19_pandemic
+    year: 2020.191
+    year_uncertainty: 0.01
+
+  - id: james-webb-space-telescope-launch
+    name: The James Webb Space Telescope is launched
+    category: science
+    region: Kourou, French Guiana
+    summary: >-
+      The largest space telescope yet built was sent toward a point about 1.5 million
+      kilometres from Earth.
+      It looks at infrared light and sees some of the earliest galaxies.
+    importance: 4
+    wikipedia: James Webb Space Telescope
+    source: https://en.wikipedia.org/wiki/James_Webb_Space_Telescope
+    year: 2021.981
+    year_uncertainty: 0.01
+
+periods:
+  - id: industrial-revolution
+    name: Industrial Revolution
+    category: technology
+    region: Britain, then Europe and North America
+    summary: >-
+      The change from hand and farm work to machines and factories, driven by steam power and
+      coal. It began in Britain and spread, and the exact dates depend on the country.
+    importance: 5
+    wikipedia: Industrial Revolution
+    source: https://en.wikipedia.org/wiki/Industrial_Revolution
+    start: 1760
+    end: 1840
+
+  - id: napoleonic-wars
+    name: Napoleonic Wars
+    category: war_politics
+    region: Europe
+    summary: >-
+      A series of wars between France under Napoleon and shifting coalitions of European states.
+      They redrew the map of Europe.
+    importance: 4
+    wikipedia: Napoleonic Wars
+    source: https://en.wikipedia.org/wiki/Napoleonic_Wars
+    start: 1803.375
+    end: 1815.885
+
+  - id: world-war-i
+    name: World War I
+    category: war_politics
+    region: Global
+    summary: >-
+      A war between two alliances of states, fought mainly in Europe and the Middle East, with
+      an estimated 15 to 22 million deaths. It ended with an armistice and led to the collapse of
+      four empires.
+    importance: 5
+    wikipedia: World War I
+    source: https://en.wikipedia.org/wiki/World_War_I
+    start: 1914.57
+    end: 1918.86
+
+  - id: great-depression
+    name: The Great Depression
+    category: civilization
+    region: Global
+    summary: >-
+      A severe worldwide economic downturn. In the United States unemployment rose to about a
+      quarter of workers by 1933.
+    importance: 4
+    wikipedia: Great Depression
+    source: https://en.wikipedia.org/wiki/Great_Depression
+    start: 1929
+    end: 1939
+
+  - id: world-war-ii
+    name: World War II
+    category: war_politics
+    region: Global
+    summary: >-
+      The largest war in history, between the Allied and Axis powers, with an estimated 70 to 85
+      million deaths. It began with the invasion of Poland and ended with Japan's surrender.
+    importance: 5
+    wikipedia: World War II
+    source: https://en.wikipedia.org/wiki/World_War_II
+    start: 1939.666
+    end: 1945.668
+
+  - id: cold-war
+    name: The Cold War
+    category: war_politics
+    region: Global
+    summary: >-
+      A long rivalry between the United States and the Soviet Union and their allies, fought
+      with arms races, spying, and wars by proxy rather than direct battle between them.
+    importance: 5
+    wikipedia: Cold War
+    source: https://en.wikipedia.org/wiki/Cold_War
+    start: 1947.192
+    end: 1991.984
+
+  - id: space-age
+    name: The Space Age
+    category: technology
+    region: Earth and space
+    summary: >-
+      The era of human spaceflight and satellites, which began with Sputnik 1. Writers differ on
+      whether it has ended; here it is treated as continuing.
+    importance: 4
+    wikipedia: Space Age
+    source: https://en.wikipedia.org/wiki/Space_Age
+    start: 1957.756
+    ongoing: true
+
+landmarks:
+  - id: statue-of-liberty
+    name: Statue of Liberty
+    category: culture
+    region: New York, United States
+    summary: >-
+      A giant copper statue given to the United States by France, standing on an island in New
+      York Harbor. Millions of immigrants saw it as they arrived.
+    importance: 5
+    wikipedia: Statue of Liberty
+    source: https://en.wikipedia.org/wiki/Statue_of_Liberty
+    built_start: 1875
+    built_end: 1886.822
+    lat: 40.6892
+    lon: -74.0444
+
+  - id: eiffel-tower
+    name: Eiffel Tower
+    category: culture
+    region: Paris, France
+    summary: >-
+      An iron lattice tower built for the 1889 World's Fair. It was the tallest structure in the
+      world until 1930 and is now the symbol of Paris.
+    importance: 5
+    wikipedia: Eiffel Tower
+    source: https://en.wikipedia.org/wiki/Eiffel_Tower
+    built_start: 1887.074
+    built_end: 1889.244
+    lat: 48.8582
+    lon: 2.2945
+
+  - id: panama-canal
+    name: Panama Canal
+    category: technology
+    region: Panama
+    summary: >-
+      A canal that lets ships cross between the Atlantic and Pacific oceans without sailing
+      around South America. France began digging it in 1881; the United States finished it.
+    importance: 4
+    wikipedia: Panama Canal
+    source: https://en.wikipedia.org/wiki/Panama_Canal
+    built_start: 1904
+    built_end: 1914.62
+    lat: 9.12
+    lon: -79.75
+
+  - id: empire-state-building
+    name: Empire State Building
+    category: culture
+    region: New York, United States
+    summary: >-
+      A 102-storey skyscraper built in just over a year during the Great Depression. It was the
+      tallest building in the world for about forty years.
+    importance: 4
+    wikipedia: Empire State Building
+    source: https://en.wikipedia.org/wiki/Empire_State_Building
+    built_start: 1930.2
+    built_end: 1931.33
+    lat: 40.7483
+    lon: -73.9856
+
+  - id: golden-gate-bridge
+    name: Golden Gate Bridge
+    category: culture
+    region: San Francisco, United States
+    summary: >-
+      A suspension bridge across the entrance to San Francisco Bay, the longest main span in the
+      world when it opened. Its orange paint is its trademark.
+    importance: 4
+    wikipedia: Golden Gate Bridge
+    source: https://en.wikipedia.org/wiki/Golden_Gate_Bridge
+    built_start: 1933.01
+    built_end: 1937.4
+    lat: 37.8197
+    lon: -122.4786
+
+  - id: sydney-opera-house
+    name: Sydney Opera House
+    category: culture
+    region: Sydney, Australia
+    summary: >-
+      A performing arts centre on Sydney Harbour, known for its roof of white shells. The
+      building took 14 years and cost far more than planned.
+    importance: 4
+    wikipedia: Sydney Opera House
+    source: https://en.wikipedia.org/wiki/Sydney_Opera_House
+    built_start: 1959.16
+    built_end: 1973.8
+    lat: -33.8568
+    lon: 151.2151
+
+  - id: burj-khalifa
+    name: Burj Khalifa
+    category: culture
+    region: Dubai, United Arab Emirates
+    summary: >-
+      A skyscraper nearly 830 metres tall. It was the tallest building in the world when it
+      opened in 2010, and it is still the tallest as of 2026.
+    importance: 4
+    wikipedia: Burj Khalifa
+    source: https://en.wikipedia.org/wiki/Burj_Khalifa
+    built_start: 2004
+    built_end: 2010.01
+    lat: 25.1972
+    lon: 55.2742

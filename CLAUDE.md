@@ -90,9 +90,9 @@ Keep questions short: state the options, the tradeoff, and your recommendation.
 |---|---|
 | Repo | Monorepo: `packages/earthlight` (core + CLI), `pipeline/` (data build, not shipped), `apps/api`, `apps/web` |
 | Python tooling | uv workspace, Python 3.12, ruff, pyright, pytest + Hypothesis, pre-commit |
-| Dependencies | Runtime core needs only stdlib + Typer/Rich + Pydantic. Heavy science libs (astropy, astroquery, pandas) live only in `pipeline/` |
+| Dependencies | Runtime core needs only stdlib + Typer/Rich + Pydantic. Heavy science libs (astropy, astroquery, scipy, pandas) live only in `pipeline/` |
 | Storage | SQLite, read-only at runtime, bundled inside the wheel, built `.db` committed to git |
-| Stars | Gaia DR3 for distances (Bailer-Jones geometric distances for ranges), HYG for names, linked via Gaia's Hipparcos cross-match |
+| Stars | Hipparcos catalogue as the star universe. Distances from Gaia DR3 with Bailer-Jones geometric distances for ranges where a star is matched through Gaia's Hipparcos cross-match, otherwise from the Hipparcos new reduction (VizieR I/311). Proper names from the IAU Catalog of Star Names (not HYG: its share-alike license conflicts with the non-commercial ESA data). Constellations from astropy |
 | Exoplanets | NASA Exoplanet Archive |
 | Deep sky | Curated YAML of about 100 to 150 objects (galaxies, clusters, quasars, JWST record holders, CMB); redshift to lookback via astropy cosmology in the pipeline |
 | Recent lookbacks | Solar system zones and objects (planets via JPL approximate Keplerian formulas, Voyager, Oort Cloud, interstellar space) |
@@ -107,4 +107,4 @@ Keep questions short: state the options, the tradeoff, and your recommendation.
 | CI | GitHub Actions: Python on Ubuntu and Windows, web job, data schema check, Dependabot |
 | Hosting | Vercel for web and API on one domain (free `*.vercel.app`), Dockerfile included for portability |
 | Release | TestPyPI first, then PyPI via trusted publishing on version tags |
-| License | MIT for code, Data Sources section crediting every dataset |
+| License | MIT for code. The bundled database is CC BY-NC 3.0 IGO (derived from ESA Gaia and Hipparcos data), stated in `LICENSE-DATA`. The project stays free, ad-free, and non-commercial. A README "Data licenses" section credits every dataset |

@@ -220,11 +220,19 @@ class HistoryPeriod(_HistoryEntry):
     """An age, era, or dynasty that lasted for a span of time."""
 
     start: DecimalYear
-    end: DecimalYear
+    end: DecimalYear | None = Field(
+        default=None, description="When the period ended. Missing exactly when it is ongoing."
+    )
+    ongoing: bool = Field(
+        default=False,
+        description="True for a period that has not ended yet, such as the Holocene.",
+    )
 
     @model_validator(mode="after")
     def _ordered(self) -> Self:
-        if self.start > self.end:
+        if self.ongoing != (self.end is None):
+            raise ValueError("a period has an end year exactly when it is not ongoing")
+        if self.end is not None and self.start > self.end:
             raise ValueError("a period cannot end before it starts")
         return self
 

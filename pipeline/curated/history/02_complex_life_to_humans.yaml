@@ -1,0 +1,238 @@
+# Complex life to human evolution: 538.8 million to about 300,000 years ago.
+# Era and period boundaries follow the ICS chart. Fossil dates are the usual published ages;
+# where a range was reported, the year is the middle and year_uncertainty covers the range.
+# Years are astronomical decimal years. Writing -N for "N years ago" is only fine at this scale,
+# where the 2,000-odd years between year 0 and today are far inside every uncertainty. Later
+# files must convert exactly (a calendar year, or 2026 minus N).
+events:
+  - id: cambrian-explosion
+    name: The Cambrian explosion
+    category: life
+    region: Global oceans
+    summary: >-
+      Over roughly 20 million years, most of the major animal body plans appeared in the
+      fossil record, many with shells, eyes, and limbs. The burst began near the base of the
+      Cambrian.
+    importance: 4
+    wikipedia: Cambrian explosion
+    source: https://en.wikipedia.org/wiki/Cambrian_explosion
+    year: -530000000
+    year_uncertainty: 10000000
+
+  - id: tiktaalik
+    name: Tiktaalik, a fish with the beginnings of limbs
+    category: life
+    region: Ellesmere Island, Canada
+    summary: >-
+      A fossil fish with a neck, ribs, and sturdy fins shows how animals with backbones may
+      have begun the move from water onto land. It lived about 375 million years ago.
+    importance: 3
+    wikipedia: Tiktaalik
+    source: https://en.wikipedia.org/wiki/Tiktaalik
+    year: -375000000
+    year_uncertainty: 5000000
+
+  - id: permian-triassic-extinction
+    name: The Permian-Triassic extinction (the Great Dying)
+    category: life
+    region: Global
+    summary: >-
+      The worst mass extinction known. Most sea species and most land animals vanished,
+      probably because of enormous volcanic eruptions in what is now Siberia that changed the
+      air and oceans.
+    importance: 5
+    wikipedia: Permian-Triassic extinction event
+    source: https://en.wikipedia.org/wiki/Permian-Triassic_extinction_event
+    year: -251902000
+    year_uncertainty: 100000
+
+  - id: first-dinosaurs
+    name: The first dinosaurs
+    category: life
+    region: South America
+    summary: >-
+      The oldest well-preserved dinosaur fossils come from the Late Triassic of Brazil and
+      Argentina. A few older, fragmentary finds are debated, so the first dinosaurs may be
+      somewhat older.
+    importance: 4
+    wikipedia: Dinosaur
+    source: https://en.wikipedia.org/wiki/Dinosaur
+    year: -233000000
+    year_uncertainty: 3000000
+
+  - id: first-mammals
+    name: The first mammal-like animals (mammaliaforms)
+    category: life
+    region: Global
+    summary: >-
+      Small, shrew-like animals such as Morganucodon appeared in the shadow of the dinosaurs
+      about 205 million years ago. These mammaliaforms are close relatives of true mammals;
+      whether to call them mammals depends on where the line is drawn.
+    importance: 3
+    wikipedia: Evolution of mammals
+    source: https://en.wikipedia.org/wiki/Evolution_of_mammals
+    year: -205000000
+    year_uncertainty: 10000000
+
+  - id: first-flowering-plants
+    name: The first flowering plants
+    category: life
+    region: Global
+    summary: >-
+      The oldest clear fossil records of flowering plants are pollen grains from the Early
+      Cretaceous, with fossil flowers a little later. They then spread quickly, changing the
+      world's forests, insects, and food chains.
+    importance: 3
+    wikipedia: Flowering plant
+    source: https://en.wikipedia.org/wiki/Flowering_plant
+    year: -135000000
+    year_uncertainty: 5000000
+
+  - id: end-cretaceous-extinction
+    name: The end of the dinosaurs
+    category: life
+    region: Yucatan, Mexico
+    summary: >-
+      A huge asteroid hit what is now Mexico and, with other changes, wiped out about three
+      quarters of all species, including every dinosaur except the birds. Mammals then had
+      room to spread.
+    importance: 5
+    wikipedia: Cretaceous-Paleogene extinction event
+    source: https://en.wikipedia.org/wiki/Cretaceous-Paleogene_extinction_event
+    year: -66000000
+    year_uncertainty: 50000
+
+  - id: sahelanthropus
+    name: Sahelanthropus, a possible early human relative
+    category: human_origins
+    region: Chad
+    summary: >-
+      A skull found in the Djurab Desert comes from a creature that lived about 7 million
+      years ago. Scientists still argue whether it belongs on the human line or is a cousin.
+    importance: 3
+    wikipedia: Sahelanthropus
+    source: https://en.wikipedia.org/wiki/Sahelanthropus
+    year: -7000000
+    year_uncertainty: 500000
+
+  - id: lucy
+    name: Lucy, an early upright-walking ancestor
+    category: human_origins
+    region: Hadar, Ethiopia
+    summary: >-
+      The skeleton nicknamed Lucy belonged to a small, upright-walking relative of humans of
+      the species Australopithecus afarensis. It was found in 1974 and is about 3.2 million
+      years old.
+    importance: 4
+    wikipedia: Lucy (Australopithecus)
+    source: https://en.wikipedia.org/wiki/Lucy_(Australopithecus)
+    year: -3200000
+    year_uncertainty: 40000
+
+  - id: lomekwi-stone-tools
+    name: The oldest known stone tools
+    category: technology
+    region: Lake Turkana, Kenya
+    summary: >-
+      Hammered and flaked stones found beside Lake Turkana are about 3.3 million years old,
+      older than the first members of our own genus. Who made them, and how they relate to
+      later tools, is not settled.
+    importance: 3
+    wikipedia: Lomekwi
+    source: https://en.wikipedia.org/wiki/Lomekwi
+    year: -3300000
+    year_uncertainty: 100000
+
+  - id: earliest-homo
+    name: The oldest known fossil of our genus
+    category: human_origins
+    region: Ledi-Geraru, Ethiopia
+    summary: >-
+      A lower jaw from Ethiopia is the earliest known fossil placed in the genus Homo. Its
+      age is inferred from the volcanic ash layers around it.
+    importance: 3
+    wikipedia: Ledi-Geraru
+    source: https://en.wikipedia.org/wiki/Ledi-Geraru
+    year: -2775000
+    year_uncertainty: 50000
+
+  - id: homo-erectus
+    name: Homo erectus appears
+    category: human_origins
+    region: Africa
+    summary: >-
+      A tall, long-legged human species that walked upright like us. It later spread out of
+      Africa and lasted for well over a million years. The oldest identified skull is about
+      2 million years old.
+    importance: 4
+    wikipedia: Homo erectus
+    source: https://en.wikipedia.org/wiki/Homo_erectus
+    year: -2000000
+    year_uncertainty: 50000
+
+  - id: early-controlled-fire
+    name: Early use of controlled fire
+    category: human_origins
+    region: Wonderwerk Cave, South Africa
+    summary: >-
+      Burned bone and ash in a South African cave are the earliest widely accepted signs that
+      human ancestors controlled fire, about 1 million years ago. Older claims elsewhere are
+      disputed.
+    importance: 4
+    wikipedia: Control of fire by early humans
+    source: https://en.wikipedia.org/wiki/Control_of_fire_by_early_humans
+    year: -1000000
+    year_uncertainty: 200000
+
+periods:
+  - id: paleozoic-era
+    name: Paleozoic Era
+    category: geological
+    region: Earth
+    summary: >-
+      The era of ancient life, from the Cambrian explosion to the Great Dying. Fish, land
+      plants, insects, amphibians, and early reptiles all arose in it.
+    importance: 3
+    wikipedia: Paleozoic
+    source: https://stratigraphy.org/chart
+    start: -538800000
+    end: -251902000
+
+  - id: mesozoic-era
+    name: Mesozoic Era
+    category: geological
+    region: Earth
+    summary: >-
+      The age of dinosaurs. It opens after the Great Dying and closes with the asteroid
+      impact that ended the dinosaurs. The first mammals and flowering plants arose in it.
+    importance: 4
+    wikipedia: Mesozoic
+    source: https://stratigraphy.org/chart
+    start: -251902000
+    end: -66000000
+
+  - id: cenozoic-era
+    name: Cenozoic Era
+    category: geological
+    region: Earth
+    summary: >-
+      The age of mammals and birds, running from the end of the dinosaurs to the present day.
+      Grasslands spread, primates evolved, and humans appeared in it. It is still going.
+    importance: 4
+    wikipedia: Cenozoic
+    source: https://stratigraphy.org/chart
+    start: -66000000
+    ongoing: true
+
+  - id: pleistocene-epoch
+    name: Pleistocene Epoch
+    category: geological
+    region: Earth
+    summary: >-
+      The ice ages. Vast ice sheets advanced and retreated many times, and our own genus
+      spread across the world. It ended with the warming that began the Holocene.
+    importance: 3
+    wikipedia: Pleistocene
+    source: https://stratigraphy.org/chart
+    start: -2580000
+    end: -9700

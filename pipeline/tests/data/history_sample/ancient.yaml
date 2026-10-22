@@ -1,0 +1,23 @@
+events:
+  - id: moon-landing
+    name: Apollo 11 Moon landing
+    category: technology
+    region: Moon
+    summary: The first people walked on the Moon.
+    importance: 5
+    wikipedia: Apollo 11
+    source: https://www.nasa.gov/mission/apollo-11/
+    year: 1969.5
+landmarks:
+  - id: great-pyramid-of-giza
+    name: Great Pyramid of Giza
+    category: civilization
+    region: Egypt
+    summary: The largest of the Giza pyramids, built as a tomb for a pharaoh.
+    importance: 5
+    wikipedia: Great Pyramid of Giza
+    source: https://en.wikipedia.org/wiki/Great_Pyramid_of_Giza
+    built_start: -2599  # 2600 BCE (N BCE is written as -(N-1))
+    built_end: -2559  # 2560 BCE
+    lat: 29.9792
+    lon: 31.1342

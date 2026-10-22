@@ -1,0 +1,156 @@
+# Deep time: the Big Bang to the end of the Ediacaran (about 539 million years ago).
+# Years are astronomical decimal years, so an event N years ago is about -N (the 2,000-odd
+# years between year 0 and today are far inside every uncertainty here).
+# Eon and period boundaries come from one source, the International Chronostratigraphic Chart
+# (ICS, 2023 and later editions, stratigraphy.org/chart); they were not cross-checked elsewhere.
+# Other dates come from the page in each entry's source; see docs/data-sources.md for the rules.
+events:
+  - id: big-bang
+    name: The Big Bang
+    category: cosmic
+    region: Universe
+    summary: >-
+      The universe began expanding from an extremely hot, dense state. Measurements of the cosmic microwave background put this about 13.8 billion
+      years ago.
+    importance: 5
+    wikipedia: Big Bang
+    source: https://en.wikipedia.org/wiki/Age_of_the_universe
+    year: -13787000000
+    year_uncertainty: 20000000
+
+  - id: first-stars
+    name: The first stars light up
+    category: cosmic
+    region: Universe
+    summary: >-
+      Clouds of hydrogen and helium collapsed into the first stars, ending the cosmic dark
+      ages. These stars are inferred from theory and have not been seen directly, so the
+      date is only a rough range of a few hundred million years after the Big Bang.
+    importance: 4
+    wikipedia: Stellar population
+    source: https://en.wikipedia.org/wiki/Stellar_population
+    year: -13537000000
+    year_uncertainty: 150000000
+
+  - id: solar-system-forms
+    name: The Solar System begins to form
+    category: cosmic
+    region: Solar System
+    summary: >-
+      The oldest solid grains in meteorites, which formed in the disc of gas and dust around
+      the young Sun, mark the start of the Solar System. Their age is the usual definition of
+      when it began.
+    importance: 5
+    wikipedia: Formation and evolution of the Solar System
+    source: https://stratigraphy.org/chart
+    year: -4567300000
+    year_uncertainty: 160000
+
+  - id: earth-forms
+    name: Earth forms
+    category: geological
+    region: Earth
+    summary: >-
+      Dust and rock in the disc around the Sun clumped together into the planet we live on.
+      The usual age quoted for Earth is about 4.54 billion years, with a small uncertainty.
+    importance: 5
+    wikipedia: Age of Earth
+    source: https://en.wikipedia.org/wiki/Age_of_Earth
+    year: -4540000000
+    year_uncertainty: 50000000
+
+  - id: moon-forming-impact
+    name: The Moon-forming impact
+    category: geological
+    region: Earth
+    summary: >-
+      A Mars-sized world called Theia is thought to have struck the young Earth, throwing out
+      debris that gathered into the Moon. Estimates of when this happened range over about
+      100 million years.
+    importance: 4
+    wikipedia: Giant-impact hypothesis
+    source: https://en.wikipedia.org/wiki/Giant-impact_hypothesis
+    year: -4470000000
+    year_uncertainty: 60000000
+
+  - id: oldest-fossil-life
+    name: Oldest widely accepted fossil evidence of life
+    category: life
+    region: Pilbara, Western Australia
+    summary: >-
+      Layered mounds made by microbes, called stromatolites, are preserved in rock in
+      Western Australia. Most scientists accept them as life, though some older claims
+      elsewhere are still debated.
+    importance: 4
+    wikipedia: Earliest known life forms
+    source: https://en.wikipedia.org/wiki/Earliest_known_life_forms
+    year: -3480000000
+    year_uncertainty: 20000000
+
+periods:
+  - id: hadean-eon
+    name: Hadean Eon
+    category: geological
+    region: Earth
+    summary: >-
+      The first eon of Earth, from the birth of the Solar System to the age of the oldest
+      surviving rocks. The surface was hot and battered by impacts, and the Moon formed.
+    importance: 3
+    wikipedia: Hadean
+    source: https://stratigraphy.org/chart
+    start: -4567300000
+    end: -4031000000
+
+  - id: archean-eon
+    name: Archean Eon
+    category: geological
+    region: Earth
+    summary: >-
+      Continents grew and the oceans held stable, and the oldest clear evidence of life dates
+      from this eon. There was almost no free oxygen.
+    importance: 3
+    wikipedia: Archean
+    source: https://stratigraphy.org/chart
+    start: -4031000000
+    end: -2500000000
+
+  - id: proterozoic-eon
+    name: Proterozoic Eon
+    category: geological
+    region: Earth
+    summary: >-
+      A long stretch of Earth's history in which oxygen built up in the air and complex cells
+      appeared. It ends at the start of the Cambrian, when animals with shells and skeletons,
+      and their burrows, become common.
+    importance: 3
+    wikipedia: Proterozoic
+    source: https://stratigraphy.org/chart
+    start: -2500000000
+    end: -538800000
+
+  - id: great-oxidation-event
+    name: Great Oxidation Event
+    category: life
+    region: Earth
+    summary: >-
+      Microbes that made oxygen from sunlight and water slowly changed the air, as oxygen
+      became a lasting part of the atmosphere. The change was gradual, and estimates of when
+      it began differ.
+    importance: 4
+    wikipedia: Great Oxidation Event
+    source: https://en.wikipedia.org/wiki/Great_Oxidation_Event
+    start: -2460000000
+    end: -2060000000
+
+  - id: ediacaran-period
+    name: Ediacaran Period
+    category: life
+    region: Earth
+    summary: >-
+      The last period before the Cambrian. It follows a global ice age, and it holds the
+      first large, complex life, such as soft-bodied frond and disc shapes on the sea floor.
+    importance: 3
+    wikipedia: Ediacaran
+    source: https://stratigraphy.org/chart
+    start: -635000000
+    end: -538800000
