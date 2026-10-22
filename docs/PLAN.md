@@ -174,8 +174,9 @@ No database yet. Pure, heavily tested functions.
   - **Build:** `search.py`: FTS5 search over vantage points and events, exact matches first; trigram candidates plus difflib for suggestions.
   - **Done when:** Tests including typos ("Betelguese", "andromedia", "fall of rom").
   - **Done:** `search.search(text, *, limit=10, repository=None)` returns a `SearchResponse` (new model: `query`, `results`, `suggestions`). Exact names and aliases first, then FTS5 word search (every word must match, the last may be unfinished, name matches rank above description matches, better known first on ties). Only when nothing matches: trigram candidates scored by `difflib` (names compared whole and in same-length word runs, accents folded, cutoff 0.7, at most 5). User text is cut into plain words and quoted, so FTS5 syntax characters cannot change the query. "fall of rom" finds the Roman Empire event directly as an unfinished phrase.
-- [ ] **3.5 Public interface**
+- [x] **3.5 Public interface**
   - **Build:** Clean top-level functions in `earthlight/__init__.py` (`when`, `from_vantage`, `info`, `search`) with docstrings and examples.
+  - **Done:** Decided with Ian: `when` takes text, a number (decimal year), or a `datetime`; an event name resolves to the best search hit (event date, period start, landmark completion) with a note saying so, and raises `UnresolvedNameError` with did-you-mean guesses when nothing matches; `from_vantage` and `info` take an id, name, or alias; `info` returns the new `PlaceInfo` model (with `ExoplanetDetails` and, for stars, `planet_ids`); every deliberate error derives from `EarthlightError` (`errors.py`) and keeps its older `ValueError` or `LookupError` parent. The docstring examples run as doctests. `SearchResponse`, `ExoplanetDetails`, and `PlaceInfo` joined the JSON schema snapshot. Note: `earthlight.search` is now the function, not the module (`from earthlight.search import ...` still works).
 - [ ] **3.6 README update** (Python usage example)
 - [ ] **3.7 Phase review**
 

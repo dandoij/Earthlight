@@ -23,6 +23,7 @@ from typing import Any, Self
 
 from earthlight.lookback import LookbackRange
 from earthlight.models import (
+    ExoplanetDetails,
     HistoryEvent,
     HistoryPeriod,
     Landmark,
@@ -62,6 +63,23 @@ class SearchRow:
     weight: int
     """Fame (0 to 5) for a vantage point, importance (1 to 5) for a history entry."""
 
+
+@dataclass(frozen=True)
+class HistoryMoment:
+    """The moment that stands for a history entry, and what that moment is."""
+
+    name: str
+    moment: float
+    role: str
+    """'date' for an event, 'start' for a period, 'completion' for a landmark."""
+
+
+_HISTORY_MOMENTS = {
+    "event": ("events", "year", "date"),
+    "period": ("periods", "start_year", "start"),
+    "landmark": ("landmarks", "built_end", "completion"),
+}
+"""For each kind of history entry: its table, the column that gives its moment, and the role."""
 
 _SEARCH_SELECT = (
     "SELECT s.type, s.id, s.name, s.aliases, s.description, v.kind AS kind, "
@@ -174,7 +192,42 @@ class Repository:
         """The largest lookback in the database: the oldest light there is anything to see."""
         return float(self._rows("SELECT max(lookback_max) AS m FROM vantage_points")[0]["m"])
 
+    def exoplanet_details(self, vantage_id: str) -> ExoplanetDetails | None:
+        """The archive details of an exoplanet, or None if ``vantage_id`` is not one."""
+        rows = self._rows("SELECT * FROM exoplanets WHERE vantage_id = ?", (vantage_id,))
+        if not rows:
+            return None
+        row = rows[0]
+        return ExoplanetDetails(
+            nasa_name=row["nasa_name"],
+            host_name=row["host_name"],
+            discovery_year=row["discovery_year"],
+            discovery_method=row["discovery_method"],
+            radius_earth=row["radius_earth"],
+            mass_earth=row["mass_earth"],
+            orbital_period_days=row["orbital_period_days"],
+            controversial=bool(row["controversial"]),
+        )
+
+    def planet_ids_of(self, host_id: str) -> list[str]:
+        """The ids of the planets whose host is this star, ordered by id."""
+        rows = self._rows("SELECT id FROM vantage_points WHERE host_id = ? ORDER BY id", (host_id,))
+        return [row["id"] for row in rows]
+
     # --- history -------------------------------------------------------------------------
+
+    def history_moment(self, entry_type: str, entry_id: str) -> HistoryMoment | None:
+        """The moment that stands for a history entry: an event's date, a period's start, or the
+        year a landmark was finished. None if there is no such entry.
+        """
+        table = _HISTORY_MOMENTS.get(entry_type)
+        if table is None:
+            return None
+        sql = f"SELECT name, {table[1]} AS moment FROM {table[0]} WHERE id = ?"  # fixed names
+        rows = self._rows(sql, (entry_id,))
+        if not rows:
+            return None
+        return HistoryMoment(name=rows[0]["name"], moment=rows[0]["moment"], role=table[2])
 
     def events_between(self, earliest: DecimalYear, latest: DecimalYear) -> list[HistoryEvent]:
         """Events dated inside ``[earliest, latest]``, counting each event's own uncertainty.

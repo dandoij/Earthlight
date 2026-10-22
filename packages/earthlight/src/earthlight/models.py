@@ -356,3 +356,46 @@ class SearchResponse(EarthlightModel):
         default=(),
         description="Did-you-mean guesses, best first. Only given when results is empty.",
     )
+
+
+# --- place details ----------------------------------------------------------------------------
+
+
+class ExoplanetDetails(EarthlightModel):
+    """What the NASA Exoplanet Archive says about a planet, beyond where it is."""
+
+    nasa_name: Name
+    host_name: Name
+    discovery_year: int | None = None
+    discovery_method: Name | None = None
+    radius_earth: float | None = Field(
+        default=None, gt=0, description="Radius in Earth radii, when measured."
+    )
+    mass_earth: float | None = Field(
+        default=None, gt=0, description="Mass in Earth masses (sometimes a minimum mass)."
+    )
+    orbital_period_days: float | None = Field(default=None, gt=0)
+    controversial: bool = Field(
+        default=False, description="True when the archive flags the planet as disputed."
+    )
+
+
+class PlaceInfo(EarthlightModel):
+    """Everything known about one place: the place itself and how it connects to others."""
+
+    vantage_point: VantagePoint
+    exoplanet: ExoplanetDetails | None = Field(
+        default=None, description="Set for an exoplanet only."
+    )
+    planet_ids: tuple[Slug, ...] = Field(
+        default=(), description="For a star, the ids of its known planets (ordered by id)."
+    )
+
+    @model_validator(mode="after")
+    def _details_match_the_kind(self) -> Self:
+        is_planet = self.vantage_point.kind is VantageKind.EXOPLANET
+        if self.exoplanet is not None and not is_planet:
+            raise ValueError("exoplanet details belong to an exoplanet only")
+        if self.planet_ids and self.vantage_point.kind is not VantageKind.STAR:
+            raise ValueError("only a star has planet_ids")
+        return self

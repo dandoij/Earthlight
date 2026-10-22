@@ -12,6 +12,7 @@ import math
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 
+from earthlight.errors import EarthlightError
 from earthlight.lookback import MomentRange
 from earthlight.models import (
     EarthSnapshot,
@@ -75,7 +76,7 @@ POPULATION_GRACE_YEARS = 5.0
 """A population estimate is shown up to this many years after the newest one in the database."""
 
 
-class MomentError(ValueError):
+class MomentError(EarthlightError, ValueError):
     """The moment cannot be answered. The message is written for the person who typed it."""
 
 
@@ -83,7 +84,7 @@ class FutureMomentError(MomentError):
     """The moment has not happened yet, so no light from it exists."""
 
 
-class UnknownVantageError(LookupError):
+class UnknownVantageError(EarthlightError, LookupError):
     """No place in the database has this id."""
 
 

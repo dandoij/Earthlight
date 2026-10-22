@@ -15,13 +15,16 @@ from pydantic import BaseModel, TypeAdapter, ValidationError
 from earthlight.lookback import LookbackRange, MomentRange
 from earthlight.models import (
     EarthSnapshot,
+    ExoplanetDetails,
     HistoryEvent,
     HistoryPeriod,
     Landmark,
     LandmarkStatus,
     Match,
     MomentResult,
+    PlaceInfo,
     PopulationEstimate,
+    SearchResponse,
     SearchResult,
     SearchType,
     SnapshotLandmark,
@@ -506,6 +509,9 @@ PUBLIC_MODELS: dict[str, type[BaseModel]] = {
     "EarthSnapshot": EarthSnapshot,
     "SearchResult": SearchResult,
     "Suggestion": Suggestion,
+    "SearchResponse": SearchResponse,
+    "ExoplanetDetails": ExoplanetDetails,
+    "PlaceInfo": PlaceInfo,
 }
 
 
@@ -524,6 +530,26 @@ def test_json_schemas_match_the_committed_snapshot() -> None:
         )
     committed = json.loads(SCHEMA_FILE.read_text("utf-8"))
     assert json.loads(json.dumps(schemas, sort_keys=True)) == committed
+
+
+def test_place_info_keeps_details_with_the_right_kind() -> None:
+    star = VantagePoint(id="s", name="S", kind=VantageKind.STAR, lookback=LookbackRange(1, 2, 3))
+    planet = VantagePoint(
+        id="p", name="P", kind=VantageKind.EXOPLANET, lookback=LookbackRange(1, 2, 3), host_id="s"
+    )
+    details = ExoplanetDetails(nasa_name="P", host_name="S")
+    assert PlaceInfo(vantage_point=star, planet_ids=("p",)).planet_ids == ("p",)
+    assert PlaceInfo(vantage_point=planet, exoplanet=details).exoplanet == details
+    with pytest.raises(ValidationError, match="exoplanet only"):
+        PlaceInfo(vantage_point=star, exoplanet=details)
+    with pytest.raises(ValidationError, match="only a star"):
+        PlaceInfo(vantage_point=planet, planet_ids=("x",))
+
+
+@pytest.mark.parametrize("field", ["radius_earth", "mass_earth", "orbital_period_days"])
+def test_exoplanet_measurements_must_be_positive(field: str) -> None:
+    with pytest.raises(ValidationError):
+        ExoplanetDetails.model_validate({"nasa_name": "P", "host_name": "S", field: 0})
 
 
 # --- review fixes -----------------------------------------------------------------------------
