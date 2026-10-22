@@ -40,6 +40,7 @@ from earthlight_pipeline.curated_yaml import load_yaml
 from earthlight_pipeline.parsing import number as _number
 from earthlight_pipeline.parsing import positive as _positive
 from earthlight_pipeline.parsing import words as _words
+from earthlight_pipeline.star_clusters import CLUSTER_TYPES, ClusterRecord, cluster_lookback
 from earthlight_pipeline.stars import SearchEntry, constellation_names
 
 SPEED_OF_LIGHT_KM_S = 299_792.458
@@ -61,9 +62,10 @@ because the cosmology itself is uncertain by that much even for a perfectly know
 WORST_ACCEPTED_QUALITY = "D"
 """SIMBAD grades redshifts A (best) to E (worst); E is not accepted."""
 
-DeepSkyKind = Literal["galaxy", "galaxy_cluster", "quasar", "cosmic_background"]
+DeepSkyKind = Literal["star_cluster", "galaxy", "galaxy_cluster", "quasar", "cosmic_background"]
 
 _KIND_LABELS = {
+    "star_cluster": "Star cluster",
     "galaxy": "Galaxy",
     "galaxy_cluster": "Galaxy cluster",
     "quasar": "Quasar",
@@ -86,6 +88,13 @@ class InlineRedshift(EarthlightModel):
     source: SourceUrl
 
 
+class CatalogueDistance(EarthlightModel):
+    """A distance taken from a catalogue, for objects near enough that redshift is no use."""
+
+    catalogue: Literal["hunt_reffert_2023"]
+    name: Name = Field(description="The object's name in that catalogue, spelled exactly.")
+
+
 class CuratedObject(EarthlightModel):
     """One entry of ``curated/deep_sky.yaml``."""
 
@@ -95,13 +104,17 @@ class CuratedObject(EarthlightModel):
     fame: int = Field(ge=1, le=5, strict=True)
     simbad: Name | None = Field(default=None, description="The object's identifier in SIMBAD.")
     inline: InlineRedshift | None = None
+    distance: CatalogueDistance | None = None
     wikipedia: Name | None = None
     aliases: tuple[Name, ...] = ()
 
     @model_validator(mode="after")
     def _one_source_of_numbers(self) -> Self:
-        if (self.simbad is None) == (self.inline is None):
-            raise ValueError("give exactly one of 'simbad' and 'inline'")
+        given = [self.simbad is not None, self.inline is not None, self.distance is not None]
+        if sum(given) != 1:
+            raise ValueError("give exactly one of 'simbad', 'inline', and 'distance'")
+        if (self.distance is not None) != (self.kind == "star_cluster"):
+            raise ValueError("a star_cluster takes its numbers from 'distance', and only it does")
         return self
 
 
@@ -134,6 +147,8 @@ def load_curated(path: Path) -> list[CuratedObject]:
         problems += [f"duplicate {field}: {value}" for value, n in counts.items() if n > 1]
     counts = Counter(_normalize(o.simbad) for o in objects if o.simbad)
     problems += [f"duplicate simbad identifier: {value}" for value, n in counts.items() if n > 1]
+    counts = Counter(o.distance.name for o in objects if o.distance)
+    problems += [f"duplicate catalogue name: {value}" for value, n in counts.items() if n > 1]
     if problems:
         raise CuratedError("\n".join(problems))
     return objects
@@ -288,16 +303,29 @@ def simbad_identifiers(objects: Iterable[CuratedObject]) -> list[str]:
     return [v for o in objects if o.simbad for v in identifier_variants(o.simbad)]
 
 
+def cluster_names(objects: Iterable[CuratedObject]) -> list[str]:
+    """The Hunt and Reffert names to ask for, for the objects that take their distance from it."""
+    return [o.distance.name for o in objects if o.distance]
+
+
 def build_deep_sky(
-    objects: Iterable[CuratedObject], simbad_records: Mapping[str, SimbadRecord]
+    objects: Iterable[CuratedObject],
+    simbad_records: Mapping[str, SimbadRecord],
+    cluster_records: Mapping[str, ClusterRecord] | None = None,
 ) -> DeepSkyBuild:
     """Build a vantage point for every curated object.
 
-    Raises CuratedError listing every object that cannot be built, so the list is fixed in
-    one pass instead of one failure at a time.
+    Objects with a redshift take it from ``simbad_records`` or their inline value; star
+    clusters take a distance from ``cluster_records``. Raises CuratedError listing every
+    object that cannot be built, so the list is fixed in one pass instead of one failure at
+    a time. The records come back in the order of ``objects``.
     """
     objects = list(objects)
-    problems: list[str] = []
+    ordered_ids = [o.id for o in objects]
+    clusters = [o for o in objects if o.distance is not None]
+    cluster_result = _build_clusters(clusters, cluster_records or {})
+    objects = [o for o in objects if o.distance is None]
+    problems: list[str] = list(cluster_result.problems)
     resolved: list[tuple[CuratedObject, float, float, str, SimbadRecord | None]] = []
     for item in objects:
         if item.inline is not None:
@@ -377,4 +405,83 @@ def build_deep_sky(
             description=f"{_KIND_LABELS[item.kind]}, redshift {shown:g}",
         )
         records.append(DeepSkyRecord(point, search))
-    return DeepSkyBuild(records, sources)
+    by_id = {record.point.id: record for record in [*records, *cluster_result.records]}
+    sources.update(cluster_result.sources)
+    return DeepSkyBuild([by_id[object_id] for object_id in ordered_ids], sources)
+
+
+@dataclass
+class _ClusterBuild:
+    problems: list[str]
+    records: list[DeepSkyRecord]
+    sources: Counter[str]
+
+
+def _light_years_text(light_years: float) -> str:
+    """A distance for people, to three significant figures: "441 light-years"."""
+    return f"{float(f'{light_years:.3g}'):,.0f} light-years"
+
+
+def _build_clusters(
+    clusters: list[CuratedObject], cluster_records: Mapping[str, ClusterRecord]
+) -> _ClusterBuild:
+    """Build the star clusters, which take a distance from the Hunt and Reffert catalogue."""
+    problems: list[str] = []
+    found: list[tuple[CuratedObject, ClusterRecord, LookbackRange]] = []
+    for item in clusters:
+        assert item.distance is not None  # guaranteed by the model
+        record = cluster_records.get(item.distance.name)
+        if record is None:
+            problems.append(f"{item.id}: Hunt and Reffert has no cluster '{item.distance.name}'")
+        elif record.cluster_type not in CLUSTER_TYPES:
+            problems.append(
+                f"{item.id}: '{record.name}' is type '{record.cluster_type}', "
+                f"not one of {', '.join(CLUSTER_TYPES)}"
+            )
+        elif record.ra_deg is None or record.dec_deg is None:
+            problems.append(f"{item.id}: Hunt and Reffert has no position for '{record.name}'")
+        else:
+            try:
+                found.append((item, record, cluster_lookback(record)))
+            except ValueError as error:
+                problems.append(f"{item.id}: {error}")
+    names = iter(
+        constellation_names(
+            [record.ra_deg for _, record, _ in found if record.ra_deg is not None],
+            [record.dec_deg for _, record, _ in found if record.dec_deg is not None],
+        )
+    )
+    records: list[DeepSkyRecord] = []
+    for item, record, lookback in found:
+        kind = CLUSTER_TYPES[record.cluster_type]
+        facts: dict[str, FactValue] = {
+            "distance_pc": round(record.dist50_pc or 0.0, 2),
+            "distance_light_years": float(f"{lookback.best:.4g}"),
+            "distance_source": "hunt_reffert_2023",
+            "catalogue_name": record.name,
+            "cluster_type": kind,
+        }
+        if record.member_stars is not None:
+            facts["member_stars"] = record.member_stars
+        point = VantagePoint(
+            id=item.id,
+            name=item.name,
+            kind=VantageKind.STAR_CLUSTER,
+            lookback=lookback,
+            constellation=next(names),
+            ra_deg=record.ra_deg,
+            dec_deg=record.dec_deg,
+            fame=item.fame,
+            wikipedia=item.wikipedia,
+            facts=facts,
+        )
+        search = SearchEntry(
+            type="vantage_point",
+            id=item.id,
+            name=item.name,
+            aliases="\n".join(dict.fromkeys(item.aliases)),
+            description=f"{kind.capitalize()} cluster, {_light_years_text(lookback.best)}",
+        )
+        records.append(DeepSkyRecord(point, search))
+    sources: Counter[str] = Counter({"hunt_reffert_2023": len(records)} if records else {})
+    return _ClusterBuild(problems, records, sources)

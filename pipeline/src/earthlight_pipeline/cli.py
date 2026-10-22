@@ -33,7 +33,7 @@ class Source:
 SOURCES: tuple[Source, ...] = (
     Source("stars", "2.4", "Hipparcos stars with Gaia and Bailer-Jones distances and IAU names."),
     Source("exoplanets", "2.5", "NASA Exoplanet Archive planets, linked to their host stars."),
-    Source("deep-sky", "2.6", "Curated galaxies, clusters, quasars, and the CMB."),
+    Source("deep-sky", "2.6", "Curated star clusters, galaxies, quasars, and the CMB."),
     Source("history", "2.7", "Hand-curated events, periods, and landmarks."),
     Source("population", "2.14", "Our World in Data historical population estimates."),
 )
@@ -190,7 +190,7 @@ def _build_deep_sky(options: BuildOptions) -> None:
 
 @app.command(
     name="deep-sky",
-    help="Galaxies, clusters, quasars, and the CMB from the curated list. (step 2.6)",
+    help="Star clusters, galaxies, quasars, and the CMB from the curated list. (step 2.6)",
 )
 def deep_sky(ctx: typer.Context) -> None:
     """Build the deep-sky vantage points from curated/deep_sky.yaml and store them."""

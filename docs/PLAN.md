@@ -117,13 +117,18 @@ No database yet. Pure, heavily tested functions.
   - **Build:** Exoplanet Archive query, distance ranges from the archive's error columns, link to host star vantage points where possible.
   - **Done when:** Planets load with host links; spot checks (for example Proxima Cen b, Kepler-22 b).
 - [x] **2.6 Deep-sky objects (far)**
-  - **Split (agreed with Ian):** SIMBAD's stored distances are unusable for near objects, so 2.6 covers only objects with redshift 0.01 or more (52 objects); the near ones are the new step 2.6b.
+  - **Split (agreed with Ian):** SIMBAD's stored distances are unusable for near objects, so 2.6 covers only objects with redshift 0.01 or more (52 objects); the near ones are the new steps 2.6b (clusters) and 2.6c (galaxies).
   - **Build:** `pipeline/curated/deep_sky.yaml` holds names, kinds, and fame only. Position and redshift come from SIMBAD (45 objects); 7 objects (JWST record galaxies, the quasar J0313-1806, the CMB) carry an inline redshift with the URL of its paper. Redshift to lookback via astropy `Planck18`, with the uncertainty described in `docs/data-sources.md`. Strict Pydantic validation; the build fails loudly, listing every problem.
   - **Outcome:** 52 objects, lookbacks from 185 million years to 13.79 billion. Also fixed astropy's constellation misspellings in the shared helper.
   - **Done when:** Loads and validates; lookbacks span from hundreds of millions to about 13.8 billion years.
-- [ ] **2.6b Deep-sky objects (near)**
-  - **Build:** add nearby objects to the same curated list and the same `deep-sky` command: globular clusters (Baumgardt and Vasiliev 2021), open clusters (Gaia-based catalogue such as Hunt and Reffert 2023 on VizieR), Local Group galaxies (McConnachie 2012), and nearby galaxies out to about 40 Mpc (Cosmicflows). Verify each catalogue's real format and license first and record it in `docs/data-sources.md`. The `CuratedObject` model needs a `distance` alternative to `simbad` and `inline` (a catalogue, an identifier in it, and the catalogue's own range).
-  - **Done when:** About 70 near objects load with sourced distance ranges; lookbacks span from tens of thousands of years to hundreds of millions.
+- [x] **2.6b Deep-sky objects: star clusters**
+  - **Split (agreed with Ian):** the near deep-sky step is two commits. 2.6b is the clusters; 2.6c is the galaxies.
+  - **Build:** 33 star clusters (18 open, 15 globular) added to `pipeline/curated/deep_sky.yaml` with a new `distance` alternative on `CuratedObject` (a catalogue and the object's name in it). Position and distance come from Hunt and Reffert (2023) on VizieR. Baumgardt and Vasiliev (2021) is not on VizieR and states no license, so Hunt and Reffert is used for the globular clusters too. A systematic Gaia parallax floor of 0.010 mas is added to every range. Details and sources are in `docs/data-sources.md`.
+  - **Outcome:** lookbacks from 154 years (Hyades) to 41,700 years (Messier 2); the deep-sky list now has 85 objects.
+  - **Done when:** The clusters load with sourced distance ranges and lookbacks span from hundreds to tens of thousands of years.
+- [ ] **2.6c Deep-sky objects: nearby galaxies**
+  - **Build:** Local Group galaxies (McConnachie 2012, VizieR `J/AJ/144/4/catalog`: distance modulus `(m-M)` with errors, 102 galaxies) and nearby galaxies out to about 40 Mpc (Cosmicflows-4, VizieR `J/ApJ/944/94/table2`: distance modulus `DM` and `e_DM`, matched by PGC number, positions through SIMBAD). Extend `CatalogueDistance.catalogue` with the two catalogues; verify each catalogue's real format and license first and record it in `docs/data-sources.md`.
+  - **Done when:** About 35 nearby galaxies load with sourced distance ranges; lookbacks span from tens of thousands of years (Magellanic Clouds, Andromeda's satellites) to hundreds of millions.
 - [x] **2.7 History schema and loader**
   - **Build:** Pydantic models and loader for `curated/history/*.yaml` (events, periods, landmarks). Fields include `year`, `year_uncertainty`, `category`, `region`, `summary` (own words), `importance` (1 to 5), `wikipedia`, `source`; landmarks add `built_start`, `built_end`, `destroyed`, `lat`, `lon`.
   - **Done when:** Loader validates a small sample file with tests.

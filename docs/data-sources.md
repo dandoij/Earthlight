@@ -253,6 +253,46 @@ Lookbacks run from 185 million years (the Hydra Cluster) to 13.79 billion years 
 - **astropy misspells three constellations and pads one:** "Chamaleon", "Ophiucus", "Pisces Austrinus", and "Crux " with a trailing space. The shared helper now corrects them to the IAU names, and a test checks all 88.
 - **Wikipedia rate-limits bursts** (HTTP 429 after about 30 quick requests). Article titles were checked one request every few seconds; "NGC 4676" and "Pandora's Cluster" are redirects, so the file uses "Mice Galaxies" and "Abell 2744".
 
+## Star-cluster build results (step 2.6b)
+
+The curated list now also holds **33 star clusters**: 18 open and 15 globular. As in step 2.6, the YAML holds names, kinds, and fame only; each cluster's position and distance come from the Hunt and Reffert (2023) catalogue, and a cluster's **lookback is its distance in light-years**.
+
+### Which catalogue, and why not the planned one
+
+- **Hunt and Reffert (2023)**, "Improving the open cluster census. II. An all-sky cluster catalogue with Gaia DR3", A&A 673, A114 (arXiv:2303.13424). On VizieR as `J/A+A/673/A114/clusters` (Table 3 of the paper), queried over TAP like the other VizieR tables (table name in double quotes). It lists 7,167 clusters, 134 of them cross-matched to known globular clusters; the table has 6,818 open (`Type` = o) and 121 globular (`Type` = g) rows. Columns used: `Name`, `Type`, `RA_ICRS`, `DE_ICRS`, `dist16`, `dist50`, `dist84` (the 16th, 50th, and 84th percentile of a maximum-likelihood distance, in parsecs), `Ndist` (stars used), `globalPlx`, and `AllNames`.
+- **Names:** the catalogue's `Name` uses underscores ("Melotte_22" is the Pleiades, "Melotte_25" the Hyades, "NGC_2632" Praesepe). `AllNames` lists the other designations, but it has errors (two different globular clusters both carry "GCL_44"), so the build never copies those aliases; search aliases are the curated ones only.
+- **Baumgardt and Vasiliev (2021), the planned source for globular clusters, was not used.** It is not on VizieR (no table under `J/MNRAS/505/5957`), and the author's page (people.smp.uq.edu.au/HolgerBaumgardt/globular, "4th (Mar. 2023) version") gives no download location for the distances and states no license. Decided with Ian: use Hunt and Reffert for all clusters now, and add Baumgardt later only if its terms are confirmed.
+- **47 Tucanae is not in the catalogue** under its NGC number, so it is not in the list.
+
+### The distance range
+
+The catalogue's percentiles cover only the random error of the Gaia parallaxes (Omega Centauri is 5,263 to 5,285 pc), which would make a falsely narrow range. The build therefore adds a **systematic parallax error of 0.010 mas in quadrature**, on each side, in parallax space, then converts back to distance. Support for the size: a study of globular clusters with Gaia EDR3 (Vasiliev and Baumgardt 2021, arXiv:2102.09568) gives 0.01 mas as the lower limit for a cluster's average parallax, and Maiz Apellaniz et al. (2021, A&A 649, A13) find a minimum systematic uncertainty of 10.3 microarcseconds for individual stars or compact clusters. (Both figures were read from search summaries of those papers, not from the papers themselves.) A different analysis (the Gaia EDR3 summary paper) gives a larger small-scale scatter of about 26 microarcseconds, so 0.01 mas is on the optimistic side.
+
+- At 100 pc the floor is about 0.1 percent of the distance; at 10 kpc it is about 10 percent.
+- It matters: Baumgardt and Vasiliev's 5.43 kpc for Omega Centauri is outside the catalogue's own range (5.26 to 5.28 kpc) but inside the widened one (a test checks this).
+- A cluster far enough that the floor leaves no far limit (about 100 kpc) is refused, loudly.
+- Light-years per parsec are computed from the definitions of the metre, the astronomical unit, and the Julian year (3.26156), not typed in.
+
+### Results
+
+| Cluster | Lookback (best) | Half-range |
+|---|---|---|
+| Hyades | 154 years | 0.1% |
+| Pleiades | 440 years | 0.1% |
+| Praesepe | 598 years | 0.2% |
+| Jewel Box (NGC 4755) | 6,453 years | 2.0% |
+| Omega Centauri | 17,200 years | 5.3% |
+| Messier 13 | 25,900 years | 8.0% |
+| Messier 2 (farthest) | 41,700 years | 13.1% |
+
+These match the usual values (Pleiades about 440 light-years, Hyades about 150, Praesepe about 600). The deep-sky list now spans 154 years to 13.79 billion years of lookback.
+
+### Terms and open items
+
+- VizieR says its data are free to use "in a scientific context" with the original authors and publication cited, and that commercial use "is subject to rules depending of the origin" (https://cds.unistra.fr/vizier-org/licences_vizier.html). Earthlight is free and non-commercial. The catalogue's own ReadMe (the place a copyright notice would be) could not be read: the CDS file server answered with a bot-protection "Access Denied" page. **Open item for Ian:** read https://cdsarc.cds.unistra.fr/ftp/J/A+A/673/A114/ReadMe in a browser and confirm there is no extra restriction.
+- The build records `source.hunt_reffert_2023` in the `meta` table, like `source.simbad`.
+- Test data: `pipeline/tests/data/hunt_reffert_snapshot.csv` holds the 33 real rows, fetched with the pipeline's own query.
+
 ## History data (steps 2.7 to 2.13)
 
 History is hand-curated, so the work is in the rules, not a download. `pipeline/curated/history/` holds one YAML file per era, each with any of `events`, `periods`, and `landmarks`. Entries are read straight into `HistoryEvent`, `HistoryPeriod`, and `Landmark` from `earthlight.models`, in strict mode (so `year: "1492"` or `importance: true` is an error).
@@ -288,6 +328,7 @@ Verified from the sources' own pages on 2026-10-20. Quotes are exact. This is a 
 | **IAU Catalog of Star Names** | "All IAU-produced products (Images, Videos, Texts) are released under Creative Commons Attribution (i.e. free to use in all perpetuity, world-wide, as long as the source is mentioned)." | Cite the IAU WGSN and https://www.iau.org/public/themes/naming_stars/. |
 | **NASA and JPL material** (planet elements, Horizons values, Voyager facts) | NASA says its content "generally are not subject to copyright in the United States", may be used for educational or informational purposes, and "NASA should be acknowledged as the source". It must not "implicitly convey NASA's endorsement of commercial goods or services" (https://www.nasa.gov/nasa-brand-center/images-and-media/). The JPL Solar System Dynamics site states no data terms of its own. | "NASA/JPL" for the orbital elements and Horizons values. Not an endorsement by NASA. |
 | **SIMBAD** (CDS), deep-sky positions and redshifts | No license statement found; CDS asks for an acknowledgment. Used for a few hundred values under the same non-commercial, credited use as the other CDS services. | "This research has made use of the SIMBAD database, CDS, Strasbourg Astronomical Observatory, France." Cite Wenger et al. 2000, A&AS 143, 9, "The SIMBAD astronomical database" (wording from https://cds.unistra.fr/help/acknowledgement/). |
+| **Hunt and Reffert (2023)** via VizieR, star-cluster positions and distances | VizieR: free to use in a scientific context with the original authors cited; commercial use depends on the catalogue. Non-commercial use here. The catalogue's ReadMe could not be read (bot protection), so confirm it. | Hunt, E. L. and Reffert, S. 2023, A&A 673, A114, "Improving the open cluster census. II. An all-sky cluster catalogue with Gaia DR3". "This research has made use of the VizieR catalogue access tool, CDS, Strasbourg, France (DOI : 10.26093/cds/vizier)." Original VizieR description: A&AS 143, 23 (2000). |
 | **Papers cited for inline redshifts** (step 2.6) | Published scientific results; only a number is taken from each, and each is cited by its arXiv URL in the curated file. | Bunker et al. (GN-z11), Castellano et al. (GHZ2), Witstok et al. (JADES-GS-z13-1-LA), Carniani et al. (JADES-GS-z14-0), Naidu et al. (MoM-z14), Wang et al. (J0313-1806), and Planck Collaboration 2018 VI (cosmology and the CMB). |
 | **Curated YAML** (deep-sky objects, history; steps 2.6 to 2.13) | Our own work. Summaries are written in our own words, and every entry cites a source URL. Wikipedia is linked, never copied. | Covered by the repository's MIT license. |
 

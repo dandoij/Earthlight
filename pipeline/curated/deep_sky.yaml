@@ -4,11 +4,14 @@
 #   simbad:  the object's identifier in SIMBAD, which supplies position and redshift.
 #   inline:  a redshift typed here for an object SIMBAD does not hold, with the URL of the
 #            paper it came from. `error` is one standard deviation, in redshift.
-# Give exactly one of the two. fame is 1 (known to enthusiasts) to 5 (a household name).
+#   distance: for star clusters, which catalogue and the object's name in it
+#            (hunt_reffert_2023 on VizieR). Position and distance come from there.
+# Give exactly one of the three. fame is 1 (known to enthusiasts) to 5 (a household name).
 # wikipedia is the exact article title, used to fetch an image.
 #
-# Objects nearer than redshift 0.01 (about 130 million light-years) are not here: their
-# redshift is mostly their own motion, so they need measured distances (step 2.6b).
+# Objects nearer than redshift 0.01 (about 130 million light-years) cannot use a redshift: it is
+# mostly their own motion. Star clusters (step 2.6b) take a catalogue distance instead; nearby
+# galaxies will follow in step 2.6c.
 
 objects:
   # --- galaxies ---------------------------------------------------------------------------
@@ -371,3 +374,301 @@ objects:
       source: https://arxiv.org/abs/1807.06209
     wikipedia: Cosmic microwave background
     aliases: [CMB, Big Bang afterglow]
+
+  # --- star clusters (distance from the Hunt and Reffert 2023 Gaia DR3 catalogue) ----------
+  # `distance.name` is the cluster's Name in that catalogue, spelled exactly (underscores in it).
+  - id: pleiades
+    name: Pleiades (Messier 45)
+    kind: star_cluster
+    fame: 5
+    distance:
+      catalogue: hunt_reffert_2023
+      name: Melotte_22
+    wikipedia: Pleiades
+    aliases: [M45, Seven Sisters, Subaru]
+  - id: hyades
+    name: Hyades
+    kind: star_cluster
+    fame: 4
+    distance:
+      catalogue: hunt_reffert_2023
+      name: Melotte_25
+    wikipedia: Hyades (star cluster)
+    aliases: [Melotte 25]
+  - id: praesepe
+    name: Praesepe (Beehive Cluster)
+    kind: star_cluster
+    fame: 4
+    distance:
+      catalogue: hunt_reffert_2023
+      name: NGC_2632
+    wikipedia: Beehive Cluster
+    aliases: [M44, NGC 2632, Beehive Cluster]
+  - id: coma-star-cluster
+    name: Coma Star Cluster
+    kind: star_cluster
+    fame: 2
+    distance:
+      catalogue: hunt_reffert_2023
+      name: Melotte_111
+    wikipedia: Coma Star Cluster
+    aliases: [Melotte 111]
+  - id: alpha-persei-cluster
+    name: Alpha Persei Cluster
+    kind: star_cluster
+    fame: 2
+    distance:
+      catalogue: hunt_reffert_2023
+      name: Melotte_20
+    wikipedia: Alpha Persei Cluster
+    aliases: [Melotte 20]
+  - id: ngc-869
+    name: h Persei (NGC 869)
+    kind: star_cluster
+    fame: 3
+    distance:
+      catalogue: hunt_reffert_2023
+      name: NGC_869
+    wikipedia: NGC 869
+    aliases: [NGC 869, Double Cluster]
+  - id: ngc-884
+    name: Chi Persei (NGC 884)
+    kind: star_cluster
+    fame: 3
+    distance:
+      catalogue: hunt_reffert_2023
+      name: NGC_884
+    wikipedia: NGC 884
+    aliases: [NGC 884, Double Cluster]
+  - id: messier-7
+    name: Ptolemy Cluster (Messier 7)
+    kind: star_cluster
+    fame: 3
+    distance:
+      catalogue: hunt_reffert_2023
+      name: NGC_6475
+    wikipedia: Messier 7
+    aliases: [M7, NGC 6475, Ptolemy Cluster]
+  - id: messier-6
+    name: Butterfly Cluster (Messier 6)
+    kind: star_cluster
+    fame: 3
+    distance:
+      catalogue: hunt_reffert_2023
+      name: NGC_6405
+    wikipedia: Butterfly Cluster
+    aliases: [M6, NGC 6405, Butterfly Cluster]
+  - id: messier-35
+    name: Messier 35
+    kind: star_cluster
+    fame: 2
+    distance:
+      catalogue: hunt_reffert_2023
+      name: NGC_2168
+    wikipedia: Messier 35
+    aliases: [M35, NGC 2168]
+  - id: messier-37
+    name: Messier 37
+    kind: star_cluster
+    fame: 2
+    distance:
+      catalogue: hunt_reffert_2023
+      name: NGC_2099
+    wikipedia: Messier 37
+    aliases: [M37, NGC 2099]
+  - id: messier-41
+    name: Messier 41
+    kind: star_cluster
+    fame: 2
+    distance:
+      catalogue: hunt_reffert_2023
+      name: NGC_2287
+    wikipedia: Messier 41
+    aliases: [M41, NGC 2287]
+  - id: messier-67
+    name: Messier 67
+    kind: star_cluster
+    fame: 2
+    distance:
+      catalogue: hunt_reffert_2023
+      name: NGC_2682
+    wikipedia: Messier 67
+    aliases: [M67, NGC 2682]
+  - id: messier-11
+    name: Wild Duck Cluster (Messier 11)
+    kind: star_cluster
+    fame: 3
+    distance:
+      catalogue: hunt_reffert_2023
+      name: NGC_6705
+    wikipedia: Wild Duck Cluster
+    aliases: [M11, NGC 6705, Wild Duck Cluster]
+  - id: ic-2602
+    name: Southern Pleiades (IC 2602)
+    kind: star_cluster
+    fame: 3
+    distance:
+      catalogue: hunt_reffert_2023
+      name: IC_2602
+    wikipedia: IC 2602
+    aliases: [IC 2602, Southern Pleiades]
+  - id: ic-2391
+    name: IC 2391
+    kind: star_cluster
+    fame: 2
+    distance:
+      catalogue: hunt_reffert_2023
+      name: IC_2391
+    wikipedia: IC 2391
+    aliases: [Omicron Velorum Cluster]
+  - id: jewel-box-cluster
+    name: Jewel Box Cluster (NGC 4755)
+    kind: star_cluster
+    fame: 3
+    distance:
+      catalogue: hunt_reffert_2023
+      name: NGC_4755
+    wikipedia: Jewel Box (star cluster)
+    aliases: [NGC 4755, Kappa Crucis Cluster]
+  - id: ngc-188
+    name: NGC 188
+    kind: star_cluster
+    fame: 2
+    distance:
+      catalogue: hunt_reffert_2023
+      name: NGC_188
+    wikipedia: NGC 188
+  # Globular clusters (Messier 13 is the one nicknamed the Great Hercules Cluster).
+  - id: omega-centauri
+    name: Omega Centauri (NGC 5139)
+    kind: star_cluster
+    fame: 5
+    distance:
+      catalogue: hunt_reffert_2023
+      name: NGC_5139
+    wikipedia: Omega Centauri
+    aliases: [NGC 5139]
+  - id: messier-13
+    name: Great Hercules Cluster (Messier 13)
+    kind: star_cluster
+    fame: 4
+    distance:
+      catalogue: hunt_reffert_2023
+      name: NGC_6205
+    wikipedia: Messier 13
+    aliases: [M13, NGC 6205, Hercules Cluster]
+  - id: messier-3
+    name: Messier 3
+    kind: star_cluster
+    fame: 3
+    distance:
+      catalogue: hunt_reffert_2023
+      name: NGC_5272
+    wikipedia: Messier 3
+    aliases: [M3, NGC 5272]
+  - id: messier-5
+    name: Messier 5
+    kind: star_cluster
+    fame: 3
+    distance:
+      catalogue: hunt_reffert_2023
+      name: NGC_5904
+    wikipedia: Messier 5
+    aliases: [M5, NGC 5904]
+  - id: messier-15
+    name: Messier 15
+    kind: star_cluster
+    fame: 3
+    distance:
+      catalogue: hunt_reffert_2023
+      name: NGC_7078
+    wikipedia: Messier 15
+    aliases: [M15, NGC 7078]
+  - id: messier-92
+    name: Messier 92
+    kind: star_cluster
+    fame: 3
+    distance:
+      catalogue: hunt_reffert_2023
+      name: NGC_6341
+    wikipedia: Messier 92
+    aliases: [M92, NGC 6341]
+  - id: messier-4
+    name: Messier 4
+    kind: star_cluster
+    fame: 3
+    distance:
+      catalogue: hunt_reffert_2023
+      name: NGC_6121
+    wikipedia: Messier 4
+    aliases: [M4, NGC 6121]
+  - id: messier-22
+    name: Messier 22
+    kind: star_cluster
+    fame: 3
+    distance:
+      catalogue: hunt_reffert_2023
+      name: NGC_6656
+    wikipedia: Messier 22
+    aliases: [M22, NGC 6656]
+  - id: ngc-6397
+    name: NGC 6397
+    kind: star_cluster
+    fame: 2
+    distance:
+      catalogue: hunt_reffert_2023
+      name: NGC_6397
+    wikipedia: NGC 6397
+  - id: ngc-6752
+    name: NGC 6752
+    kind: star_cluster
+    fame: 2
+    distance:
+      catalogue: hunt_reffert_2023
+      name: NGC_6752
+    wikipedia: NGC 6752
+  - id: messier-55
+    name: Messier 55
+    kind: star_cluster
+    fame: 2
+    distance:
+      catalogue: hunt_reffert_2023
+      name: NGC_6809
+    wikipedia: Messier 55
+    aliases: [M55, NGC 6809]
+  - id: messier-12
+    name: Messier 12
+    kind: star_cluster
+    fame: 2
+    distance:
+      catalogue: hunt_reffert_2023
+      name: NGC_6218
+    wikipedia: Messier 12
+    aliases: [M12, NGC 6218]
+  - id: messier-10
+    name: Messier 10
+    kind: star_cluster
+    fame: 2
+    distance:
+      catalogue: hunt_reffert_2023
+      name: NGC_6254
+    wikipedia: Messier 10
+    aliases: [M10, NGC 6254]
+  - id: messier-2
+    name: Messier 2
+    kind: star_cluster
+    fame: 2
+    distance:
+      catalogue: hunt_reffert_2023
+      name: NGC_7089
+    wikipedia: Messier 2
+    aliases: [M2, NGC 7089]
+  - id: messier-71
+    name: Messier 71
+    kind: star_cluster
+    fame: 2
+    distance:
+      catalogue: hunt_reffert_2023
+      name: NGC_6838
+    wikipedia: Messier 71
+    aliases: [M71, NGC 6838]

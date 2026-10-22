@@ -283,3 +283,40 @@ def fetch_simbad(
             )
         )
     return paths
+
+
+HUNT_REFFERT_TABLE = "J/A+A/673/A114/clusters"
+"""The main catalogue of Hunt and Reffert (2023) on VizieR (Table 3 of the paper)."""
+
+
+def hunt_reffert_query(names: Sequence[str]) -> str:
+    """ADQL for the Hunt and Reffert rows of the given catalogue names (exact spellings)."""
+    if not names:
+        raise ValueError("at least one cluster name is needed")
+    listed = ", ".join("'" + name.replace("'", "''") + "'" for name in names)
+    return (
+        "SELECT Name, AllNames, Type, RA_ICRS, DE_ICRS, dist16, dist50, dist84, Ndist, globalPlx "
+        f'FROM "{HUNT_REFFERT_TABLE}" WHERE Name IN ({listed})'
+    )
+
+
+def fetch_hunt_reffert(
+    names: Sequence[str], cache_dir: Path | None, refresh: bool, progress: Progress = _ignore
+) -> Path:
+    """The Hunt and Reffert rows for the given cluster names, as one cached file.
+
+    The file name depends on the names, so a changed list is never read from an old file.
+    """
+    ordered = sorted(set(names))
+    digest = hashlib.sha256("|".join(ordered).encode()).hexdigest()[:12]
+    progress(f"Downloading {len(ordered)} clusters from Hunt and Reffert (VizieR)")
+    return cached_download(
+        tap_url(VIZIER_TAP, hunt_reffert_query(ordered)),
+        f"hunt_reffert_{digest}.csv",
+        cache_dir=cache_dir,
+        refresh=refresh,
+        timeout=TAP_TIMEOUT_SECONDS,
+        retries=TAP_RETRIES,
+        retry_wait=TAP_RETRY_WAIT_SECONDS,
+        notify=progress,
+    )
