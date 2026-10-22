@@ -345,3 +345,14 @@ class Suggestion(EarthlightModel):
     id: Slug
     name: Name
     similarity: float = Field(ge=0, le=1, description="1 means identical text.")
+
+
+class SearchResponse(EarthlightModel):
+    """The answer to a search: hits best first, or guesses when nothing matched."""
+
+    query: str = Field(description="The text that was searched for, with spaces tidied up.")
+    results: tuple[SearchResult, ...] = ()
+    suggestions: tuple[Suggestion, ...] = Field(
+        default=(),
+        description="Did-you-mean guesses, best first. Only given when results is empty.",
+    )

@@ -14,6 +14,7 @@ import json
 import sqlite3
 import threading
 from collections.abc import Collection
+from dataclasses import dataclass
 from functools import lru_cache
 from importlib import resources
 from pathlib import Path
@@ -44,6 +45,32 @@ _ENTRY_COLUMNS = (
     "importance",
     "wikipedia",
     "source",
+)
+
+
+@dataclass(frozen=True)
+class SearchRow:
+    """One searchable thing as stored: what it is, its names, and how well known it is."""
+
+    type: str
+    id: str
+    name: str
+    aliases: tuple[str, ...]
+    description: str
+    kind: str | None
+    """For a vantage point, what kind of object it is; None for history entries."""
+    weight: int
+    """Fame (0 to 5) for a vantage point, importance (1 to 5) for a history entry."""
+
+
+_SEARCH_SELECT = (
+    "SELECT s.type, s.id, s.name, s.aliases, s.description, v.kind AS kind, "
+    "COALESCE(v.fame, e.importance, p.importance, l.importance, 0) AS weight "
+    "FROM {source} "
+    "LEFT JOIN vantage_points v ON s.type = 'vantage_point' AND v.id = s.id "
+    "LEFT JOIN events e ON s.type = 'event' AND e.id = s.id "
+    "LEFT JOIN periods p ON s.type = 'period' AND p.id = s.id "
+    "LEFT JOIN landmarks l ON s.type = 'landmark' AND l.id = s.id "
 )
 
 
@@ -213,6 +240,46 @@ class Repository:
             for row in rows
         ]
 
+    # --- search --------------------------------------------------------------------------
+
+    def search_exact(self, text: str) -> list[SearchRow]:
+        """Entries whose name, or one of whose other names, is ``text`` (ignoring case)."""
+        wanted = text.lower()
+        sql = _SEARCH_SELECT.format(source="search_entries s") + (
+            "WHERE lower(s.name) = :text "
+            "OR instr(char(10) || lower(s.aliases) || char(10), char(10) || :text || char(10)) > 0 "
+            "ORDER BY weight DESC, s.name, s.id"
+        )
+        return [_search_row(row) for row in self._rows(sql, {"text": wanted})]
+
+    def search_words(self, expression: str, limit: int) -> list[SearchRow]:
+        """Word search. ``expression`` is FTS5 syntax built by ``earthlight.search``.
+
+        Best match first (name matches count most), then the better known.
+        """
+        sql = _SEARCH_SELECT.format(
+            source="search_fts f JOIN search_entries s ON s.entry_id = f.rowid"
+        ) + (
+            "WHERE search_fts MATCH :expression "
+            "ORDER BY bm25(search_fts, 10.0, 4.0, 1.0), weight DESC, s.name, s.id LIMIT :limit"
+        )
+        return [
+            _search_row(row) for row in self._rows(sql, {"expression": expression, "limit": limit})
+        ]
+
+    def search_trigrams(self, expression: str, limit: int) -> list[SearchRow]:
+        """Entries sharing letter triples with the query: candidates for did-you-mean.
+
+        ``expression`` is FTS5 syntax built by ``earthlight.search``. Entries sharing the
+        most triples come first.
+        """
+        sql = _SEARCH_SELECT.format(
+            source="search_trigram t JOIN search_entries s ON s.entry_id = t.rowid"
+        ) + ("WHERE search_trigram MATCH :expression ORDER BY t.rank, s.id LIMIT :limit")
+        return [
+            _search_row(row) for row in self._rows(sql, {"expression": expression, "limit": limit})
+        ]
+
     # --- population ----------------------------------------------------------------------
 
     def population_years(self) -> tuple[DecimalYear, DecimalYear] | None:
@@ -238,6 +305,18 @@ class Repository:
 
 def _entry_fields(row: sqlite3.Row) -> dict[str, Any]:
     return {column: row[column] for column in _ENTRY_COLUMNS}
+
+
+def _search_row(row: sqlite3.Row) -> SearchRow:
+    return SearchRow(
+        type=row["type"],
+        id=row["id"],
+        name=row["name"],
+        aliases=tuple(line for line in row["aliases"].splitlines() if line),
+        description=row["description"],
+        kind=row["kind"],
+        weight=row["weight"],
+    )
 
 
 def _vantage_point(row: sqlite3.Row) -> VantagePoint:

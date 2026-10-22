@@ -170,9 +170,10 @@ No database yet. Pure, heavily tested functions.
   - **Build:** `engine.from_(vantage_id)`: events overlapping the range, periods active, landmarks with status (standing, under construction, destroyed), population, "Earth does not exist yet" for lookbacks older than about 4.54 billion years, and a notice when the range is very wide.
   - **Done when:** Tests across all lookback scales.
   - **Done:** `engine.from_vantage(vantage_id, *, now_year=None, repository=None)` (name chosen with Ian) returns an `EarthSnapshot`. At most 10 events, periods, and landmarks (the most important, shown oldest first) with a note giving the total; a span wider than 1,000 years is flagged; landmark status is judged at the middle of the span (destroyed, under construction, standing); population is the nearest stored estimate (never interpolated) and is left out outside 10000 BCE to 5 years past the newest estimate; light older than Earth (best lookback over 4.54 billion years) gives `earth_exists = False` and no history; a span that straddles Earth's formation is clipped to the time since. Unknown ids raise `UnknownVantageError`.
-- [ ] **3.4 Search and did-you-mean**
+- [x] **3.4 Search and did-you-mean**
   - **Build:** `search.py`: FTS5 search over vantage points and events, exact matches first; trigram candidates plus difflib for suggestions.
   - **Done when:** Tests including typos ("Betelguese", "andromedia", "fall of rom").
+  - **Done:** `search.search(text, *, limit=10, repository=None)` returns a `SearchResponse` (new model: `query`, `results`, `suggestions`). Exact names and aliases first, then FTS5 word search (every word must match, the last may be unfinished, name matches rank above description matches, better known first on ties). Only when nothing matches: trigram candidates scored by `difflib` (names compared whole and in same-length word runs, accents folded, cutoff 0.7, at most 5). User text is cut into plain words and quoted, so FTS5 syntax characters cannot change the query. "fall of rom" finds the Roman Empire event directly as an unfinished phrase.
 - [ ] **3.5 Public interface**
   - **Build:** Clean top-level functions in `earthlight/__init__.py` (`when`, `from_vantage`, `info`, `search`) with docstrings and examples.
 - [ ] **3.6 README update** (Python usage example)
