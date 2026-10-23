@@ -27,6 +27,7 @@ from earthlight_pipeline.deep_sky import (
     lookback_years,
     read_simbad,
     redshift_uncertainty,
+    search_aliases,
     simbad_identifiers,
 )
 
@@ -505,3 +506,42 @@ def test_an_incomplete_or_impossible_inline_position_is_rejected(
 ) -> None:
     with pytest.raises(ValidationError):
         inline_object(**position)
+
+
+# --- search aliases --------------------------------------------------------------------------
+
+
+def aliases_of(name: str, *aliases: str, extra: tuple[str, ...] = ()) -> list[str]:
+    item = CuratedObject.model_validate(entry(name=name, aliases=list(aliases)))
+    return search_aliases(item, extra).splitlines()
+
+
+def test_a_name_with_a_parenthesis_is_also_found_by_each_half() -> None:
+    assert aliases_of("Andromeda Galaxy (Messier 31)") == ["Andromeda Galaxy", "Messier 31"]
+    assert aliases_of("NGC 1275 (Perseus A)") == ["NGC 1275", "Perseus A"]
+
+
+def test_a_short_messier_alias_also_gives_the_long_form() -> None:
+    assert aliases_of("Sombrero Galaxy", "M104", "NGC 4594") == ["M104", "NGC 4594", "Messier 104"]
+    assert aliases_of("Pleiades (Messier 45)", "M45") == ["M45", "Pleiades", "Messier 45"]
+
+
+def test_aliases_are_unique_ignoring_case_and_never_repeat_the_name() -> None:
+    assert aliases_of("Black Eye Galaxy (Messier 64)", "M64", "Black Eye Galaxy", "m64") == [
+        "M64",
+        "Black Eye Galaxy",
+        "Messier 64",
+    ]
+    assert aliases_of("Hyades", "hyades") == []
+
+
+def test_extra_names_come_after_the_written_ones() -> None:
+    assert aliases_of("Perseus A", "NGC 1275", extra=("NAME Perseus A",)) == [
+        "NGC 1275",
+        "NAME Perseus A",
+    ]
+
+
+def test_a_plain_name_with_no_aliases_has_none() -> None:
+    assert aliases_of("GN-z11") == []
+    assert aliases_of("Messier 2", "M2") == ["M2"]

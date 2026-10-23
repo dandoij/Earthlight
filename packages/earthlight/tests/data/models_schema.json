@@ -395,6 +395,7 @@
     "description": "What a vantage point is. The values are part of the JSON contract.",
     "enum": [
      "planet",
+     "moon",
      "spacecraft",
      "zone",
      "star",
@@ -819,6 +820,7 @@
     "description": "What a vantage point is. The values are part of the JSON contract.",
     "enum": [
      "planet",
+     "moon",
      "spacecraft",
      "zone",
      "star",
@@ -1272,6 +1274,7 @@
     "description": "What a vantage point is. The values are part of the JSON contract.",
     "enum": [
      "planet",
+     "moon",
      "spacecraft",
      "zone",
      "star",
@@ -1583,6 +1586,7 @@
     "description": "What a vantage point is. The values are part of the JSON contract.",
     "enum": [
      "planet",
+     "moon",
      "spacecraft",
      "zone",
      "star",
@@ -1646,6 +1650,7 @@
     "description": "What a vantage point is. The values are part of the JSON contract.",
     "enum": [
      "planet",
+     "moon",
      "spacecraft",
      "zone",
      "star",
@@ -1794,6 +1799,7 @@
     "description": "What a vantage point is. The values are part of the JSON contract.",
     "enum": [
      "planet",
+     "moon",
      "spacecraft",
      "zone",
      "star",

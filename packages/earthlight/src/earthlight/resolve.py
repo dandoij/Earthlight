@@ -8,10 +8,11 @@ cannot: the error carries the closest guesses.
 import re
 from dataclasses import dataclass
 
-from earthlight.errors import UnresolvedNameError
+from earthlight.errors import UnresolvedNameError, shown
 from earthlight.models import SearchResponse, SearchType, VantagePoint
 from earthlight.repository import Repository, SearchRow
 from earthlight.search import search, search_rows, tidy
+from earthlight.solar_bodies import find_solar_body, is_earth, solar_body
 from earthlight.time import DecimalYear, format_year
 
 _HISTORY_TYPES = frozenset({SearchType.EVENT, SearchType.PERIOD, SearchType.LANDMARK})
@@ -33,13 +34,26 @@ class ResolvedMoment:
     note: str
 
 
-def resolve_place(text: str, repo: Repository) -> VantagePoint:
-    """The place named by ``text``: an exact id first, otherwise an exact name or alias.
+def resolve_place(text: str, repo: Repository, *, now_year: DecimalYear) -> VantagePoint:
+    """The place named by ``text``: the Sun, Moon, or a planet (worked out for ``now_year``),
+    otherwise an exact id, name, or alias from the database.
 
-    Raises ``UnresolvedNameError`` (with did-you-mean guesses) when no place matches.
+    Raises ``UnresolvedNameError`` (with did-you-mean guesses) when no place matches, and for
+    the Earth itself, which is where all of this light starts.
     """
     cleaned = " ".join(text.split())
     if cleaned:
+        if is_earth(cleaned):
+            raise UnresolvedNameError(
+                "Earth is where this light starts, so it has no view of itself. Try a place "
+                "such as the Moon, Mars, or Betelgeuse.",
+                text=cleaned,
+            )
+        body = find_solar_body(cleaned)
+        if body is not None:
+            point = solar_body(body.id, now_year)
+            if point is not None:
+                return point
         point = repo.vantage_point(cleaned) or repo.vantage_point(cleaned.lower())
         if point is not None:
             return point
@@ -72,17 +86,18 @@ def resolve_history(text: str, repo: Repository, *, now_year: DecimalYear) -> Re
             label = format_year(entry.moment, now_year=now_year)
             detail = f"{entry.name} ({label}{_ROLE_TEXT[entry.role]})"
             if _names_every_word(row, query):
-                note = f"Using {detail} for '{query}'."
+                note = f"Using {detail} for '{shown(query)}'."
             else:
-                note = f"Closest match for '{query}': {detail}."
+                note = f"Closest match for '{shown(query)}': {detail}."
             return ResolvedMoment(moment=entry.moment, note=note)
     response = search(text, limit=10, repository=repo)
     history = _only(response, _HISTORY_TYPES)
     places = _only(response, {SearchType.VANTAGE_POINT})
     if places.results:
         message = (
-            f"'{response.query}' is the name of a place, not a moment. "
-            "Use from_vantage to see Earth as it looks from there."
+            f"'{shown(response.query)}' is the name of a place, not a moment. "
+            "Look it up as a place instead (the from command, or from_vantage in Python) to see "
+            "Earth as it looks from there."
         )
     else:
         message = _not_found_message(response.query, "event, period, or landmark", history)
@@ -116,7 +131,7 @@ def _only(
 def _not_found_message(text: str, noun: str, found: SearchResponse) -> str:
     if not text:
         return f"Enter the name of a {noun}."
-    message = f"No {noun} called '{text}' was found."
+    message = f"No {noun} called '{shown(text)}' was found."
     guesses = [s.name for s in found.suggestions] or [r.name for r in found.results]
     if guesses:
         message += " Did you mean " + ", ".join(guesses[:3]) + "?"

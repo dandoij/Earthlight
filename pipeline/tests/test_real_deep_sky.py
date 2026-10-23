@@ -134,3 +134,20 @@ def test_search_entries_are_unique_and_describe_the_object(built) -> None:
             ), record.point.id
     cartwheel = next(r.search for r in built.records if r.point.id == "cartwheel-galaxy")
     assert "MCG-06-02-022a" in cartwheel.aliases.split("\n")
+
+
+def test_every_object_is_found_by_the_halves_of_its_name_and_by_its_long_messier_name(
+    built,
+) -> None:
+    def names(point_id: str) -> set[str]:
+        record = next(r for r in built.records if r.point.id == point_id)
+        return {record.search.name, *record.search.aliases.splitlines()}
+
+    assert {"Andromeda Galaxy", "Andromeda", "Messier 31", "M31"} <= names("andromeda-galaxy")
+    assert {"Triangulum Galaxy", "Messier 33"} <= names("triangulum-galaxy")
+    assert {"Centaurus A", "NGC 5128"} <= names("centaurus-a")
+    assert {"Pleiades", "Messier 45"} <= names("pleiades")
+    for record in built.records:
+        match = re.fullmatch(r"(.+?) \((.+)\)", record.point.name)
+        if match:
+            assert set(match.groups()) <= names(record.point.id), record.point.id

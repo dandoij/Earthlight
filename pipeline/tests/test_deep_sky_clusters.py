@@ -134,7 +134,8 @@ def test_a_cluster_gets_a_position_a_constellation_and_its_facts() -> None:
         "cluster_type": "open",
         "member_stars": 907,
     }
-    assert built.search.aliases == "M45\nSeven Sisters"  # only the curated aliases
+    # The curated aliases, then the long Messier form of "M45" (this test's name has no brackets).
+    assert built.search.aliases == "M45\nSeven Sisters\nMessier 45"
     assert built.search.description == "Open cluster, 440 light-years"
     assert dict(build.sources) == {"hunt_reffert_2023": 1}
 

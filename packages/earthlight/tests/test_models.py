@@ -133,6 +133,7 @@ def test_names_are_stripped_and_cannot_be_empty() -> None:
 def test_every_kind_is_a_snake_case_string() -> None:
     assert [k.value for k in VantageKind] == [
         "planet",
+        "moon",
         "spacecraft",
         "zone",
         "star",

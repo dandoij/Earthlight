@@ -32,6 +32,139 @@ Light travels exactly one light-year per year, so every star, planet, and galaxy
 
 Sources for every number are in [`docs/data-sources.md`](docs/data-sources.md).
 
+### Using it from the command line
+
+The package installs an `earthlight` command with four subcommands. It is not on PyPI yet (packaging comes in a later phase), so from a clone run `uv sync` and then `uv run earthlight ...`.
+
+| Command | Question |
+|---|---|
+| `earthlight when MOMENT` | Where is the light from this moment arriving right now? |
+| `earthlight from PLACE` | What did Earth look like in the light arriving at this place? |
+| `earthlight info PLACE` | What is known about this place? |
+| `earthlight search TEXT` | Which places and history entries match this name? |
+
+`when` guesses what kind of moment you typed: a bare number is a calendar year (`1492`), and `500 BCE`, `2004-06-15`, `3 days ago`, `66 mya`, and event names such as `apollo 11` all work. To skip the guessing, give exactly one of `--year`, `--date`, `--ago`, or `--event` instead (`earthlight when --ago "66 million years"`). Write a date that starts with a minus sign as `--date -0043-03-15`, because a bare argument that starts with a dash is read as an option. `PLACE` is a name (`Betelgeuse`, `Andromeda Galaxy`, `M31`, `Saturn`, `the Moon`) or an id from a search (`hip-27989`).
+
+The examples below are real output, taken as if the date were 1 January 2026 and the terminal were 100 columns wide, so yours will differ a little in the numbers and the layout. A test runs every example in this section and fails if the README stops matching the program.
+
+A year, shown as four panels (a wide terminal puts them two by two, a narrow one stacks them):
+
+```console
+$ earthlight when 1492
+1492 CE
+The light that left Earth then has travelled 534 light-years and is arriving at:
+╭─ Famous ──────────────────────────────────────╮ ╭─ Exoplanet ────────────────────────────────────╮
+│ Antares  star, Scorpius                       │ │ TOI-132 b  exoplanet, Grus                     │
+│ 554 light-years away                          │ │ 534 light-years away                           │
+│ range 473 to 667 light-years                  │ │ range 531 to 537 light-years                   │
+│ magnitude 1.06                                │ │ magnitude 11.2                                 │
+│ best estimate 19.7 years farther              │ │ best estimate 0.2 years nearer                 │
+│ id hip-80763                                  │ │ id toi-132-b                                   │
+╰───────────────────────────────────────────────╯ ╰────────────────────────────────────────────────╯
+╭─ Visible tonight ─────────────────────────────╮ ╭─ Most precise ─────────────────────────────────╮
+│ HIP 9132  star, Triangulum                    │ │ HIP 14859  star, Cepheus                       │
+│ 534 light-years away                          │ │ 534 light-years away                           │
+│ range 516 to 555 light-years                  │ │ range 533 to 535 light-years                   │
+│ magnitude 5.84                                │ │ magnitude 7.06                                 │
+│ best estimate 0.3 years farther               │ │ best estimate 0.1 years farther                │
+│ id hip-9132                                   │ │ id hip-14859                                   │
+╰───────────────────────────────────────────────╯ ╰────────────────────────────────────────────────╯
+```
+
+Recent light is still crossing our own neighbourhood, so there is no star to name yet:
+
+```console
+$ earthlight when "3 hours ago"
+3 hours ago
+The light that left Earth then has travelled 3.0 light-hours and is arriving at:
+╭─ Where the light is ─────────────────────────────────────────────────────────────────────────────╮
+│ Inside the heliosphere                                                                           │
+│ The bubble of solar wind around the Sun, from the planets out to the heliopause.                 │
+│ 0 to 122 au from the Sun                                                                         │
+│ 0.00806% of the way to Proxima Centauri                                                          │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+This light has travelled about 3.0 light-hours (22 au) from Earth.
+Right now it has passed Mercury, Venus, Mars, Jupiter, Saturn and Uranus and is still on its way to
+Neptune.
+No star is this close: the light is still crossing the Sun's own surroundings, about 0.00806% of the
+way to the nearest star.
+```
+
+The other direction. Light from the most distant galaxies left before Earth existed:
+
+```console
+$ earthlight from GN-z11
+GN-z11  galaxy  id gn-z11
+13.4 billion light-years away. The light arriving there now left Earth between 13.4 billion years
+ago and 13.3 billion years ago.
+The light arriving at GN-z11 left about 13.4 billion years ago. Earth formed only about 4.54 billion
+years ago, so in this light Earth does not exist yet.
+```
+
+The Sun, the Moon, and the planets are places too (`earthlight from saturn`, `earthlight info moon`). They are close enough that their distance changes every day, so it is worked out for the date instead of stored: Saturn is about 1.3 light-hours away on 1 January 2026, so from there you would see Earth as it was about an hour and twenty minutes ago. The range is the nearest and farthest the two can ever be, from the sizes of their orbits:
+
+```console
+$ earthlight info saturn
+Saturn  planet  id saturn
+1.3 light-hours away (range 1.1 to 1.5 light-hours)
+Wikipedia: Saturn
+Catalogue facts
+┏━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Fact            ┃ Value                    ┃
+┡━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ distance au     │ 9.7118                   │
+│ distance source │ jpl_approximate_elements │
+└─────────────────┴──────────────────────────┘
+See Earth from here: earthlight from saturn
+```
+
+Search finds them by the start of a name:
+
+```console
+$ earthlight search sat
+┏━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┓
+┃ Type   ┃ Name                  ┃ Detail                     ┃ Id             ┃
+┡━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━┩
+│ planet │ Saturn                │ Planet of the solar system │ saturn         │
+│ event  │ Sputnik 1 is launched │ Event, 1957 CE             │ sputnik-launch │
+└────────┴───────────────────────┴────────────────────────────┴────────────────┘
+```
+
+A typo gets guesses with ids you can use in the next command:
+
+```console
+$ earthlight search Betelguese
+Nothing found for 'Betelguese'.
+Did you mean:
+  Betelgeuse  (place, id hip-27989)
+```
+
+Anything that cannot be answered prints an error and exits with code 1 (a mistyped command exits with code 2):
+
+```console
+$ earthlight when 2100
+Error: 2100 CE has not happened yet, so no light from it exists. Pick a moment in the past.
+```
+
+Every command takes `--json` and then prints exactly one JSON document, the same shape the Python functions return. Errors under `--json` are also JSON on standard output, with the keys `title`, `detail`, `suggestions`, and `results`, so a script can read failures too:
+
+```console
+$ earthlight search androm --limit 1 --json
+{
+  "query": "androm",
+  "results": [
+    {
+      "type": "vantage_point",
+      "id": "andromeda-galaxy",
+      "name": "Andromeda Galaxy (Messier 31)",
+      "kind": "galaxy",
+      "description": "Galaxy, 2.56 million light-years"
+    }
+  ],
+  "suggestions": []
+}
+```
+
 ### Using it from Python
 
 The package answers both questions with four functions: `when`, `from_vantage`, `info`, and `search`. This snippet runs as shown (`now_year` is passed only so the output is repeatable; by default the current time is used):
@@ -75,8 +208,8 @@ Betelgeuse
 ```
 
 - `when(moment)` takes text (`"1492"`, `"500 BCE"`, `"2004-06-15"`, `"3 days ago"`, `"66 mya"`, or an event name such as `"apollo 11"`), a number (a decimal year), or a `datetime`. It returns one winner for each of four categories (famous, exoplanet, visible tonight, most precise), or the zone of space the light is crossing for very recent moments. When no place's range contains the moment exactly, the best place whose range comes within 5% is shown, with `approximate` set on the match and a note saying how far off it is. An event name uses the best search hit (an event's date, a period's start, a landmark's completion) and a note says which one, or calls it the closest match when its name does not contain every word you typed.
-- `from_vantage(place)` takes an id (`"hip-27989"`) or a name (`"Betelgeuse"`, `"M31"`) and lists the most important events, periods, and landmarks in the span of Earth's history whose light is arriving there (at most ten of each, with `event_total`, `period_total`, and `landmark_total` saying how many there were, and `wide_span` set when the span is over 1,000 years wide), with the world population. Light older than Earth reports that Earth does not exist yet.
-- `info(place)` gives the place itself, the NASA archive details for an exoplanet, and the planets of a star.
+- `from_vantage(place)` takes an id (`"hip-27989"`) or a name (`"Betelgeuse"`, `"M31"`, `"saturn"`, `"the Moon"`; the Sun, Moon, and planets are worked out for the date) and lists the most important events, periods, and landmarks in the span of Earth's history whose light is arriving there (at most ten of each, with `event_total`, `period_total`, and `landmark_total` saying how many there were, and `wide_span` set when the span is over 1,000 years wide), with the world population. Light older than Earth reports that Earth does not exist yet.
+- `info(place)` gives the place itself, the NASA archive details for an exoplanet, and the planets of a star (the Sun lists the seven planets). Pass `now_year` to fix the date for the Sun, Moon, and planets, whose distance changes with it.
 - `search(text)` finds places and history by name; when nothing matches it offers did-you-mean guesses.
 - Every deliberate failure raises a subclass of `EarthlightError` with a message written for the person who asked (a future moment, an unknown name, text that is not a moment).
 
@@ -103,11 +236,11 @@ What each source is, the real file formats, and the choices made while building 
 
 ## Status
 
-**In development.** The project skeleton, tooling, and CI are in place. The core math and data models are written and tested (the time model, input parsing, lookback math, solar system positions, and the shared data shapes), and the data pipeline has built and validated the bundled database. The Python engine answers both questions from that database (`earthlight.when`, `from_vantage`, `info`, and `search`). There is no command-line tool, API, or web app yet. The full plan is in [`docs/PLAN.md`](docs/PLAN.md).
+**In development.** The project skeleton, tooling, and CI are in place. The core math and data models are written and tested (the time model, input parsing, lookback math, solar system positions, and the shared data shapes), and the data pipeline has built and validated the bundled database. The Python engine answers both questions from that database (`earthlight.when`, `from_vantage`, `info`, and `search`). The `earthlight` command-line tool answers the same questions from a terminal (`when`, `from`, `info`, `search`, each with `--json`). There is no API or web app yet. The full plan is in [`docs/PLAN.md`](docs/PLAN.md).
 
 ## Planned tech stack
 
-- **Core and CLI:** Python 3.12 package with Typer, Rich, and Pydantic
+- **Core and CLI:** Python 3.12 package with Typer, Rich, and Pydantic (built; see above)
 - **Data:** SQLite database built from Gaia DR3 and Hipparcos star data, Bailer-Jones distances, the IAU Catalog of Star Names, the NASA Exoplanet Archive, and hand-curated deep-sky and history lists (built; see above)
 - **API:** FastAPI
 - **Web app:** React, TypeScript, and Vite

@@ -186,13 +186,38 @@ No database yet. Pure, heavily tested functions.
 
 ## Phase 4: CLI (branch `phase-4-cli`)
 
-- [ ] **4.1 CLI skeleton**: Typer app, `earthlight` entry point, `--version`, friendly error handling with exit codes.
-- [ ] **4.2 `when` command**: smart argument plus `--year`, `--date`, `--ago`, `--event` overrides; Rich output (hero line, four category panels, zone info). Phase 1 review note: the overrides need public per-format entry points in `earthlight.parse` (for example `parse_year`, `parse_date`, `parse_ago`) so the CLI does not rebuild strings, and bare years (capped at 9999) should be reconciled with ISO years (up to 999999).
-- [ ] **4.3 `from` and `info` commands**: Earth snapshot and object facts with Rich layout.
-- [ ] **4.4 `search` command and did-you-mean** in all commands' "not found" errors.
-- [ ] **4.5 `--json` output** for every command (same shapes as the API), plus CLI tests with Typer's `CliRunner` and JSON snapshot tests.
-- [ ] **4.6 README update**: CLI usage with example output. Note for Ian on recording a demo GIF.
-- [ ] **4.7 Phase review**
+- [x] **4.1 CLI skeleton**: Typer app, `earthlight` entry point, `--version`, friendly error handling with exit codes.
+  - **Done:** `earthlight.cli` (`app`, `friendly_errors`), `python -m earthlight`, and the `earthlight` console script. `typer` and `rich` are now runtime dependencies of the package (both are in the locked decisions). Exit codes: 1 for a request that cannot be answered, 2 for a mistyped command (Typer).
+- [x] **4.2 `when` command**: smart argument plus `--year`, `--date`, `--ago`, `--event` overrides; Rich output (hero line, four category panels, zone info). Phase 1 review note: the overrides need public per-format entry points in `earthlight.parse` (for example `parse_year`, `parse_date`, `parse_ago`) so the CLI does not rebuild strings, and bare years (capped at 9999) should be reconciled with ISO years (up to 999999).
+  - **Done:** `parse_year`, `parse_date`, `parse_ago` (the word "ago" is optional). Reconciled by keeping the 9999 cap only where `parse` has to guess (a bare `12000` is probably "years ago"); `--year` says what it is, so it accepts any year up to 1,000,000, like ISO dates. `earthlight.when(..., as_event=True)` is new so `--event 1492` searches a name instead of reading a year. The command reads the clock once and `--json` is already on `when`.
+- [x] **4.3 `from` and `info` commands**: Earth snapshot and object facts with Rich layout.
+  - **Done:** `earthlight from PLACE` shows the header, events, periods, and landmarks tables (with "N of M" when cut), and world population; `earthlight info PLACE` shows distance, position, exoplanet details, planets of a star, and catalogue facts. Both take an id, name, or alias. Summaries are left to `--json` for now.
+- [x] **4.4 `search` command and did-you-mean** in all commands' "not found" errors.
+  - **Done:** `earthlight search TEXT [--limit N]` prints a table of type, name, detail, and id; a search with no hits prints "Nothing found" plus guesses and still exits 0 (an empty answer is not a failure). The shared error handler now lists "Did you mean" guesses and a "Partial matches" table (with ids) for every unresolved name, in `from`, `info`, and `when --event`.
+- [x] **4.5 `--json` output** for every command (same shapes as the API), plus CLI tests with Typer's `CliRunner` and JSON snapshot tests.
+  - **Done:** `--json` on `when`, `from`, `info`, and `search` prints one document, the same model the Python call returns. With `--json` an error is a JSON document on stdout (exit 1) shaped like an RFC 9457 problem: `title`, `detail`, `suggestions`, `results`. Typer usage errors (exit 2) stay text. `tests/data/cli_json_snapshot.json` holds 11 real outputs; regenerate with `$env:UPDATE_SNAPSHOTS = "1"` when a change is intended. A test fails if a new command lacks `--json`.
+- [x] **4.6 README update**: CLI usage with example output. Note for Ian on recording a demo GIF.
+  - **Done:** "Using it from the command line" with six real examples (a year, recent light, a place older than Earth, a typo, an error, JSON). `test_readme.py` runs every `console` block with the clock, width, and box characters fixed, so the README cannot drift from the program. Layouts now print through `cli.output.print_view`, so tests can swap the console.
+- [x] **4.7 Phase review**
+  - **Done:** code-reviewer over `git diff main...HEAD`; bugs and clear improvements fixed in "fix: address phase 4 review findings". Judgment calls decided with Ian: a JSON error title "Empty input" for blank text; `Suggestion` keeps no `kind`; the parse functions stay in `earthlight.parse`; long names are shortened in errors, `--year` accepts commas, the year-range error is plain, and the help explains `--date -0043-03-15`.
+  - **Follow-up (aliases):** `earthlight from "andromeda galaxy"` failed because only exact names and aliases resolve. Decided with Ian to add aliases rather than loosen `resolve_place`. The deep-sky build now also stores the two halves of a name with brackets ("Andromeda Galaxy", "Messier 31") and the long form of a short Messier alias ("M31" gives "Messier 31"), and "Andromeda" was added by hand. A rebuild from the cache changed only the search aliases of 39 deep-sky entries; every data table is identical. The Sun is not a place in the database, so `from sun` still has no exact match.
+
+---
+
+## Phase 4b: Solar system places (branch `phase-4b-solar-system`, merged into `phase-4-cli`)
+
+Added after Phase 4 because `earthlight from saturn` found nothing: the plan listed planets and Voyager as places, but no step built them. They change distance daily, so they are computed on demand, not stored. Decided with Ian: the planets, the Sun, and the Moon; Voyager 1 and dwarf planets are left out for now.
+
+- [x] **4b.1 Solar system bodies and orbit bounds**
+  - **Build:** `solar_system.py` gains `planet_distance_bounds_au`, `earth_sun_distance_au`, `earth_sun_distance_bounds_au`, and the Moon constants from NASA's Moon Fact Sheet. New `solar_bodies.py` turns a name or id into a `VantagePoint` for a date (the Sun is a star, the planets are planets, and the Moon is a new `moon` kind). Nothing is wired into the commands yet.
+  - **Done when:** The bounds contain Horizons distances and agree with hand-worked orbits; every body has an ordered range; names are found case-insensitively; sources are in `docs/data-sources.md`.
+  - **Done:** also `VantageKind.MOON` (added to the models, `schema.sql`, and the JSON schema snapshot).
+- [x] **4b.2 Wire the bodies into the engine**: `resolve_place`, `engine.from_vantage`, `info`, and `search` find them; did-you-mean covers their names; a clear message for Earth itself; a note when the light left Earth under a day ago. Rebuild the database from the cache so its `kind` check includes `moon`.
+  - **Done:** `resolve_place` now takes `now_year`; `earthlight.info` gained an optional `now_year` (the Sun lists the seven planets as `planet_ids`); search puts an exact name or a start of at least three letters ahead of database hits and offers "saturm" a guess; a place under a light-day away gets the note "from there Earth looks almost exactly as it does now". The database was rebuilt from the cache: every table and search entry is identical, only the `kind` check now allows `moon`. Two older tests that used `sun` as a partial match now use `sunflower`.
+- [x] **4b.3 Command line and README**: `info` shows ranges in light-minutes and hours, `from` words short spans properly, README example.
+  - **Done:** one `_span` rule picks the unit for distances (`light_travel`), ranges (`light_range`, which shares the unit and hides a range that reads as one value), and plain times (`time_span`): seconds and minutes keep a decimal under ten, so the Moon is "1.3 light-seconds" and the Sun "8.2 light-minutes". A place under a day away says "left Earth about 1.3 hours ago". README has `info saturn` and `search sat`, checked by `test_readme.py`.
+- [x] **4b.4 Phase review**
+  - **Done:** code-reviewer over `git diff phase-4-cli...HEAD`; bugs and clear improvements fixed in "fix: address phase 4b review findings". The science was confirmed (bounds, Saturn, Moon, and Sun numbers; no body name shadows a database place). Judgment calls decided with Ian: a note when the date is outside 1800 to 2050 AD, `distance_au` for the Moon too, and bodies stay first in search for short prefixes. Unit words moved to `earthlight/units.py` so the engine and the command line cannot disagree.
 
 ---
 

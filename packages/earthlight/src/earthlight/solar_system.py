@@ -188,6 +188,16 @@ def _heliocentric_au(elements: _Elements, centuries: float) -> tuple[float, floa
     return x, y, z
 
 
+def _centuries(moment: DecimalYear, what: str) -> float:
+    """Julian centuries since J2000 for a moment the orbit formulas cover.
+
+    Raises ValueError, saying ``what`` is unavailable, outside 1800 AD to 2050 AD.
+    """
+    if not TABLE_FIRST_MOMENT <= moment < TABLE_END_MOMENT:
+        raise ValueError(f"{what} only available from 1800 to 2050 AD, got {moment:.2f}")
+    return (julian_date(moment) - _JD_J2000) / _DAYS_PER_CENTURY
+
+
 def planet_position_au(planet: Planet, moment: DecimalYear) -> tuple[float, float, float]:
     """Vector from Earth to ``planet`` at ``moment``, in astronomical units.
 
@@ -205,11 +215,7 @@ def planet_position_au(planet: Planet, moment: DecimalYear) -> tuple[float, floa
     """
     if planet not in PLANETS:
         raise ValueError(f"unknown planet {planet!r}; expected one of {', '.join(PLANETS)}")
-    if not TABLE_FIRST_MOMENT <= moment < TABLE_END_MOMENT:
-        raise ValueError(
-            f"planet positions are only available from 1800 to 2050 AD, got {moment:.2f}"
-        )
-    centuries = (julian_date(moment) - _JD_J2000) / _DAYS_PER_CENTURY
+    centuries = _centuries(moment, "planet positions are")
     ex, ey, ez = _heliocentric_au(_ELEMENTS["earth"], centuries)
     px, py, pz = _heliocentric_au(_ELEMENTS[planet], centuries)
     return px - ex, py - ey, pz - ez
@@ -222,6 +228,68 @@ def planet_distance_au(planet: Planet, moment: DecimalYear) -> float:
     moment outside 1800 AD to 2050 AD or an unknown planet name.
     """
     return math.hypot(*planet_position_au(planet, moment))
+
+
+def _orbit_radii_au(name: str, moment: DecimalYear) -> tuple[float, float]:
+    """Nearest and farthest distance from the Sun (perihelion, aphelion) on this date."""
+    t = _centuries(moment, "orbit sizes are")
+    elements = _ELEMENTS[name]
+    a = elements.a + elements.a_rate * t
+    e = elements.e + elements.e_rate * t
+    return a * (1 - e), a * (1 + e)
+
+
+def planet_distance_bounds_au(planet: Planet, moment: DecimalYear) -> tuple[float, float]:
+    """The closest and farthest ``planet`` can ever be from Earth, in astronomical units.
+
+    The distance between two bodies is at least the difference of their distances from the
+    Sun and at most the sum, whatever the angle between them. So with each body's distance from
+    the Sun held between its perihelion and aphelion, the nearest possible approach is
+    ``max(0, planet perihelion - Earth aphelion, Earth perihelion - planet aphelion)`` and
+    the farthest is ``planet aphelion + Earth aphelion``. These are true limits for any date,
+    not the extremes the planet reaches in practice (Mars never gets quite that close).
+    Raises ValueError for a moment outside 1800 AD to 2050 AD or an unknown planet.
+    """
+    if planet not in PLANETS:
+        raise ValueError(f"unknown planet {planet!r}; expected one of {', '.join(PLANETS)}")
+    planet_near, planet_far = _orbit_radii_au(planet, moment)
+    earth_near, earth_far = _orbit_radii_au("earth", moment)
+    nearest = max(0.0, planet_near - earth_far, earth_near - planet_far)
+    return nearest, planet_far + earth_far
+
+
+def earth_sun_distance_au(moment: DecimalYear) -> float:
+    """Distance from Earth to the Sun at ``moment``, in astronomical units.
+
+    The Earth is the Earth-Moon barycenter here, as in the planet positions (see the module
+    docstring). Raises ValueError for a moment outside 1800 AD to 2050 AD.
+    """
+    centuries = _centuries(moment, "the Earth-Sun distance is")
+    return math.hypot(*_heliocentric_au(_ELEMENTS["earth"], centuries))
+
+
+def earth_sun_distance_bounds_au(moment: DecimalYear) -> tuple[float, float]:
+    """The nearest (perihelion) and farthest (aphelion) the Earth is from the Sun, in au.
+
+    Raises ValueError for a moment outside 1800 AD to 2050 AD.
+    """
+    return _orbit_radii_au("earth", moment)
+
+
+# --- the Moon ----------------------------------------------------------------------
+
+MOON_NEAREST_KM = 357_000.0
+MOON_FARTHEST_KM = 407_000.0
+MOON_MEAN_KM = 384_400.0
+"""NASA's Moon Fact Sheet (https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html,
+updated 11 January 2024, retrieved 2026-10-22): the distance "roughly ranges from 357,000 km
+to 407,000 km", and the semimajor axis of the orbit is 0.3844 million km. The sheet gives no
+way to know where in that range the Moon is on a given date, so the mean is the best estimate."""
+
+
+def km_to_au(kilometres: float) -> float:
+    """Convert kilometres to astronomical units."""
+    return kilometres * 1000.0 / ASTRONOMICAL_UNIT_M
 
 
 # --- Voyager 1 -------------------------------------------------------------------
