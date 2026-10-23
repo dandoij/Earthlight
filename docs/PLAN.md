@@ -194,7 +194,8 @@ No database yet. Pure, heavily tested functions.
   - **Done:** `earthlight from PLACE` shows the header, events, periods, and landmarks tables (with "N of M" when cut), and world population; `earthlight info PLACE` shows distance, position, exoplanet details, planets of a star, and catalogue facts. Both take an id, name, or alias. Summaries are left to `--json` for now.
 - [x] **4.4 `search` command and did-you-mean** in all commands' "not found" errors.
   - **Done:** `earthlight search TEXT [--limit N]` prints a table of type, name, detail, and id; a search with no hits prints "Nothing found" plus guesses and still exits 0 (an empty answer is not a failure). The shared error handler now lists "Did you mean" guesses and a "Partial matches" table (with ids) for every unresolved name, in `from`, `info`, and `when --event`.
-- [ ] **4.5 `--json` output** for every command (same shapes as the API), plus CLI tests with Typer's `CliRunner` and JSON snapshot tests.
+- [x] **4.5 `--json` output** for every command (same shapes as the API), plus CLI tests with Typer's `CliRunner` and JSON snapshot tests.
+  - **Done:** `--json` on `when`, `from`, `info`, and `search` prints one document, the same model the Python call returns. With `--json` an error is a JSON document on stdout (exit 1) shaped like an RFC 9457 problem: `title`, `detail`, `suggestions`, `results`. Typer usage errors (exit 2) stay text. `tests/data/cli_json_snapshot.json` holds 11 real outputs; regenerate with `$env:UPDATE_SNAPSHOTS = "1"` when a change is intended. A test fails if a new command lacks `--json`.
 - [ ] **4.6 README update**: CLI usage with example output. Note for Ian on recording a demo GIF.
 - [ ] **4.7 Phase review**
 

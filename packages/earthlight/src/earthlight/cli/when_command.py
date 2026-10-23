@@ -8,6 +8,7 @@ from rich.console import Console
 import earthlight
 from earthlight.cli.app import app
 from earthlight.cli.errors import friendly_errors
+from earthlight.cli.output import JsonOption, emit_json
 from earthlight.cli.render import moment_view
 from earthlight.parse import parse_ago, parse_date, parse_year
 from earthlight.time import now
@@ -38,9 +39,7 @@ def when(
         str | None,
         typer.Option("--event", help='Treat the input as an event name: "fall of rome".'),
     ] = None,
-    json_output: Annotated[
-        bool, typer.Option("--json", help="Print the result as JSON instead of a layout.")
-    ] = False,
+    json_output: JsonOption = False,
 ) -> None:
     """Where in the universe is the light from a moment arriving right now?
 
@@ -64,7 +63,7 @@ def when(
             param_hint="MOMENT",
         )
     reference = now()  # read the clock once, so "3 days ago" and the answer agree
-    with friendly_errors():
+    with friendly_errors(json_output=json_output):
         if year is not None:
             result = earthlight.when(parse_year(year), now_year=reference)
         elif date is not None:
@@ -77,6 +76,6 @@ def when(
             assert moment is not None
             result = earthlight.when(moment, now_year=reference)
     if json_output:
-        typer.echo(result.model_dump_json(indent=2))
+        emit_json(result)
     else:
         Console().print(moment_view(result))
