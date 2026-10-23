@@ -51,6 +51,17 @@ All retrieved 2026-10-20.
 
 The three Oort Cloud values are **conventional, approximate** numbers chosen with the project owner. Sources disagree widely: inner edge from about 250 to 5,000 au, the inner/outer split at about 20,000 au, and outer edge from 50,000 to 200,000 au. NASA's Oort Cloud page (https://science.nasa.gov/solar-system/oort-cloud/) gives no numeric boundaries at all, so there is no single authoritative citation. The values are treated as soft edges everywhere they appear.
 
+### The Sun, the Moon, and the planets as places (step 4b.1)
+
+These are close enough that their distance from Earth changes day by day, so they are worked out for the date asked about and never stored in the database.
+
+- **Planets and the Sun:** the same JPL Table 1 elements as above. A planet's distance on a date is the length of the geocentric vector. The Sun's is the length of the Earth's heliocentric vector (the Earth-Moon barycenter, so it is off by a few thousand km at most).
+- **Lookback range of a planet:** the nearest and farthest it can ever be from Earth, from the sizes of the two orbits. The distance between two bodies is at least the difference of their distances from the Sun and at most the sum, so with each held between its perihelion `a(1-e)` and aphelion `a(1+e)` (taken at the date, from the same elements) the range is `max(0, planet perihelion - Earth aphelion, Earth perihelion - planet aphelion)` to `planet aphelion + Earth aphelion`. These are true limits for any date and wider than what a planet reaches in practice (for example about 0.36 to 2.68 au for Mars at J2000). The best estimate is the distance on the date. Cross-checked in the tests against Horizons at five dates and by hand for Mercury, Mars, and Jupiter.
+- **Lookback range of the Sun:** the Earth's perihelion to aphelion, about 0.9833 to 1.0167 au, with the best estimate the distance on the date.
+- **The Moon:** NASA's Moon Fact Sheet (https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html, updated 11 January 2024, retrieved 2026-10-22) says the distance "roughly ranges from 357,000 km to 407,000 km" and gives the semimajor axis as 0.3844 million km. The range is 357,000 to 407,000 km and the best estimate is the mean, 384,400 km. There is no lunar ephemeris in the project, so where the Moon is in that range on a given date is not known; the answer is about 1.2 to 1.4 light-seconds either way.
+- **Outside 1800 to 2050 AD** the position formulas are not valid. The range uses the orbit sizes at J2000 (they change by parts per million per century), the best estimate is the middle of the range, and the `distance_source` fact is `orbit_range_midpoint`.
+- **Not included:** Voyager 1 (its model is a straight line in distance from the Sun, valid 2012 to 2035) and the dwarf planets.
+
 ### Constants
 
 - Astronomical unit: 149,597,870,700 m (exact, IAU 2012 Resolution B2).

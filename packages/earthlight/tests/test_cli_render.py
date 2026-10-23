@@ -15,13 +15,14 @@ import earthlight
 from earthlight.cli import app
 from earthlight.cli.render import (
     info_view,
-    light_travel,
     match_panel,
     percent_text,
     snapshot_view,
     zone_panel,
 )
 from earthlight.lookback import MomentRange
+from earthlight.solar_bodies import OUT_OF_TABLE_NOTE
+from earthlight.units import light_range, time_span
 
 NOW = 2026.0
 ANSI_CODES = re.compile(r"\x1b\[[0-9;]*m")
@@ -129,8 +130,62 @@ def test_naming_a_place_where_a_moment_is_expected_points_at_the_from_command() 
         earthlight.when("Betelgeuse", as_event=True, now_year=NOW)
 
 
-def test_light_travel_singular() -> None:
-    assert light_travel(1 / 31_557_600) == "1 light-second"
+SECOND = 1 / 31_557_600
+
+
+@pytest.mark.parametrize(
+    ("years", "expected"),
+    [
+        (SECOND, "1.0 seconds"),
+        (1.28 * SECOND, "1.3 seconds"),
+        (45 * SECOND, "45 seconds"),
+        (498 * SECOND, "8.3 minutes"),
+        (3_000 * SECOND, "50 minutes"),
+        (4_260 * SECOND, "1.2 hours"),
+        (3 * 86_400 * SECOND, "3 days"),
+        (534.0, "534 years"),
+    ],
+)
+def test_time_span_picks_a_unit_with_a_short_count(years: float, expected: str) -> None:
+    assert time_span(years) == expected
+
+
+@pytest.mark.parametrize(
+    ("low", "high", "expected"),
+    [
+        (473.4, 667.0, "473 to 667 light-years"),
+        (4.2428, 4.2450, None),  # both read 4.2: no range worth showing
+        (0.98 * 499 * SECOND, 1.02 * 499 * SECOND, "8.2 to 8.5 light-minutes"),
+        (66 * 60 * SECOND, 92 * 60 * SECOND, "1.1 to 1.5 light-hours"),
+        (50 * 60 * SECOND, 3 * 3600 * SECOND, "50 light-minutes to 3.0 light-hours"),
+        (1.19 * SECOND, 1.36 * SECOND, "1.2 to 1.4 light-seconds"),
+    ],
+)
+def test_light_range_shares_a_unit_and_hides_a_range_that_reads_as_one_value(
+    low: float, high: float, expected: str | None
+) -> None:
+    assert light_range(low, high) == expected
+
+
+def test_a_place_under_a_day_away_says_when_the_light_left_in_one_estimate() -> None:
+    text = render_text(snapshot_view(earthlight.from_vantage("saturn", now_year=NOW), NOW))
+    assert "left Earth about 1.3 hours ago." in text
+    assert "between" not in text.splitlines()[1]
+    moon = render_text(snapshot_view(earthlight.from_vantage("moon", now_year=NOW), NOW))
+    assert "left Earth about 1.3 seconds ago." in moon
+    far = render_text(snapshot_view(earthlight.from_vantage("hip-70890", now_year=NOW), NOW))
+    assert "left Earth in 2021 CE." in far
+
+
+def test_info_shows_the_range_of_a_body_in_its_own_unit() -> None:
+    saturn = render_text(info_view(earthlight.info("saturn", now_year=NOW)))
+    assert "1.3 light-hours away (range 1.1 to 1.5 light-hours)" in saturn
+    sun = render_text(info_view(earthlight.info("sun", now_year=NOW)))
+    assert "8.2 light-minutes away (range 8.2 to 8.5 light-minutes)" in sun
+    assert "Planets: mercury, venus, mars" in sun
+    moon = render_text(info_view(earthlight.info("moon", now_year=NOW)))
+    assert "1.3 light-seconds away (range 1.2 to 1.4 light-seconds)" in moon
+    assert "mean distance km" in moon
 
 
 # --- help text ---------------------------------------------------------------------------------
@@ -206,3 +261,22 @@ def test_layouts_do_not_crash_on_names_the_encoding_cannot_hold(arguments: tuple
     done = _earthlight(*arguments)
     assert done.returncode == 0, done.stderr
     assert b"Traceback" not in done.stderr
+
+
+def test_info_for_a_planet_outside_the_orbit_table_carries_the_note() -> None:
+    far = render_text(info_view(earthlight.info("jupiter", now_year=2100.0)))
+    assert OUT_OF_TABLE_NOTE.split(",")[0] in far
+    assert OUT_OF_TABLE_NOTE.split(",")[0] not in render_text(
+        info_view(earthlight.info("jupiter", now_year=NOW))
+    )
+    assert OUT_OF_TABLE_NOTE.split(",")[0] not in render_text(
+        info_view(earthlight.info("moon", now_year=2100.0))
+    )
+
+
+def test_info_shows_a_range_with_one_precision_and_the_moon_facts_cleanly() -> None:
+    mercury = render_text(info_view(earthlight.info("mercury", now_year=NOW)))
+    assert "range 4.3 to 12.3 light-minutes" in mercury
+    moon = render_text(info_view(earthlight.info("moon", now_year=NOW)))
+    assert "distance au" in moon and "0.00257" in moon
+    assert "384400" in moon and "384400.0" not in moon

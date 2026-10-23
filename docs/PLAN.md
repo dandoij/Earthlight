@@ -204,6 +204,23 @@ No database yet. Pure, heavily tested functions.
 
 ---
 
+## Phase 4b: Solar system places (branch `phase-4b-solar-system`, merged into `phase-4-cli`)
+
+Added after Phase 4 because `earthlight from saturn` found nothing: the plan listed planets and Voyager as places, but no step built them. They change distance daily, so they are computed on demand, not stored. Decided with Ian: the planets, the Sun, and the Moon; Voyager 1 and dwarf planets are left out for now.
+
+- [x] **4b.1 Solar system bodies and orbit bounds**
+  - **Build:** `solar_system.py` gains `planet_distance_bounds_au`, `earth_sun_distance_au`, `earth_sun_distance_bounds_au`, and the Moon constants from NASA's Moon Fact Sheet. New `solar_bodies.py` turns a name or id into a `VantagePoint` for a date (the Sun is a star, the planets are planets, and the Moon is a new `moon` kind). Nothing is wired into the commands yet.
+  - **Done when:** The bounds contain Horizons distances and agree with hand-worked orbits; every body has an ordered range; names are found case-insensitively; sources are in `docs/data-sources.md`.
+  - **Done:** also `VantageKind.MOON` (added to the models, `schema.sql`, and the JSON schema snapshot).
+- [x] **4b.2 Wire the bodies into the engine**: `resolve_place`, `engine.from_vantage`, `info`, and `search` find them; did-you-mean covers their names; a clear message for Earth itself; a note when the light left Earth under a day ago. Rebuild the database from the cache so its `kind` check includes `moon`.
+  - **Done:** `resolve_place` now takes `now_year`; `earthlight.info` gained an optional `now_year` (the Sun lists the seven planets as `planet_ids`); search puts an exact name or a start of at least three letters ahead of database hits and offers "saturm" a guess; a place under a light-day away gets the note "from there Earth looks almost exactly as it does now". The database was rebuilt from the cache: every table and search entry is identical, only the `kind` check now allows `moon`. Two older tests that used `sun` as a partial match now use `sunflower`.
+- [x] **4b.3 Command line and README**: `info` shows ranges in light-minutes and hours, `from` words short spans properly, README example.
+  - **Done:** one `_span` rule picks the unit for distances (`light_travel`), ranges (`light_range`, which shares the unit and hides a range that reads as one value), and plain times (`time_span`): seconds and minutes keep a decimal under ten, so the Moon is "1.3 light-seconds" and the Sun "8.2 light-minutes". A place under a day away says "left Earth about 1.3 hours ago". README has `info saturn` and `search sat`, checked by `test_readme.py`.
+- [x] **4b.4 Phase review**
+  - **Done:** code-reviewer over `git diff phase-4-cli...HEAD`; bugs and clear improvements fixed in "fix: address phase 4b review findings". The science was confirmed (bounds, Saturn, Moon, and Sun numbers; no body name shadows a database place). Judgment calls decided with Ian: a note when the date is outside 1800 to 2050 AD, `distance_au` for the Moon too, and bodies stay first in search for short prefixes. Unit words moved to `earthlight/units.py` so the engine and the command line cannot disagree.
+
+---
+
 ## Phase 5: Packaging and release (branch `phase-5-release`)
 
 - [ ] **5.1 Wheel build**: build backend config, database included as package data, size check, `uv build`. Phase 2.2 note: the package license metadata must name both licenses (MIT for code, CC BY-NC 3.0 IGO for the bundled data) and the wheel must include `LICENSE-DATA`.

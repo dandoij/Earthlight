@@ -27,7 +27,9 @@ from earthlight.models import (
     VantagePoint,
     ZoneInfo,
 )
-from earthlight.time import SECONDS_PER_DAY, SECONDS_PER_JULIAN_YEAR, DecimalYear, format_year
+from earthlight.solar_bodies import ORBIT_RANGE_MIDPOINT, OUT_OF_TABLE_NOTE
+from earthlight.time import DecimalYear, format_year
+from earthlight.units import big_number, is_within_a_day, light_range, light_travel, time_span
 
 GRID_MIN_WIDTH = 100
 """Terminals at least this wide show the four category panels two by two."""
@@ -40,52 +42,12 @@ _CATEGORY_TITLES = (
 )
 
 
-def _counted(count: str, unit: str) -> str:
-    """``count`` with its unit, singular only for exactly ``1`` (``1 light-second``)."""
-    return f"{count} {unit}" if count == "1" else f"{count} {unit}s"
-
-
-def light_travel(years: float) -> str:
-    """Describe a light-travel time as the distance it covers, such as ``534 light-years``."""
-    seconds = years * SECONDS_PER_JULIAN_YEAR
-    if seconds < 120:
-        return _counted(f"{seconds:.0f}", "light-second")
-    if seconds < 7200:
-        return _counted(f"{seconds / 60:.0f}", "light-minute")
-    if seconds < 2 * SECONDS_PER_DAY:
-        return _counted(f"{seconds / 3600:.1f}", "light-hour")
-    if years < 1:
-        return _counted(f"{seconds / SECONDS_PER_DAY:.0f}", "light-day")
-    return f"{big_number(years)} light-years"
-
-
-def big_number(value: float) -> str:
-    """A count of years for people: ``4.2``, ``534``, ``12,000``, ``66 million``.
-
-    The value is rounded before its unit is chosen, so 999.6 million reads ``1 billion``.
-    """
-    if value >= 1e6:
-        millions = float(f"{value / 1e6:.3g}")
-        if millions >= 1000:
-            return f"{millions / 1000:g} billion"
-        return f"{millions:g} million"
-    if value >= 100:
-        rounded = round(value)
-        return "1 million" if rounded >= 1_000_000 else f"{rounded:,}"
-    tenths = round(value, 1)
-    return f"{tenths:.0f}" if tenths >= 100 else f"{tenths:.1f}"
-
-
 def percent_text(percent: float) -> str:
     """A percentage to three significant figures, never in exponent form: ``0.00806``."""
     if percent <= 0:
         return "0"
     decimals = max(0, 2 - math.floor(math.log10(percent)))
     return f"{percent:.{decimals}f}"
-
-
-def _range_text(low: float, high: float) -> str:
-    return f"{big_number(low)} to {big_number(high)}"
 
 
 def match_panel(title: str, match: Match | None) -> Panel:
@@ -102,9 +64,8 @@ def match_panel(title: str, match: Match | None) -> Panel:
     header.append(f"  {', '.join(where)}", style="dim")
     lines: list[RenderableType] = [header]
     lines.append(Text(f"{light_travel(point.lookback.best)} away"))
-    low, high = point.lookback.minimum, point.lookback.maximum
-    if big_number(low) != big_number(high):
-        lines.append(Text(f"range {_range_text(low, high)} light-years", style="dim"))
+    if spread := light_range(point.lookback.minimum, point.lookback.maximum):
+        lines.append(Text(f"range {spread}", style="dim"))
     if point.magnitude is not None:
         lines.append(Text(f"magnitude {round(point.magnitude, 2):g}", style="dim"))
     if match.approximate:
@@ -199,6 +160,10 @@ def _period_end(period: HistoryPeriod, now_year: DecimalYear) -> str:
 
 
 def _left_earth(snapshot: EarthSnapshot, now_year: DecimalYear) -> str:
+    lookback = snapshot.vantage_point.lookback
+    if is_within_a_day(lookback):
+        # Under a day: the two ends of the span are minutes apart, so give the best estimate.
+        return f"about {time_span(lookback.best)} ago"
     earliest = format_year(snapshot.moments.earliest, now_year=now_year)
     latest = format_year(snapshot.moments.latest, now_year=now_year)
     if earliest == latest:
@@ -290,9 +255,8 @@ def info_view(details: PlaceInfo) -> RenderableType:
     lookback = point.lookback
     parts: list[RenderableType] = [_place_header(point)]
     distance = f"{light_travel(lookback.best)} away"
-    low, high = big_number(lookback.minimum), big_number(lookback.maximum)
-    if low != high:  # a range that rounds to one number tells the reader nothing
-        distance += f" (range {low} to {high} light-years)"
+    if spread := light_range(lookback.minimum, lookback.maximum):
+        distance += f" (range {spread})"
     parts.append(Text(distance))
     if point.magnitude is not None:
         parts.append(Text(f"Magnitude {round(point.magnitude, 2):g}"))
@@ -313,6 +277,8 @@ def info_view(details: PlaceInfo) -> RenderableType:
         for key in sorted(point.facts):
             facts.add_row(Text(key.replace("_", " ")), Text(str(point.facts[key])))
         parts.append(facts)
+    if point.facts.get("distance_source") == ORBIT_RANGE_MIDPOINT:
+        parts.append(Text(OUT_OF_TABLE_NOTE, style="dim"))
     parts.append(Text(f"See Earth from here: earthlight from {point.id}", style="dim"))
     return Group(*parts)
 

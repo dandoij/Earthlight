@@ -86,7 +86,7 @@ def test_an_unknown_place_is_a_not_found_document_with_guesses(command: str) -> 
 
 
 def test_partial_matches_are_in_the_results_key() -> None:
-    document = error_of("from", "sun")
+    document = error_of("from", "sunflower")
     assert [hit["id"] for hit in document["results"]] == ["messier-63"]
 
 

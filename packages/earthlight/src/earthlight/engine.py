@@ -29,6 +29,7 @@ from earthlight.models import (
     ZoneInfo,
 )
 from earthlight.repository import Repository, default_repository
+from earthlight.solar_bodies import ORBIT_RANGE_MIDPOINT, OUT_OF_TABLE_NOTE, solar_body
 from earthlight.solar_system import (
     AU_IN_LIGHT_YEARS,
     PLANETS,
@@ -51,6 +52,7 @@ from earthlight.time import (
     seconds_between,
     subtract_seconds,
 )
+from earthlight.units import is_within_a_day, light_travel
 
 NEAR_MISS_FRACTION = 0.05
 """When no place has a range that contains the moment, the best place whose range comes
@@ -249,18 +251,16 @@ def _zone_info(zone: Zone, lookback: float) -> ZoneInfo:
 
 
 def _light_distance_text(lookback: float) -> str:
-    """How far the light has travelled, in the unit people can picture."""
-    seconds = lookback * SECONDS_PER_JULIAN_YEAR
+    """How far the light has travelled, in the unit people can picture, with its distance in au
+    when that is more than a few light-seconds."""
     au = lookback / AU_IN_LIGHT_YEARS
-    if seconds < 120:
-        return f"{seconds:.0f} light-seconds"
-    if seconds < 7200:
-        return f"{seconds / 60:.0f} light-minutes ({au:.1f} au)"
-    if seconds < 172_800:
-        return f"{seconds / 3600:.1f} light-hours ({au:,.0f} au)"
-    if au < 10_000:
-        return f"{seconds / 86_400:.0f} light-days ({au:,.0f} au)"
-    return f"{lookback:.2f} light-years ({au:,.0f} au)"
+    if au < 0.1:
+        return light_travel(lookback)
+    return (
+        f"{light_travel(lookback)} ({au:,.1f} au)"
+        if au < 10
+        else (f"{light_travel(lookback)} ({au:,.0f} au)")
+    )
 
 
 def _solar_system_notes(lookback: float, reference: DecimalYear) -> list[str]:
@@ -352,13 +352,20 @@ def from_vantage(
     """
     reference = now() if now_year is None else now_year  # the one and only clock read
     repo = default_repository() if repository is None else repository
-    point = repo.vantage_point(vantage_id)
+    point = solar_body(vantage_id, reference) or repo.vantage_point(vantage_id)
     if point is None:
         raise UnknownVantageError(f"there is no place with the id '{vantage_id}'")
 
     moments = _moments_for(point, reference)
     label = _span_label(moments, reference)
     notes: list[str] = []
+    if is_within_a_day(point.lookback):
+        notes.append(
+            f"This place is only {light_travel(point.lookback.best)} away, so from there Earth "
+            "looks almost exactly as it does now."
+        )
+    if point.facts.get("distance_source") == ORBIT_RANGE_MIDPOINT:
+        notes.append(OUT_OF_TABLE_NOTE)
 
     if point.lookback.best > EARTH_AGE_YEARS:
         notes.append(
