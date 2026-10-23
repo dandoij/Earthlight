@@ -43,7 +43,7 @@ The package installs an `earthlight` command with four subcommands. It is not on
 | `earthlight info PLACE` | What is known about this place? |
 | `earthlight search TEXT` | Which places and history entries match this name? |
 
-`when` guesses what kind of moment you typed: a bare number is a calendar year (`1492`), and `500 BCE`, `2004-06-15`, `3 days ago`, `66 mya`, and event names such as `apollo 11` all work. To skip the guessing, give exactly one of `--year`, `--date`, `--ago`, or `--event` instead (`earthlight when --ago "66 million years"`). `PLACE` is a name (`Betelgeuse`, `M31`) or an id from a search (`hip-27989`).
+`when` guesses what kind of moment you typed: a bare number is a calendar year (`1492`), and `500 BCE`, `2004-06-15`, `3 days ago`, `66 mya`, and event names such as `apollo 11` all work. To skip the guessing, give exactly one of `--year`, `--date`, `--ago`, or `--event` instead (`earthlight when --ago "66 million years"`). Write a date that starts with a minus sign as `--date -0043-03-15`, because a bare argument that starts with a dash is read as an option. `PLACE` is a name (`Betelgeuse`, `M31`) or an id from a search (`hip-27989`).
 
 The examples below are real output, taken as if the date were 1 January 2026 and the terminal were 100 columns wide, so yours will differ a little in the numbers and the layout. A test runs every example in this section and fails if the README stops matching the program.
 
@@ -81,7 +81,7 @@ The light that left Earth then has travelled 3.0 light-hours and is arriving at:
 │ Inside the heliosphere                                                                           │
 │ The bubble of solar wind around the Sun, from the planets out to the heliopause.                 │
 │ 0 to 122 au from the Sun                                                                         │
-│ 0.0081% of the way to Proxima Centauri                                                           │
+│ 0.00806% of the way to Proxima Centauri                                                          │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
 This light has travelled about 3.0 light-hours (22 au) from Earth.
 Right now it has passed Mercury, Venus, Mars, Jupiter, Saturn and Uranus and is still on its way to

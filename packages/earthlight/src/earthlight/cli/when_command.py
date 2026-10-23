@@ -14,14 +14,23 @@ from earthlight.time import now
 
 _OVERRIDES = ("--year", "--date", "--ago", "--event")
 
+_WHEN_HELP = (
+    "Where in the universe is the light from a moment arriving right now?\n\n"
+    "Give the moment as one argument and Earthlight works out what kind it is, or force the "
+    "kind with exactly one of --year, --date, --ago, or --event.\n\n"
+    "Write a date that starts with a minus sign as --date -0043-03-15, because a bare argument "
+    "that starts with a dash is read as an option."
+)
 
-@app.command()
+
+@app.command(help=_WHEN_HELP)
 def when(
     moment: Annotated[
         str | None,
         typer.Argument(
             help='A year ("1492", "500 BCE"), a date ("2004-06-15"), a time ago ("3 days ago", '
             '"66 mya"), or an event name ("apollo 11"). The kind is guessed from the text.',
+            metavar="MOMENT",
             show_default=False,
         ),
     ] = None,
@@ -40,11 +49,6 @@ def when(
     ] = None,
     json_output: JsonOption = False,
 ) -> None:
-    """Where in the universe is the light from a moment arriving right now?
-
-    Give the moment as one argument and Earthlight works out what kind it is, or force the
-    kind with exactly one of --year, --date, --ago, or --event.
-    """
     given = {
         name: value
         for name, value in (

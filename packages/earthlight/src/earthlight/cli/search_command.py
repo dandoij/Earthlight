@@ -10,8 +10,13 @@ from earthlight.cli.errors import friendly_errors
 from earthlight.cli.output import JsonOption, emit_json, print_view
 from earthlight.cli.render import search_view
 
+_SEARCH_HELP = (
+    "Find stars, planets, galaxies, and history entries by name.\n\n"
+    "Use an id from the results with the from and info commands."
+)
 
-@app.command()
+
+@app.command(help=_SEARCH_HELP)
 def search(
     text: Annotated[
         str,
@@ -26,10 +31,6 @@ def search(
     ] = 10,
     json_output: JsonOption = False,
 ) -> None:
-    """Find stars, planets, galaxies, and history entries by name.
-
-    Use an id from the results with the from and info commands.
-    """
     with friendly_errors(json_output=json_output):
         response = earthlight.search(text, limit=limit)
     if json_output:

@@ -169,6 +169,7 @@ def test_more_than_one_input_is_a_usage_error(arguments: list[str]) -> None:
         (["0"], "no year 0"),
         (["--year", "fall of rome"], "not a year"),
         (["--date", "2023-02-30"], "not a valid date"),
+        (["--date", "1492"], "not a date"),
         (["--ago", "soon"], "not an amount of time"),
         (["--event", "qwertyzxcv"], "qwertyzxcv"),
         (["--event", "   "], "name of an event"),
@@ -209,6 +210,11 @@ def test_json_output_is_only_the_json_document() -> None:
         (66e6, "66 million"),
         (1.5e6, "1.5 million"),
         (13.79e9, "13.8 billion"),
+        (9.996e8, "1 billion"),
+        (999_999.9, "1 million"),
+        (99.96, "100"),
+        (999.4e6, "999 million"),
+        (1e9, "1 billion"),
     ],
 )
 def test_big_number(value: float, expected: str) -> None:
@@ -219,6 +225,7 @@ def test_big_number(value: float, expected: str) -> None:
     ("years", "expected"),
     [
         (30 / 31_557_600, "30 light-seconds"),
+        (1 / 31_557_600, "1 light-second"),
         (600 / 31_557_600, "10 light-minutes"),
         (10_800 / 31_557_600, "3.0 light-hours"),
         (5 * 86_400 / 31_557_600, "5 light-days"),

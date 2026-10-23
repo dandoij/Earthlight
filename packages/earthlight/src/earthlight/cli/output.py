@@ -2,9 +2,11 @@
 
 With ``--json`` a command prints exactly one JSON document to standard output and nothing else,
 so it can be piped into ``jq`` or read by a script. The documents are the same models the web
-API will return, written with ``model_dump_json``.
+API will return. Non-ASCII characters are written as escapes (the JSON way), so the output is valid
+on any terminal or pipe, whatever encoding it uses.
 """
 
+import json
 from typing import Annotated
 
 import typer
@@ -19,7 +21,7 @@ JsonOption = Annotated[
 
 def emit_json(model: BaseModel) -> None:
     """Print a result model as an indented JSON document."""
-    typer.echo(model.model_dump_json(indent=2))
+    typer.echo(json.dumps(model.model_dump(mode="json"), indent=2))
 
 
 def make_console() -> Console:

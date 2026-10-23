@@ -4,6 +4,8 @@ Commands live in their own modules and register themselves on ``app`` when impor
 ``earthlight.cli``). Keeping the object here avoids a circular import between the two.
 """
 
+import io
+import sys
 from importlib.metadata import PackageNotFoundError, version
 from typing import Annotated
 
@@ -21,6 +23,17 @@ def _show_version(show: bool) -> None:
     if show:
         typer.echo(f"earthlight {_installed_version()}")
         raise typer.Exit()
+
+
+def _never_fail_on_unencodable_text() -> None:
+    """Print a replacement character instead of crashing on text the output cannot encode.
+
+    A redirected stream on Windows often uses a legacy code page (such as cp1252), which cannot
+    hold names like "Bibha" with its macron.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        if isinstance(stream, io.TextIOWrapper):
+            stream.reconfigure(errors="replace")
 
 
 app = typer.Typer(
@@ -45,3 +58,4 @@ def main(
     ] = False,
 ) -> None:
     """Where in the universe is the light from a moment arriving right now?"""
+    _never_fail_on_unencodable_text()

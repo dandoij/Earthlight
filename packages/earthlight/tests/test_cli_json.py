@@ -107,7 +107,35 @@ def test_a_bad_moment_is_an_invalid_moment_document(arguments: list[str]) -> Non
     assert document["results"] == []
 
 
+@pytest.mark.parametrize(
+    "arguments",
+    [["when", "--event", " "], ["when", "--year", " "], ["info", ""], ["from", "  "]],
+)
+def test_blank_input_is_an_empty_input_document(arguments: list[str]) -> None:
+    assert error_of(*arguments)["title"] == "Empty input"
+
+
+@pytest.mark.parametrize("arguments", [["from"], ["info"], ["when", "--event"]])
+def test_a_5000_character_name_is_cut_in_the_message_but_not_in_the_text(
+    arguments: list[str],
+) -> None:
+    long_name = "x" * 5000
+    document = error_of(*arguments, long_name)
+    assert len(document["detail"]) < 300
+    assert "..." in document["detail"]
+
+
+@pytest.mark.parametrize("arguments", [["from"], ["info"], ["when", "--event"]])
+def test_a_5000_character_name_is_cut_in_the_text_error(arguments: list[str]) -> None:
+    result = run(*arguments, "y" * 5000)
+    assert result.exit_code == 1
+    assert len(result.stderr) < 400
+
+
 def test_error_titles_by_kind_of_problem() -> None:
+    assert error_title(earthlight.EmptyInputError("x")) == "Empty input"
+    assert error_title(earthlight.UnresolvedNameError("x", text=" ")) == "Empty input"
+    assert error_title(earthlight.UnresolvedNameError("x", text="a")) == "Not found"
     assert error_title(earthlight.UnknownVantageError("x")) == "Not found"
     assert error_title(earthlight.FutureMomentError("x")) == "Invalid moment"
     assert error_title(earthlight.InvalidMomentError("x")) == "Invalid moment"

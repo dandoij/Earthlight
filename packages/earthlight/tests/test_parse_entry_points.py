@@ -1,5 +1,6 @@
 """Tests for the per-format parse functions that the command line flags use."""
 
+from collections.abc import Callable
 from datetime import datetime
 
 import pytest
@@ -7,6 +8,7 @@ import pytest
 from earthlight.parse import (
     MAX_BARE_YEAR,
     EmptyInputError,
+    EventQuery,
     InvalidMomentError,
     MomentQuery,
     parse,
@@ -63,6 +65,26 @@ def test_an_explicit_year_has_the_same_limit_as_iso_dates() -> None:
     assert parse_date("999999-01-01") == from_calendar(999_999)
     with pytest.raises(InvalidMomentError, match="too large"):
         parse_year(str(MAX_CALENDAR_YEAR + 1))
+
+
+def test_parse_year_accepts_thousands_separators_but_parse_does_not() -> None:
+    assert parse_year("12,000") == 12_000.0
+    assert parse_year("1,492.5") == 1492.5
+    assert parse("12,000") == EventQuery("12,000")
+    with pytest.raises(InvalidMomentError):
+        parse_year("12,00")
+
+
+@pytest.mark.parametrize("function", [parse, parse_year])
+def test_an_era_year_beyond_the_supported_range_gets_a_plain_message(
+    function: Callable[[str], object],
+) -> None:
+    with pytest.raises(InvalidMomentError) as caught:
+        function("999999999999 BCE")
+    message = str(caught.value)
+    assert "out of range" in message
+    assert "within 1,000,000 of year 0" in message
+    assert "got -" not in message
 
 
 @pytest.mark.parametrize(

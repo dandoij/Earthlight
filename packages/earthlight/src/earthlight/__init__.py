@@ -49,6 +49,7 @@ from earthlight.parse import (
     MomentQuery,
     ParseError,
     ParseResult,
+    clean_event_name,
     parse,
 )
 from earthlight.repository import Repository, default_repository
@@ -101,10 +102,7 @@ def when(
         raise TypeError("as_event needs the name of an event as text")
     if isinstance(moment, str):
         if as_event:
-            name = " ".join(moment.split())
-            if not name:
-                raise EmptyInputError("Enter the name of an event.")
-            parsed: ParseResult = EventQuery(name)
+            parsed: ParseResult = EventQuery(clean_event_name(moment))
         else:
             parsed = parse(moment, now_year=reference)
         if isinstance(parsed, MomentQuery):

@@ -53,6 +53,17 @@ def test_python_dash_m_runs_the_command_line() -> None:
     assert done.stdout.startswith("earthlight ")
 
 
+def test_importing_the_main_module_does_not_run_the_command_line() -> None:
+    done = subprocess.run(
+        [sys.executable, "-c", "import earthlight.__main__"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert done.returncode == 0
+    assert done.stdout == ""
+
+
 def failing_app(error: Exception) -> typer.Typer:
     """A throwaway app whose only command raises ``error`` inside ``friendly_errors``."""
     test_app = typer.Typer()
@@ -85,6 +96,13 @@ def test_square_brackets_in_an_error_are_not_read_as_markup() -> None:
         failing_app(EarthlightError('Nothing called "[bold]x[/bold]".')), ["boom"], env=PLAIN_ENV
     )
     assert 'Nothing called "[bold]x[/bold]".' in plain(result.stderr)
+
+
+def test_emoji_codes_in_an_error_are_not_replaced() -> None:
+    result = runner.invoke(
+        failing_app(EarthlightError("Nothing called :star: x.")), ["boom"], env=PLAIN_ENV
+    )
+    assert "Nothing called :star: x." in plain(result.stderr)
 
 
 def test_a_bug_is_not_hidden_by_the_error_handler() -> None:

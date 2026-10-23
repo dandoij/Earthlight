@@ -4,6 +4,7 @@ Everything here turns a result model into something Rich can print. Nothing here
 clock or the database, so the layouts can be tested on hand-made models.
 """
 
+import math
 from collections.abc import Iterable
 
 from rich.console import Console, ConsoleOptions, Group, RenderableType, RenderResult
@@ -39,29 +40,48 @@ _CATEGORY_TITLES = (
 )
 
 
+def _counted(count: str, unit: str) -> str:
+    """``count`` with its unit, singular only for exactly ``1`` (``1 light-second``)."""
+    return f"{count} {unit}" if count == "1" else f"{count} {unit}s"
+
+
 def light_travel(years: float) -> str:
     """Describe a light-travel time as the distance it covers, such as ``534 light-years``."""
     seconds = years * SECONDS_PER_JULIAN_YEAR
     if seconds < 120:
-        return f"{seconds:.0f} light-seconds"
+        return _counted(f"{seconds:.0f}", "light-second")
     if seconds < 7200:
-        return f"{seconds / 60:.0f} light-minutes"
+        return _counted(f"{seconds / 60:.0f}", "light-minute")
     if seconds < 2 * SECONDS_PER_DAY:
-        return f"{seconds / 3600:.1f} light-hours"
+        return _counted(f"{seconds / 3600:.1f}", "light-hour")
     if years < 1:
-        return f"{seconds / SECONDS_PER_DAY:.0f} light-days"
+        return _counted(f"{seconds / SECONDS_PER_DAY:.0f}", "light-day")
     return f"{big_number(years)} light-years"
 
 
 def big_number(value: float) -> str:
-    """A count of years for people: ``4.2``, ``534``, ``12,000``, ``66 million``."""
-    if value >= 1e9:
-        return f"{float(f'{value / 1e9:.3g}'):g} billion"
+    """A count of years for people: ``4.2``, ``534``, ``12,000``, ``66 million``.
+
+    The value is rounded before its unit is chosen, so 999.6 million reads ``1 billion``.
+    """
     if value >= 1e6:
-        return f"{float(f'{value / 1e6:.3g}'):g} million"
+        millions = float(f"{value / 1e6:.3g}")
+        if millions >= 1000:
+            return f"{millions / 1000:g} billion"
+        return f"{millions:g} million"
     if value >= 100:
-        return f"{value:,.0f}"
-    return f"{value:.1f}"
+        rounded = round(value)
+        return "1 million" if rounded >= 1_000_000 else f"{rounded:,}"
+    tenths = round(value, 1)
+    return f"{tenths:.0f}" if tenths >= 100 else f"{tenths:.1f}"
+
+
+def percent_text(percent: float) -> str:
+    """A percentage to three significant figures, never in exponent form: ``0.00806``."""
+    if percent <= 0:
+        return "0"
+    decimals = max(0, 2 - math.floor(math.log10(percent)))
+    return f"{percent:.{decimals}f}"
 
 
 def _range_text(low: float, high: float) -> str:
@@ -107,7 +127,10 @@ def zone_panel(zone: ZoneInfo) -> Panel:
     ]
     if zone.percent_to_proxima is not None:
         lines.append(
-            Text(f"{zone.percent_to_proxima:.2g}% of the way to Proxima Centauri", style="dim")
+            Text(
+                f"{percent_text(zone.percent_to_proxima)}% of the way to Proxima Centauri",
+                style="dim",
+            )
         )
     return Panel(Group(*lines), title="Where the light is", title_align="left")
 
@@ -198,7 +221,11 @@ def snapshot_view(snapshot: EarthSnapshot, now_year: DecimalYear) -> RenderableT
             "Events", len(snapshot.events), snapshot.event_total, ("When", "Event", "Where")
         )
         for event in snapshot.events:
-            table.add_row(format_year(event.year, now_year=now_year), event.name, event.region)
+            table.add_row(
+                Text(format_year(event.year, now_year=now_year)),
+                Text(event.name),
+                Text(event.region),
+            )
         parts.append(table)
     if snapshot.periods:
         table = _history_table(
@@ -206,9 +233,9 @@ def snapshot_view(snapshot: EarthSnapshot, now_year: DecimalYear) -> RenderableT
         )
         for period in snapshot.periods:
             table.add_row(
-                format_year(period.start, now_year=now_year),
-                _period_end(period, now_year),
-                period.name,
+                Text(format_year(period.start, now_year=now_year)),
+                Text(_period_end(period, now_year)),
+                Text(period.name),
             )
         parts.append(table)
     if snapshot.landmarks:
@@ -220,10 +247,10 @@ def snapshot_view(snapshot: EarthSnapshot, now_year: DecimalYear) -> RenderableT
         )
         for landmark in snapshot.landmarks:
             table.add_row(
-                format_year(landmark.built_end, now_year=now_year),
-                landmark.name,
-                landmark.status.value.replace("_", " "),
-                landmark.region,
+                Text(format_year(landmark.built_end, now_year=now_year)),
+                Text(landmark.name),
+                Text(landmark.status.value.replace("_", " ")),
+                Text(landmark.region),
             )
         parts.append(table)
     if snapshot.population is not None:
@@ -284,7 +311,7 @@ def info_view(details: PlaceInfo) -> RenderableType:
         facts.add_column("Fact", style="dim")
         facts.add_column("Value", overflow="fold")
         for key in sorted(point.facts):
-            facts.add_row(key.replace("_", " "), str(point.facts[key]))
+            facts.add_row(Text(key.replace("_", " ")), Text(str(point.facts[key])))
         parts.append(facts)
     parts.append(Text(f"See Earth from here: earthlight from {point.id}", style="dim"))
     return Group(*parts)
@@ -306,21 +333,23 @@ def results_table(results: tuple[SearchResult, ...], title: str | None = None) -
     table.add_column("Id", style="dim", overflow="fold")
     for result in results:
         table.add_row(
-            _type_label(result.type, result.kind),
-            result.name,
-            result.description or "",
-            result.id,
+            Text(_type_label(result.type, result.kind)),
+            Text(result.name),
+            Text(result.description or ""),
+            Text(result.id),
         )
     return table
 
 
 def suggestions_view(
-    suggestions: tuple[Suggestion, ...], results: tuple[SearchResult, ...] = ()
+    suggestions: tuple[Suggestion, ...],
+    results: tuple[SearchResult, ...] = (),
+    header: str = "Did you mean:",
 ) -> RenderableType | None:
-    """Did-you-mean guesses and partial matches, or ``None`` if there is nothing to offer."""
+    """Guesses and partial matches under ``header``, or ``None`` if there is nothing to offer."""
     parts: list[RenderableType] = []
     if suggestions:
-        parts.append(Text("Did you mean:", style="bold"))
+        parts.append(Text(header, style="bold"))
         parts.extend(
             Text(f"  {guess.name}  ({_type_label(guess.type)}, id {guess.id})")
             for guess in suggestions

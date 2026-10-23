@@ -198,7 +198,8 @@ No database yet. Pure, heavily tested functions.
   - **Done:** `--json` on `when`, `from`, `info`, and `search` prints one document, the same model the Python call returns. With `--json` an error is a JSON document on stdout (exit 1) shaped like an RFC 9457 problem: `title`, `detail`, `suggestions`, `results`. Typer usage errors (exit 2) stay text. `tests/data/cli_json_snapshot.json` holds 11 real outputs; regenerate with `$env:UPDATE_SNAPSHOTS = "1"` when a change is intended. A test fails if a new command lacks `--json`.
 - [x] **4.6 README update**: CLI usage with example output. Note for Ian on recording a demo GIF.
   - **Done:** "Using it from the command line" with six real examples (a year, recent light, a place older than Earth, a typo, an error, JSON). `test_readme.py` runs every `console` block with the clock, width, and box characters fixed, so the README cannot drift from the program. Layouts now print through `cli.output.print_view`, so tests can swap the console.
-- [ ] **4.7 Phase review**
+- [x] **4.7 Phase review**
+  - **Done:** code-reviewer over `git diff main...HEAD`; bugs and clear improvements fixed in "fix: address phase 4 review findings". Judgment calls decided with Ian: a JSON error title "Empty input" for blank text; `Suggestion` keeps no `kind`; the parse functions stay in `earthlight.parse`; long names are shortened in errors, `--year` accepts commas, the year-range error is plain, and the help explains `--date -0043-03-15`.
 
 ---
 

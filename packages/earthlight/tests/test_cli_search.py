@@ -1,14 +1,17 @@
 """Tests for the ``earthlight search`` command and the did-you-mean lines in errors."""
 
+import io
 import re
 
 import pytest
+from rich.console import Console
 from typer.testing import CliRunner, Result
 
 import earthlight
 from earthlight.cli import app, friendly_errors
+from earthlight.cli.render import search_view
 from earthlight.errors import UnresolvedNameError
-from earthlight.models import SearchType, Suggestion
+from earthlight.models import SearchResponse, SearchResult, SearchType, Suggestion
 
 ANSI_CODES = re.compile(r"\x1b\[[0-9;]*m")
 ENV = {"NO_COLOR": "1", "COLUMNS": "120", "TERMINAL_WIDTH": "200"}
@@ -90,6 +93,24 @@ def test_search_text_that_looks_like_markup_is_shown_literally() -> None:
     assert "Nothing found for '[red]x[/red]'." in out(run("search", "[red]x[/red]"))
 
 
+def test_a_table_cell_that_looks_like_markup_is_shown_literally() -> None:
+    response = SearchResponse(
+        query="alpha",
+        results=(
+            SearchResult(
+                type=SearchType.EVENT,
+                id="an-id",
+                name="[bold]Alpha[/bold] :star:",
+                description="[red]note[/red] :rocket:",
+            ),
+        ),
+    )
+    printed = io.StringIO()
+    Console(file=printed, width=120, color_system=None).print(search_view(response))
+    assert "[bold]Alpha[/bold] :star:" in printed.getvalue()
+    assert "[red]note[/red] :rocket:" in printed.getvalue()
+
+
 # --- did-you-mean in the errors of the other commands ---------------------------------------
 
 
@@ -101,8 +122,9 @@ def test_a_misspelt_place_lists_guesses_with_ids(arguments: list[str]) -> None:
     result = run(*arguments)
     assert result.exit_code == 1
     assert err(result).startswith("Error:")
-    assert "Did you mean:" in err(result)
+    assert "Try one of these ids:" in err(result)
     assert "Betelgeuse  (place, id hip-27989)" in err(result)
+    assert err(result).count("Did you mean") == 1  # the engine's sentence, not repeated
     assert result.stdout == ""
 
 

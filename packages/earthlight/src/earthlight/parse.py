@@ -34,7 +34,7 @@ import math
 import re
 from dataclasses import dataclass
 
-from earthlight.errors import EarthlightError
+from earthlight.errors import EarthlightError, shown
 from earthlight.time import (
     MAX_CALENDAR_YEAR,
     SECONDS_PER_DAY,
@@ -49,8 +49,6 @@ from earthlight.time import (
 
 MAX_BARE_YEAR = 9999
 """Largest bare calendar year. Larger numbers are probably a mistake for "N years ago"."""
-
-_MAX_ECHOED_CHARS = 40
 
 
 class ParseError(EarthlightError, ValueError):
@@ -85,6 +83,7 @@ _COUNT = r"\d+(?:,\d{3})*(?:\.\d+)?"
 
 # re.ASCII keeps \d to 0-9, so Arabic-Indic or fullwidth digits are not moments.
 _BARE_YEAR = re.compile(r"\d+(?:\.\d+)?", re.ASCII)
+_YEAR_FLAG = re.compile(r"\d+(?:,\d{3})*(?:\.\d+)?", re.ASCII)
 _NEGATIVE_BARE_YEAR = re.compile(r"-\d+(?:\.\d+)?", re.ASCII)
 _ERA_YEAR = re.compile(
     r"(\d+(?:,\d{3})*)\s*(b\.c\.e\.|b\.c\.|c\.e\.|a\.d\.|bce|bc|ce|ad)", re.ASCII
@@ -117,13 +116,6 @@ _YEARS_PER_UNIT: dict[str, float] = {
 }
 
 
-def _shown(text: str) -> str:
-    """Shorten user text before it goes into an error message."""
-    if len(text) <= _MAX_ECHOED_CHARS:
-        return text
-    return text[: _MAX_ECHOED_CHARS - 3] + "..."
-
-
 def _clean(text: str) -> tuple[str, str]:
     """The text with spaces tidied, and the same in lower case. Blank input is an error."""
     cleaned = " ".join(text.split())
@@ -132,9 +124,17 @@ def _clean(text: str) -> tuple[str, str]:
     return cleaned, cleaned.lower()
 
 
+def clean_event_name(text: str) -> str:
+    """The name of an event with its spaces tidied. Blank input is an error."""
+    name = " ".join(text.split())
+    if not name:
+        raise EmptyInputError("Enter the name of an event.")
+    return name
+
+
 def _negative_year_error(text: str) -> InvalidMomentError:
     return InvalidMomentError(
-        f'"{_shown(text)}" is not a calendar year. Write "N BCE" for years before 1 CE.'
+        f'"{shown(text)}" is not a calendar year. Write "N BCE" for years before 1 CE.'
     )
 
 
@@ -176,12 +176,12 @@ def parse_year(text: str) -> DecimalYear:
     cleaned, lowered = _clean(text)
     if _NEGATIVE_BARE_YEAR.fullmatch(lowered):
         raise _negative_year_error(cleaned)
-    if _BARE_YEAR.fullmatch(lowered):
+    if _YEAR_FLAG.fullmatch(lowered):
         return _parse_bare_year(cleaned, limit=MAX_CALENDAR_YEAR).moment
     if match := _ERA_YEAR.fullmatch(lowered):
         return _parse_era_year(cleaned, match.group(1), match.group(2)).moment
     raise InvalidMomentError(
-        f'"{_shown(cleaned)}" is not a year. Write for example "1492" or "500 BCE".'
+        f'"{shown(cleaned)}" is not a year. Write for example "1492" or "500 BCE".'
     )
 
 
@@ -193,7 +193,7 @@ def parse_date(text: str) -> DecimalYear:
     cleaned, lowered = _clean(text)
     if match := _ISO_DATE.fullmatch(lowered):
         return _parse_iso_date(cleaned, match.group(1), match.group(2), match.group(3)).moment
-    raise InvalidMomentError(f'"{_shown(cleaned)}" is not a date. Write it as YYYY-MM-DD.')
+    raise InvalidMomentError(f'"{shown(cleaned)}" is not a date. Write it as YYYY-MM-DD.')
 
 
 def parse_ago(text: str, *, now_year: DecimalYear | None = None) -> DecimalYear:
@@ -210,21 +210,21 @@ def parse_ago(text: str, *, now_year: DecimalYear | None = None) -> DecimalYear:
         unit = match.group(2).rstrip("s")
         return _parse_relative(cleaned, match.group(1), unit, now_year).moment
     raise InvalidMomentError(
-        f'"{_shown(cleaned)}" is not an amount of time. Try "3 days", "12000 years", or "66 mya".'
+        f'"{shown(cleaned)}" is not an amount of time. Try "3 days", "12000 years", or "66 mya".'
     )
 
 
 def _parse_bare_year(text: str, *, limit: int = MAX_BARE_YEAR) -> MomentQuery:
-    value = float(text)
+    value = float(text.replace(",", ""))
     if value < 1:
         raise InvalidMomentError(
-            f'"{_shown(text)}" is not a calendar year: there is no year 0. '
+            f'"{shown(text)}" is not a calendar year: there is no year 0. '
             'Write "1 BCE" for the year before 1 CE.'
         )
     if value >= limit + 1:
         raise InvalidMomentError(
-            f'"{_shown(text)}" is too large for a calendar year (the limit is {limit}). '
-            f'For a long time ago, write for example "{_shown(text)} years ago".'
+            f'"{shown(text)}" is too large for a calendar year (the limit is {limit}). '
+            f'For a long time ago, write for example "{shown(text)} years ago".'
         )
     return MomentQuery(value)
 
@@ -232,17 +232,24 @@ def _parse_bare_year(text: str, *, limit: int = MAX_BARE_YEAR) -> MomentQuery:
 def _parse_era_year(text: str, number: str, era: str) -> MomentQuery:
     era_name: Era = "BCE" if era.replace(".", "") in ("bce", "bc") else "CE"
     try:
-        year = int(number.replace(",", ""))
-        return MomentQuery(from_calendar(astronomical_year(year, era_name)))
+        year = astronomical_year(int(number.replace(",", "")), era_name)
+        if abs(year) > MAX_CALENDAR_YEAR:
+            raise InvalidMomentError(
+                f'"{shown(text)}" is out of range: years must be within {MAX_CALENDAR_YEAR:,} '
+                "of year 0."
+            )
+        return MomentQuery(from_calendar(year))
+    except InvalidMomentError:
+        raise
     except ValueError as error:
-        raise InvalidMomentError(f'"{_shown(text)}" is not a valid year: {error}') from error
+        raise InvalidMomentError(f'"{shown(text)}" is not a valid year: {error}') from error
 
 
 def _parse_iso_date(text: str, year: str, month: str, day: str) -> MomentQuery:
     try:
         return MomentQuery(from_calendar(int(year), int(month), int(day)))
     except ValueError as error:
-        raise InvalidMomentError(f'"{_shown(text)}" is not a valid date: {error}') from error
+        raise InvalidMomentError(f'"{shown(text)}" is not a valid date: {error}') from error
 
 
 def _parse_relative(text: str, count: str, unit: str, now_year: DecimalYear | None) -> MomentQuery:
@@ -251,13 +258,13 @@ def _parse_relative(text: str, count: str, unit: str, now_year: DecimalYear | No
     if unit in _SECONDS_PER_UNIT:
         seconds = amount * _SECONDS_PER_UNIT[unit]
         if not math.isfinite(seconds):
-            raise InvalidMomentError(f'"{_shown(text)}" is too large to be a moment in time.')
+            raise InvalidMomentError(f'"{shown(text)}" is too large to be a moment in time.')
         moment = subtract_seconds(reference, seconds)
     else:
         years = amount * _YEARS_PER_UNIT[unit]
         if not math.isfinite(years):
-            raise InvalidMomentError(f'"{_shown(text)}" is too large to be a moment in time.')
+            raise InvalidMomentError(f'"{shown(text)}" is too large to be a moment in time.')
         moment = reference - years
     if not math.isfinite(moment):
-        raise InvalidMomentError(f'"{_shown(text)}" is too large to be a moment in time.')
+        raise InvalidMomentError(f'"{shown(text)}" is too large to be a moment in time.')
     return MomentQuery(moment)

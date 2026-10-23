@@ -8,6 +8,16 @@ so code that catches those still works.
 
 from earthlight.models import SearchResult, Suggestion
 
+MAX_ECHOED_CHARS = 40
+"""The longest stretch of the person's own text an error message repeats back."""
+
+
+def shown(text: str) -> str:
+    """Shorten user text before it goes into an error message."""
+    if len(text) <= MAX_ECHOED_CHARS:
+        return text
+    return text[: MAX_ECHOED_CHARS - 3] + "..."
+
 
 class EarthlightError(Exception):
     """The base class of every error Earthlight raises on purpose."""
