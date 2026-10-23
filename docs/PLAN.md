@@ -204,6 +204,20 @@ No database yet. Pure, heavily tested functions.
 
 ---
 
+## Phase 4b: Solar system places (branch `phase-4b-solar-system`, merged into `phase-4-cli`)
+
+Added after Phase 4 because `earthlight from saturn` found nothing: the plan listed planets and Voyager as places, but no step built them. They change distance daily, so they are computed on demand, not stored. Decided with Ian: the planets, the Sun, and the Moon; Voyager 1 and dwarf planets are left out for now.
+
+- [x] **4b.1 Solar system bodies and orbit bounds**
+  - **Build:** `solar_system.py` gains `planet_distance_bounds_au`, `earth_sun_distance_au`, `earth_sun_distance_bounds_au`, and the Moon constants from NASA's Moon Fact Sheet. New `solar_bodies.py` turns a name or id into a `VantagePoint` for a date (the Sun is a star, the planets are planets, and the Moon is a new `moon` kind). Nothing is wired into the commands yet.
+  - **Done when:** The bounds contain Horizons distances and agree with hand-worked orbits; every body has an ordered range; names are found case-insensitively; sources are in `docs/data-sources.md`.
+  - **Done:** also `VantageKind.MOON` (added to the models, `schema.sql`, and the JSON schema snapshot).
+- [ ] **4b.2 Wire the bodies into the engine**: `resolve_place`, `engine.from_vantage`, `info`, and `search` find them; did-you-mean covers their names; a clear message for Earth itself; a note when the light left Earth under a day ago. Rebuild the database from the cache so its `kind` check includes `moon`.
+- [ ] **4b.3 Command line and README**: `info` shows ranges in light-minutes and hours, `from` words short spans properly, README example.
+- [ ] **4b.4 Phase review**
+
+---
+
 ## Phase 5: Packaging and release (branch `phase-5-release`)
 
 - [ ] **5.1 Wheel build**: build backend config, database included as package data, size check, `uv build`. Phase 2.2 note: the package license metadata must name both licenses (MIT for code, CC BY-NC 3.0 IGO for the bundled data) and the wheel must include `LICENSE-DATA`.

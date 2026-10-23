@@ -52,6 +52,7 @@ class VantageKind(StrEnum):
     """What a vantage point is. The values are part of the JSON contract."""
 
     PLANET = "planet"
+    MOON = "moon"
     SPACECRAFT = "spacecraft"
     ZONE = "zone"
     STAR = "star"

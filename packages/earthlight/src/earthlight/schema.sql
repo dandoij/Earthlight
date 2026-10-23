@@ -34,7 +34,7 @@ CREATE TABLE vantage_points (
         length(name) BETWEEN 1 AND 200 AND name = trim(name, ' ' || char(9, 10, 13))
     ),
     kind          TEXT NOT NULL CHECK (kind IN (
-        'planet', 'spacecraft', 'zone', 'star', 'exoplanet',
+        'planet', 'moon', 'spacecraft', 'zone', 'star', 'exoplanet',
         'star_cluster', 'galaxy', 'galaxy_cluster', 'quasar', 'cosmic_background'
     )),
     -- Years of lookback. For Gaia stars min and max are the 16th and 84th percentiles of the
