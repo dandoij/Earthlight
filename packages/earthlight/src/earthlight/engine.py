@@ -29,6 +29,7 @@ from earthlight.models import (
     ZoneInfo,
 )
 from earthlight.repository import Repository, default_repository
+from earthlight.solar_bodies import solar_body
 from earthlight.solar_system import (
     AU_IN_LIGHT_YEARS,
     PLANETS,
@@ -63,6 +64,9 @@ NAKED_EYE_MAGNITUDE = 6.0
 """The faintest star a person with good eyesight and a dark sky can see."""
 
 _PROXIMA_LIGHT_YEARS = au_to_light_years(PROXIMA_CENTAURI_AU)
+
+_ABOUT_NOW_YEARS = 1 / 365.25
+"""A place closer than a light-day sees Earth almost as it is now, and a note says so."""
 
 EARTH_AGE_YEARS = 4.54e9
 """Earth formed about 4.54 billion years ago (the same figure as the ``earth-forms`` history
@@ -352,13 +356,18 @@ def from_vantage(
     """
     reference = now() if now_year is None else now_year  # the one and only clock read
     repo = default_repository() if repository is None else repository
-    point = repo.vantage_point(vantage_id)
+    point = solar_body(vantage_id, reference) or repo.vantage_point(vantage_id)
     if point is None:
         raise UnknownVantageError(f"there is no place with the id '{vantage_id}'")
 
     moments = _moments_for(point, reference)
     label = _span_label(moments, reference)
     notes: list[str] = []
+    if point.lookback.best < _ABOUT_NOW_YEARS:
+        notes.append(
+            f"{point.name} is only {_light_distance_text(point.lookback.best)} away, so from "
+            "there Earth looks almost exactly as it does now."
+        )
 
     if point.lookback.best > EARTH_AGE_YEARS:
         notes.append(

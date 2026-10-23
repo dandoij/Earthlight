@@ -12,6 +12,7 @@ from earthlight.errors import UnresolvedNameError, shown
 from earthlight.models import SearchResponse, SearchType, VantagePoint
 from earthlight.repository import Repository, SearchRow
 from earthlight.search import search, search_rows, tidy
+from earthlight.solar_bodies import find_solar_body, is_earth, solar_body
 from earthlight.time import DecimalYear, format_year
 
 _HISTORY_TYPES = frozenset({SearchType.EVENT, SearchType.PERIOD, SearchType.LANDMARK})
@@ -33,13 +34,26 @@ class ResolvedMoment:
     note: str
 
 
-def resolve_place(text: str, repo: Repository) -> VantagePoint:
-    """The place named by ``text``: an exact id first, otherwise an exact name or alias.
+def resolve_place(text: str, repo: Repository, *, now_year: DecimalYear) -> VantagePoint:
+    """The place named by ``text``: the Sun, Moon, or a planet (worked out for ``now_year``),
+    otherwise an exact id, name, or alias from the database.
 
-    Raises ``UnresolvedNameError`` (with did-you-mean guesses) when no place matches.
+    Raises ``UnresolvedNameError`` (with did-you-mean guesses) when no place matches, and for
+    the Earth itself, which is where all of this light starts.
     """
     cleaned = " ".join(text.split())
     if cleaned:
+        if is_earth(cleaned):
+            raise UnresolvedNameError(
+                "Earth is where this light starts, so it has no view of itself. Try a place "
+                "such as the Moon, Mars, or Betelgeuse.",
+                text=cleaned,
+            )
+        body = find_solar_body(cleaned)
+        if body is not None:
+            point = solar_body(body.id, now_year)
+            if point is not None:
+                return point
         point = repo.vantage_point(cleaned) or repo.vantage_point(cleaned.lower())
         if point is not None:
             return point

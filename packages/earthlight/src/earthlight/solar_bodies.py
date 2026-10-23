@@ -47,15 +47,35 @@ class SolarBody:
 
 
 SOLAR_BODIES: Final[tuple[SolarBody, ...]] = (
-    SolarBody("sun", "Sun", VantageKind.STAR, 5, "Sun", "The star at the centre", ("Sol",)),
-    SolarBody("moon", "Moon", VantageKind.MOON, 5, "Moon", "Earth's natural satellite", ("Luna",)),
-    SolarBody("mercury", "Mercury", VantageKind.PLANET, 3, "Mercury (planet)", "Planet", ()),
-    SolarBody("venus", "Venus", VantageKind.PLANET, 4, "Venus", "Planet", ()),
-    SolarBody("mars", "Mars", VantageKind.PLANET, 4, "Mars", "Planet", ()),
-    SolarBody("jupiter", "Jupiter", VantageKind.PLANET, 4, "Jupiter", "Planet", ()),
-    SolarBody("saturn", "Saturn", VantageKind.PLANET, 4, "Saturn", "Planet", ()),
-    SolarBody("uranus", "Uranus", VantageKind.PLANET, 3, "Uranus", "Planet", ()),
-    SolarBody("neptune", "Neptune", VantageKind.PLANET, 3, "Neptune", "Planet", ()),
+    SolarBody(
+        "sun", "Sun", VantageKind.STAR, 5, "Sun", "Star at the centre of the solar system", ("Sol",)
+    ),
+    SolarBody(
+        "moon", "Moon", VantageKind.MOON, 5, "Moon", "Natural satellite of the Earth", ("Luna",)
+    ),
+    SolarBody(
+        "mercury",
+        "Mercury",
+        VantageKind.PLANET,
+        3,
+        "Mercury (planet)",
+        "Planet of the solar system",
+        (),
+    ),
+    SolarBody("venus", "Venus", VantageKind.PLANET, 4, "Venus", "Planet of the solar system", ()),
+    SolarBody("mars", "Mars", VantageKind.PLANET, 4, "Mars", "Planet of the solar system", ()),
+    SolarBody(
+        "jupiter", "Jupiter", VantageKind.PLANET, 4, "Jupiter", "Planet of the solar system", ()
+    ),
+    SolarBody(
+        "saturn", "Saturn", VantageKind.PLANET, 4, "Saturn", "Planet of the solar system", ()
+    ),
+    SolarBody(
+        "uranus", "Uranus", VantageKind.PLANET, 3, "Uranus", "Planet of the solar system", ()
+    ),
+    SolarBody(
+        "neptune", "Neptune", VantageKind.PLANET, 3, "Neptune", "Planet of the solar system", ()
+    ),
 )
 
 SOLAR_BODY_IDS: Final[tuple[str, ...]] = tuple(body.id for body in SOLAR_BODIES)
@@ -88,6 +108,29 @@ def _normalised(text: str) -> str:
 def find_solar_body(text: str) -> SolarBody | None:
     """The body that ``text`` names exactly (ignoring case and a leading "the"), if any."""
     return _BY_NAME.get(_normalised(text))
+
+
+MIN_PREFIX_CHARS = 3
+"""The shortest start of a name that finds a body ("sat" finds Saturn, "s" finds nothing)."""
+
+
+def matching_solar_bodies(text: str) -> list[SolarBody]:
+    """The bodies that ``text`` names exactly or starts to name, the exact one first.
+
+    This is what a search for the text should offer. Typing "mar" finds Mars, and "the sun" finds
+    the Sun, but two letters find nothing: too many things start with them.
+    """
+    wanted = _normalised(text)
+    exact = find_solar_body(text)
+    found = [exact] if exact else []
+    if len(wanted) >= MIN_PREFIX_CHARS:
+        found += [
+            body
+            for body in SOLAR_BODIES
+            if body not in found
+            and any(name.casefold().startswith(wanted) for name in (body.name, *body.other_names))
+        ]
+    return found
 
 
 def is_earth(text: str) -> bool:

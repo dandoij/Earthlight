@@ -137,7 +137,7 @@ def test_a_misspelt_event_name_lists_guesses() -> None:
 
 
 def test_a_name_with_only_partial_matches_lists_them_in_a_table() -> None:
-    result = run("from", "sun")
+    result = run("from", "sunflower")
     assert result.exit_code == 1
     assert "Partial matches" in err(result)
     assert "messier-63" in err(result)

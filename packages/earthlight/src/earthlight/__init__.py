@@ -55,6 +55,7 @@ from earthlight.parse import (
 from earthlight.repository import Repository, default_repository
 from earthlight.resolve import resolve_history, resolve_place
 from earthlight.search import search as _search
+from earthlight.solar_bodies import PLANET_IDS
 from earthlight.time import DecimalYear, from_datetime, now
 
 FutureMomentError = _engine.FutureMomentError
@@ -133,7 +134,8 @@ def from_vantage(
 ) -> EarthSnapshot:
     """What did Earth look like in the light that is arriving at ``place`` right now?
 
-    ``place`` is an id (``"hip-27989"``) or a name or alias (``"Betelgeuse"``, ``"M31"``). The
+    ``place`` is an id (``"hip-27989"``) or a name or alias (``"Betelgeuse"``, ``"M31"``), or the
+    Sun, the Moon, or a planet (``"saturn"``), whose distance is worked out for ``now_year``. The
     snapshot lists the most important events, periods, and landmarks in that span of Earth's
     history (at most ten of each, oldest first), the world population, and notes about
     anything unusual, such as a span so wide that it is uncertain, or light older than Earth.
@@ -145,27 +147,40 @@ def from_vantage(
     '2021 CE'
     >>> from_vantage("GN-z11", now_year=2026.0).earth_exists
     False
+    >>> from_vantage("moon", now_year=2026.0).vantage_point.kind.value
+    'moon'
     """
     reference = now() if now_year is None else now_year
     repo = default_repository() if repository is None else repository
-    point = resolve_place(place, repo)
+    point = resolve_place(place, repo, now_year=reference)
     return _engine.from_vantage(point.id, now_year=reference, repository=repo)
 
 
-def info(place: str, *, repository: Repository | None = None) -> PlaceInfo:
+def info(
+    place: str,
+    *,
+    now_year: DecimalYear | None = None,
+    repository: Repository | None = None,
+) -> PlaceInfo:
     """Everything known about one place: the place itself, the archive details if it is an
     exoplanet, and the ids of its planets if it is a star.
 
-    ``place`` is an id or a name, as for ``from_vantage``.
+    ``place`` is an id or a name, as for ``from_vantage``. ``now_year`` only matters for the Sun,
+    the Moon, and the planets, whose distance from Earth changes with the date.
 
     >>> details = info("proxima-cen-b")
     >>> details.vantage_point.host_id, details.exoplanet.discovery_year
     ('hip-70890', 2016)
     >>> "proxima-cen-b" in info("Proxima Centauri").planet_ids
     True
+    >>> info("sun", now_year=2026.0).planet_ids[:2]
+    ('mercury', 'venus')
     """
+    reference = now() if now_year is None else now_year
     repo = default_repository() if repository is None else repository
-    point = resolve_place(place, repo)
+    point = resolve_place(place, repo, now_year=reference)
+    if point.id == "sun":
+        return PlaceInfo(vantage_point=point, planet_ids=PLANET_IDS)
     if point.kind is VantageKind.EXOPLANET:
         return PlaceInfo(vantage_point=point, exoplanet=repo.exoplanet_details(point.id))
     if point.kind is VantageKind.STAR:

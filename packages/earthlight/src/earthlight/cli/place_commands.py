@@ -41,8 +41,9 @@ def from_command(place: PlaceArgument, json_output: JsonOption = False) -> None:
 
 @app.command(help="Show what is known about one place: distance, position, and catalogue facts.")
 def info(place: PlaceArgument, json_output: JsonOption = False) -> None:
+    reference = now()  # the Sun, Moon, and planets are as far away as the date says
     with friendly_errors(json_output=json_output):
-        details = earthlight.info(place)
+        details = earthlight.info(place, now_year=reference)
     if json_output:
         emit_json(details)
     else:

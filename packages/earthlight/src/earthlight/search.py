@@ -10,6 +10,10 @@
    (the trigram index finds near-misses that word search cannot), and Python's ``difflib``
    scores how alike each candidate's name really is.
 
+The Sun, the Moon, and the planets are not in the database (their distance changes with the
+date), so they are matched separately: an exact name, or at least three letters of the start of
+one, puts the body ahead of the database hits, and a typo can be corrected to one.
+
 The text a person types is never put into SQL or into FTS5 syntax as written: it is cut into
 plain words, and each word is quoted, so characters like ``"`` or ``*`` or ``AND`` cannot change
 the meaning of the query.
@@ -22,6 +26,7 @@ from difflib import SequenceMatcher
 
 from earthlight.models import SearchResponse, SearchResult, SearchType, Suggestion, VantageKind
 from earthlight.repository import Repository, SearchRow, default_repository
+from earthlight.solar_bodies import SOLAR_BODIES, SolarBody, matching_solar_bodies
 
 DEFAULT_LIMIT = 10
 """How many results a search returns unless asked for another number."""
@@ -55,8 +60,11 @@ def search(
     query = tidy(text)
     words = _WORD.findall(query)
     rows = search_rows(text, limit=limit, repository=repo)
-    if rows or not words or limit < 1:
-        return SearchResponse(query=query, results=tuple(_result(row) for row in rows))
+    # The Sun, Moon, and planets are not in the database: they come first, then the rows.
+    found = [_solar_result(body) for body in matching_solar_bodies(query)]
+    found += [_result(row) for row in rows]
+    if found or not words or limit < 1:
+        return SearchResponse(query=query, results=tuple(found[: max(limit, 0)]))
     return SearchResponse(query=query, suggestions=_suggestions(repo, query, words))
 
 
@@ -99,6 +107,16 @@ def _expression(words: list[str]) -> str:
     return " ".join(quoted)
 
 
+def _solar_result(body: SolarBody) -> SearchResult:
+    return SearchResult(
+        type=SearchType.VANTAGE_POINT,
+        id=body.id,
+        name=body.name,
+        kind=body.kind,
+        description=body.description,
+    )
+
+
 def _result(row: SearchRow) -> SearchResult:
     kind = VantageKind(row.kind) if row.type == SearchType.VANTAGE_POINT else None
     return SearchResult(
@@ -136,19 +154,38 @@ def _suggestions(repo: Repository, query: str, words: list[str]) -> tuple[Sugges
     expression = " OR ".join(f'"{triple}"' for triple in triples)
     candidates = _unique(repo.search_trigrams(expression, _CANDIDATES))
     wanted = _fold(" ".join(words))
-    scored = [(_similarity(wanted, row), row) for row in candidates]
+    # (score, how well known, suggestion): database entries and solar system bodies together.
+    scored = [
+        (
+            _similarity(wanted, row),
+            row.weight,
+            Suggestion(type=SearchType(row.type), id=row.id, name=row.name, similarity=0),
+        )
+        for row in candidates
+    ]
+    scored += [
+        (_solar_similarity(wanted, body), body.fame, _solar_suggestion(body))
+        for body in SOLAR_BODIES
+    ]
     best = sorted(
-        (pair for pair in scored if pair[0] >= MIN_SIMILARITY),
-        key=lambda pair: (-pair[0], -pair[1].weight, pair[1].name),
+        (entry for entry in scored if entry[0] >= MIN_SIMILARITY),
+        key=lambda entry: (-entry[0], -entry[1], entry[2].name),
     )
     return tuple(
-        Suggestion(
-            type=SearchType(row.type),
-            id=row.id,
-            name=row.name,
-            similarity=round(score, 3),
-        )
-        for score, row in best[:MAX_SUGGESTIONS]
+        suggestion.model_copy(update={"similarity": round(score, 3)})
+        for score, _, suggestion in best[:MAX_SUGGESTIONS]
+    )
+
+
+def _solar_suggestion(body: SolarBody) -> Suggestion:
+    return Suggestion(type=SearchType.VANTAGE_POINT, id=body.id, name=body.name, similarity=0)
+
+
+def _solar_similarity(wanted: str, body: SolarBody) -> float:
+    """How alike ``wanted`` is to a body's name or one of its other names."""
+    return max(
+        SequenceMatcher(None, wanted, _fold(name)).ratio()
+        for name in (body.name, *body.other_names)
     )
 
 
