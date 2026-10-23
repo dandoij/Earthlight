@@ -364,6 +364,33 @@ def cosmicflows_numbers(objects: Iterable[CuratedObject]) -> list[int]:
     ]
 
 
+_PARENTHESIS = re.compile(r"(?P<base>.+?) \((?P<inner>.+)\)")
+_MESSIER_SHORT = re.compile(r"M(?P<number>\d+)")
+
+
+def search_aliases(item: CuratedObject, extra: Iterable[str] = ()) -> str:
+    """The other names a person might type for ``item``, one per line.
+
+    These are the names written in the YAML, any ``extra`` names, and names read off the
+    display name: ``Andromeda Galaxy (Messier 31)`` is also found as ``Andromeda Galaxy`` and as
+    ``Messier 31``, and an alias ``M31`` also gives ``Messier 31``. Each name appears once,
+    ignoring case, and the display name itself is not repeated.
+    """
+    names = [*item.aliases, *extra]
+    if match := _PARENTHESIS.fullmatch(item.name):
+        names += [match["base"], match["inner"]]
+    for name in list(names):
+        if short := _MESSIER_SHORT.fullmatch(name):
+            names.append(f"Messier {short['number']}")
+    seen = {item.name.casefold()}
+    kept: list[str] = []
+    for name in names:
+        if name.casefold() not in seen:
+            seen.add(name.casefold())
+            kept.append(name)
+    return "\n".join(kept)
+
+
 def build_deep_sky(
     objects: Iterable[CuratedObject],
     simbad_records: Mapping[str, SimbadRecord],
@@ -463,12 +490,11 @@ def build_deep_sky(
             wikipedia=item.wikipedia,
             facts=facts,
         )
-        aliases = [*item.aliases, *([record.main_id] if record else [])]
         search = SearchEntry(
             type="vantage_point",
             id=item.id,
             name=item.name,
-            aliases="\n".join(dict.fromkeys(aliases)),
+            aliases=search_aliases(item, [record.main_id] if record else []),
             description=f"{_KIND_LABELS[item.kind]}, redshift {shown:g}",
         )
         records.append(DeepSkyRecord(point, search))
@@ -553,7 +579,7 @@ def _build_clusters(
             type="vantage_point",
             id=item.id,
             name=item.name,
-            aliases="\n".join(dict.fromkeys(item.aliases)),
+            aliases=search_aliases(item),
             description=f"{kind.capitalize()} cluster, {_light_years_text(lookback.best)}",
         )
         records.append(DeepSkyRecord(point, search))
@@ -621,7 +647,7 @@ def _build_catalogue_galaxies(
             type="vantage_point",
             id=item.id,
             name=item.name,
-            aliases="\n".join(dict.fromkeys(item.aliases)),
+            aliases=search_aliases(item),
             description=f"{_KIND_LABELS[item.kind]}, {_light_years_text(lookback.best)}",
         )
         built.append(DeepSkyRecord(point, search))

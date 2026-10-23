@@ -169,3 +169,26 @@ def test_info_view_marks_a_disputed_planet() -> None:
     )
     assert "Its existence is disputed." in render_text(info_view(disputed))
     assert "disputed" not in render_text(info_view(details))
+
+
+@pytest.mark.parametrize(
+    ("typed", "place_id"),
+    [
+        ("andromeda galaxy", "andromeda-galaxy"),
+        ("Andromeda", "andromeda-galaxy"),
+        ("Messier 31", "andromeda-galaxy"),
+        ("M31", "andromeda-galaxy"),
+        ("triangulum galaxy", "triangulum-galaxy"),
+        ("Centaurus A", "centaurus-a"),
+        ("omega centauri", "omega-centauri"),
+        ("jewel box cluster", "jewel-box-cluster"),
+        ("Messier 45", "pleiades"),
+        ("Pleiades", "pleiades"),
+    ],
+)
+def test_a_place_is_found_by_the_halves_of_its_name_and_its_long_messier_name(
+    typed: str, place_id: str
+) -> None:
+    result = run("info", typed)
+    assert result.exit_code == 0, result.stderr
+    assert f"id {place_id}" in out(result)

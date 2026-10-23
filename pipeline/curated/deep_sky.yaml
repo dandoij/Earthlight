@@ -711,7 +711,7 @@ objects:
       catalogue: mcconnachie_2012
       name: Andromeda
     wikipedia: Andromeda Galaxy
-    aliases: [M31, NGC 224]
+    aliases: [M31, NGC 224, Andromeda]
   - id: triangulum-galaxy
     name: Triangulum Galaxy (Messier 33)
     kind: galaxy

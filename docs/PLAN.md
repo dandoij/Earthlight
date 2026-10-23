@@ -200,6 +200,7 @@ No database yet. Pure, heavily tested functions.
   - **Done:** "Using it from the command line" with six real examples (a year, recent light, a place older than Earth, a typo, an error, JSON). `test_readme.py` runs every `console` block with the clock, width, and box characters fixed, so the README cannot drift from the program. Layouts now print through `cli.output.print_view`, so tests can swap the console.
 - [x] **4.7 Phase review**
   - **Done:** code-reviewer over `git diff main...HEAD`; bugs and clear improvements fixed in "fix: address phase 4 review findings". Judgment calls decided with Ian: a JSON error title "Empty input" for blank text; `Suggestion` keeps no `kind`; the parse functions stay in `earthlight.parse`; long names are shortened in errors, `--year` accepts commas, the year-range error is plain, and the help explains `--date -0043-03-15`.
+  - **Follow-up (aliases):** `earthlight from "andromeda galaxy"` failed because only exact names and aliases resolve. Decided with Ian to add aliases rather than loosen `resolve_place`. The deep-sky build now also stores the two halves of a name with brackets ("Andromeda Galaxy", "Messier 31") and the long form of a short Messier alias ("M31" gives "Messier 31"), and "Andromeda" was added by hand. A rebuild from the cache changed only the search aliases of 39 deep-sky entries; every data table is identical. The Sun is not a place in the database, so `from sun` still has no exact match.
 
 ---
 
