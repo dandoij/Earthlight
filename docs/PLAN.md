@@ -214,7 +214,8 @@ Added after Phase 4 because `earthlight from saturn` found nothing: the plan lis
   - **Done:** also `VantageKind.MOON` (added to the models, `schema.sql`, and the JSON schema snapshot).
 - [x] **4b.2 Wire the bodies into the engine**: `resolve_place`, `engine.from_vantage`, `info`, and `search` find them; did-you-mean covers their names; a clear message for Earth itself; a note when the light left Earth under a day ago. Rebuild the database from the cache so its `kind` check includes `moon`.
   - **Done:** `resolve_place` now takes `now_year`; `earthlight.info` gained an optional `now_year` (the Sun lists the seven planets as `planet_ids`); search puts an exact name or a start of at least three letters ahead of database hits and offers "saturm" a guess; a place under a light-day away gets the note "from there Earth looks almost exactly as it does now". The database was rebuilt from the cache: every table and search entry is identical, only the `kind` check now allows `moon`. Two older tests that used `sun` as a partial match now use `sunflower`.
-- [ ] **4b.3 Command line and README**: `info` shows ranges in light-minutes and hours, `from` words short spans properly, README example.
+- [x] **4b.3 Command line and README**: `info` shows ranges in light-minutes and hours, `from` words short spans properly, README example.
+  - **Done:** one `_span` rule picks the unit for distances (`light_travel`), ranges (`light_range`, which shares the unit and hides a range that reads as one value), and plain times (`time_span`): seconds and minutes keep a decimal under ten, so the Moon is "1.3 light-seconds" and the Sun "8.2 light-minutes". A place under a day away says "left Earth about 1.3 hours ago". README has `info saturn` and `search sat`, checked by `test_readme.py`.
 - [ ] **4b.4 Phase review**
 
 ---

@@ -41,22 +41,56 @@ _CATEGORY_TITLES = (
 
 
 def _counted(count: str, unit: str) -> str:
-    """``count`` with its unit, singular only for exactly ``1`` (``1 light-second``)."""
-    return f"{count} {unit}" if count == "1" else f"{count} {unit}s"
+    """``count`` with its unit. Counts are decimals ("1.0") or larger, so the unit is plural."""
+    return f"{count} {unit}s"
+
+
+def _span(years: float) -> tuple[str, str]:
+    """A length of time as a count and a unit, picked so the count stays short.
+
+    Seconds under ten and minutes under ten keep a decimal (the Moon is 1.3 seconds away, the
+    Sun 8.3 minutes), and an hour or more is shown in hours until two days.
+    """
+    seconds = years * SECONDS_PER_JULIAN_YEAR
+    if seconds < 10:
+        return f"{seconds:.1f}", "second"
+    if seconds < 120:
+        return f"{seconds:.0f}", "second"
+    if seconds < 600:
+        return f"{seconds / 60:.1f}", "minute"
+    if seconds < 3600:
+        return f"{seconds / 60:.0f}", "minute"
+    if seconds < 2 * SECONDS_PER_DAY:
+        return f"{seconds / 3600:.1f}", "hour"
+    if years < 1:
+        return f"{seconds / SECONDS_PER_DAY:.0f}", "day"
+    return big_number(years), "year"
 
 
 def light_travel(years: float) -> str:
     """Describe a light-travel time as the distance it covers, such as ``534 light-years``."""
-    seconds = years * SECONDS_PER_JULIAN_YEAR
-    if seconds < 120:
-        return _counted(f"{seconds:.0f}", "light-second")
-    if seconds < 7200:
-        return _counted(f"{seconds / 60:.0f}", "light-minute")
-    if seconds < 2 * SECONDS_PER_DAY:
-        return _counted(f"{seconds / 3600:.1f}", "light-hour")
-    if years < 1:
-        return _counted(f"{seconds / SECONDS_PER_DAY:.0f}", "light-day")
-    return f"{big_number(years)} light-years"
+    count, unit = _span(years)
+    return _counted(count, f"light-{unit}")
+
+
+def time_span(years: float) -> str:
+    """Describe a length of time in plain units, such as ``71 minutes`` or ``534 years``."""
+    count, unit = _span(years)
+    return _counted(count, unit)
+
+
+def light_range(low: float, high: float) -> str | None:
+    """A range of light-travel times, such as ``473 to 667 light-years``.
+
+    Returns ``None`` when both ends read the same, since a range that rounds to one value tells
+    the reader nothing.
+    """
+    low_span, high_span = _span(low), _span(high)
+    if low_span == high_span:
+        return None
+    if low_span[1] == high_span[1]:
+        return f"{low_span[0]} to {high_span[0]} light-{low_span[1]}s"
+    return f"{light_travel(low)} to {light_travel(high)}"
 
 
 def big_number(value: float) -> str:
@@ -84,10 +118,6 @@ def percent_text(percent: float) -> str:
     return f"{percent:.{decimals}f}"
 
 
-def _range_text(low: float, high: float) -> str:
-    return f"{big_number(low)} to {big_number(high)}"
-
-
 def match_panel(title: str, match: Match | None) -> Panel:
     """One category panel: the place, how far away it is, and how well it fits."""
     if match is None:
@@ -102,9 +132,8 @@ def match_panel(title: str, match: Match | None) -> Panel:
     header.append(f"  {', '.join(where)}", style="dim")
     lines: list[RenderableType] = [header]
     lines.append(Text(f"{light_travel(point.lookback.best)} away"))
-    low, high = point.lookback.minimum, point.lookback.maximum
-    if big_number(low) != big_number(high):
-        lines.append(Text(f"range {_range_text(low, high)} light-years", style="dim"))
+    if spread := light_range(point.lookback.minimum, point.lookback.maximum):
+        lines.append(Text(f"range {spread}", style="dim"))
     if point.magnitude is not None:
         lines.append(Text(f"magnitude {round(point.magnitude, 2):g}", style="dim"))
     if match.approximate:
@@ -199,6 +228,10 @@ def _period_end(period: HistoryPeriod, now_year: DecimalYear) -> str:
 
 
 def _left_earth(snapshot: EarthSnapshot, now_year: DecimalYear) -> str:
+    lookback = snapshot.vantage_point.lookback
+    if lookback.maximum * SECONDS_PER_JULIAN_YEAR < SECONDS_PER_DAY:
+        # Under a day: the two ends of the span are minutes apart, so give the best estimate.
+        return f"about {time_span(lookback.best)} ago"
     earliest = format_year(snapshot.moments.earliest, now_year=now_year)
     latest = format_year(snapshot.moments.latest, now_year=now_year)
     if earliest == latest:
@@ -290,9 +323,8 @@ def info_view(details: PlaceInfo) -> RenderableType:
     lookback = point.lookback
     parts: list[RenderableType] = [_place_header(point)]
     distance = f"{light_travel(lookback.best)} away"
-    low, high = big_number(lookback.minimum), big_number(lookback.maximum)
-    if low != high:  # a range that rounds to one number tells the reader nothing
-        distance += f" (range {low} to {high} light-years)"
+    if spread := light_range(lookback.minimum, lookback.maximum):
+        distance += f" (range {spread})"
     parts.append(Text(distance))
     if point.magnitude is not None:
         parts.append(Text(f"Magnitude {round(point.magnitude, 2):g}"))

@@ -225,7 +225,11 @@ def test_big_number(value: float, expected: str) -> None:
     ("years", "expected"),
     [
         (30 / 31_557_600, "30 light-seconds"),
-        (1 / 31_557_600, "1 light-second"),
+        (1 / 31_557_600, "1.0 light-seconds"),
+        (1.28 / 31_557_600, "1.3 light-seconds"),
+        (498 / 31_557_600, "8.3 light-minutes"),
+        (3_000 / 31_557_600, "50 light-minutes"),
+        (4_260 / 31_557_600, "1.2 light-hours"),
         (600 / 31_557_600, "10 light-minutes"),
         (10_800 / 31_557_600, "3.0 light-hours"),
         (5 * 86_400 / 31_557_600, "5 light-days"),
