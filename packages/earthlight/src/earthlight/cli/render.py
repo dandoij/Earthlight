@@ -18,6 +18,11 @@ from earthlight.models import (
     Match,
     MomentResult,
     PlaceInfo,
+    SearchResponse,
+    SearchResult,
+    SearchType,
+    Suggestion,
+    VantageKind,
     VantagePoint,
     ZoneInfo,
 )
@@ -285,11 +290,65 @@ def info_view(details: PlaceInfo) -> RenderableType:
     return Group(*parts)
 
 
+def _type_label(search_type: SearchType, kind: VantageKind | None = None) -> str:
+    """What to call a hit: a place says what it is (star, galaxy), the rest say their type."""
+    if search_type is SearchType.VANTAGE_POINT:
+        return kind.value.replace("_", " ") if kind else "place"
+    return search_type.value
+
+
+def results_table(results: tuple[SearchResult, ...], title: str | None = None) -> Table:
+    """Search hits as a table: what it is, its name, a detail line, and the id to use next."""
+    table = Table(title=title, title_justify="left", title_style="bold")
+    table.add_column("Type", style="dim")
+    table.add_column("Name", style="bold", overflow="fold")
+    table.add_column("Detail", overflow="fold")
+    table.add_column("Id", style="dim", overflow="fold")
+    for result in results:
+        table.add_row(
+            _type_label(result.type, result.kind),
+            result.name,
+            result.description or "",
+            result.id,
+        )
+    return table
+
+
+def suggestions_view(
+    suggestions: tuple[Suggestion, ...], results: tuple[SearchResult, ...] = ()
+) -> RenderableType | None:
+    """Did-you-mean guesses and partial matches, or ``None`` if there is nothing to offer."""
+    parts: list[RenderableType] = []
+    if suggestions:
+        parts.append(Text("Did you mean:", style="bold"))
+        parts.extend(
+            Text(f"  {guess.name}  ({_type_label(guess.type)}, id {guess.id})")
+            for guess in suggestions
+        )
+    if results:
+        parts.append(results_table(results, title="Partial matches"))
+    return Group(*parts) if parts else None
+
+
+def search_view(response: SearchResponse) -> RenderableType:
+    """The answer to ``search``: the hits, or a plain "nothing found" with guesses."""
+    if response.results:
+        return results_table(response.results)
+    parts: list[RenderableType] = [Text(f"Nothing found for '{response.query}'.")]
+    guesses = suggestions_view(response.suggestions)
+    if guesses is not None:
+        parts.append(guesses)
+    return Group(*parts)
+
+
 __all__ = [
     "CategoryGrid",
     "big_number",
     "info_view",
     "light_travel",
     "moment_view",
+    "results_table",
+    "search_view",
     "snapshot_view",
+    "suggestions_view",
 ]
