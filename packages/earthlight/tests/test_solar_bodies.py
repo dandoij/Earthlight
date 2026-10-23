@@ -24,8 +24,9 @@ from earthlight.solar_bodies import (
     SOLAR_BODY_IDS,
     find_solar_body,
     is_earth,
+    matching_solar_bodies,
     solar_body,
-    solar_body_names,
+    solar_name_forms,
 )
 from earthlight.solar_system import (
     PLANETS,
@@ -166,8 +167,10 @@ def test_the_moon_is_a_second_or_so_away() -> None:
     assert seconds(point.lookback.maximum) == pytest.approx(407_000 / SPEED_OF_LIGHT_KM_S, rel=1e-4)
     assert point.facts == {
         "distance_source": "nasa_moon_fact_sheet",
-        "mean_distance_km": 384_400.0,
+        "distance_au": 0.00257,
+        "mean_distance_km": 384_400,
     }
+    assert isinstance(point.facts["mean_distance_km"], int)
 
 
 @given(moment=moments)
@@ -259,7 +262,40 @@ def test_the_earth_is_recognised_so_it_can_be_explained() -> None:
     assert not is_earth("Earthrise")
 
 
-def test_did_you_mean_names_include_the_other_names() -> None:
-    names = solar_body_names()
-    assert {"Sun", "Sol", "Moon", "Luna", "Saturn", "Neptune"} <= set(names)
-    assert len(names) == len(set(names))
+@pytest.mark.parametrize(
+    ("text", "body_id"),
+    [
+        ("Sun.", "sun"),
+        ("sun!!", "sun"),
+        ("  the   SUN ", "sun"),
+        ("Säturn", "saturn"),
+        ("SATURN,", "saturn"),
+        (f"Earth{chr(0x2019)}s Moon", "moon"),  # typographic apostrophe, as phones type it
+        ("EARTH'S MOON", "moon"),
+        ("earth s moon", "moon"),
+    ],
+)
+def test_punctuation_accents_and_apostrophes_do_not_hide_a_body(text: str, body_id: str) -> None:
+    body = find_solar_body(text)
+    assert body is not None
+    assert body.id == body_id
+    assert next(b.id for b in matching_solar_bodies(text)) == body_id
+
+
+def test_a_lone_the_is_not_a_body() -> None:
+    assert find_solar_body("the") is None
+    assert matching_solar_bodies("the") == []
+
+
+def test_exact_only_names_do_not_match_a_prefix() -> None:
+    assert [b.id for b in matching_solar_bodies("earth s")] == []
+    assert [b.id for b in matching_solar_bodies("ear")] == []
+    assert [b.id for b in matching_solar_bodies("lun")] == ["moon"]  # an other name, so it can
+
+
+def test_name_forms_are_the_plain_forms_names_are_compared_in() -> None:
+    sun = find_solar_body("sun")
+    moon = find_solar_body("moon")
+    assert sun is not None and moon is not None
+    assert solar_name_forms(sun) == ("sun", "sol")
+    assert solar_name_forms(moon) == ("moon", "luna", "earth s moon")

@@ -14,7 +14,8 @@ from earthlight.time import now
 PlaceArgument = Annotated[
     str,
     typer.Argument(
-        help='A place: a name ("Betelgeuse", "M31"), an alias, or an id ("hip-27989").',
+        help='A place: a name ("Betelgeuse", "M31", "Saturn", "the Moon"), an alias, or an id '
+        '("hip-27989").',
         metavar="PLACE",
         show_default=False,
     ),

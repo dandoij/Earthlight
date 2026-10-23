@@ -27,7 +27,9 @@ from earthlight.models import (
     VantagePoint,
     ZoneInfo,
 )
-from earthlight.time import SECONDS_PER_DAY, SECONDS_PER_JULIAN_YEAR, DecimalYear, format_year
+from earthlight.solar_bodies import ORBIT_RANGE_MIDPOINT, OUT_OF_TABLE_NOTE
+from earthlight.time import DecimalYear, format_year
+from earthlight.units import big_number, is_within_a_day, light_range, light_travel, time_span
 
 GRID_MIN_WIDTH = 100
 """Terminals at least this wide show the four category panels two by two."""
@@ -38,76 +40,6 @@ _CATEGORY_TITLES = (
     ("visible_tonight", "Visible tonight"),
     ("most_precise", "Most precise"),
 )
-
-
-def _counted(count: str, unit: str) -> str:
-    """``count`` with its unit. Counts are decimals ("1.0") or larger, so the unit is plural."""
-    return f"{count} {unit}s"
-
-
-def _span(years: float) -> tuple[str, str]:
-    """A length of time as a count and a unit, picked so the count stays short.
-
-    Seconds under ten and minutes under ten keep a decimal (the Moon is 1.3 seconds away, the
-    Sun 8.3 minutes), and an hour or more is shown in hours until two days.
-    """
-    seconds = years * SECONDS_PER_JULIAN_YEAR
-    if seconds < 10:
-        return f"{seconds:.1f}", "second"
-    if seconds < 120:
-        return f"{seconds:.0f}", "second"
-    if seconds < 600:
-        return f"{seconds / 60:.1f}", "minute"
-    if seconds < 3600:
-        return f"{seconds / 60:.0f}", "minute"
-    if seconds < 2 * SECONDS_PER_DAY:
-        return f"{seconds / 3600:.1f}", "hour"
-    if years < 1:
-        return f"{seconds / SECONDS_PER_DAY:.0f}", "day"
-    return big_number(years), "year"
-
-
-def light_travel(years: float) -> str:
-    """Describe a light-travel time as the distance it covers, such as ``534 light-years``."""
-    count, unit = _span(years)
-    return _counted(count, f"light-{unit}")
-
-
-def time_span(years: float) -> str:
-    """Describe a length of time in plain units, such as ``71 minutes`` or ``534 years``."""
-    count, unit = _span(years)
-    return _counted(count, unit)
-
-
-def light_range(low: float, high: float) -> str | None:
-    """A range of light-travel times, such as ``473 to 667 light-years``.
-
-    Returns ``None`` when both ends read the same, since a range that rounds to one value tells
-    the reader nothing.
-    """
-    low_span, high_span = _span(low), _span(high)
-    if low_span == high_span:
-        return None
-    if low_span[1] == high_span[1]:
-        return f"{low_span[0]} to {high_span[0]} light-{low_span[1]}s"
-    return f"{light_travel(low)} to {light_travel(high)}"
-
-
-def big_number(value: float) -> str:
-    """A count of years for people: ``4.2``, ``534``, ``12,000``, ``66 million``.
-
-    The value is rounded before its unit is chosen, so 999.6 million reads ``1 billion``.
-    """
-    if value >= 1e6:
-        millions = float(f"{value / 1e6:.3g}")
-        if millions >= 1000:
-            return f"{millions / 1000:g} billion"
-        return f"{millions:g} million"
-    if value >= 100:
-        rounded = round(value)
-        return "1 million" if rounded >= 1_000_000 else f"{rounded:,}"
-    tenths = round(value, 1)
-    return f"{tenths:.0f}" if tenths >= 100 else f"{tenths:.1f}"
 
 
 def percent_text(percent: float) -> str:
@@ -229,7 +161,7 @@ def _period_end(period: HistoryPeriod, now_year: DecimalYear) -> str:
 
 def _left_earth(snapshot: EarthSnapshot, now_year: DecimalYear) -> str:
     lookback = snapshot.vantage_point.lookback
-    if lookback.maximum * SECONDS_PER_JULIAN_YEAR < SECONDS_PER_DAY:
+    if is_within_a_day(lookback):
         # Under a day: the two ends of the span are minutes apart, so give the best estimate.
         return f"about {time_span(lookback.best)} ago"
     earliest = format_year(snapshot.moments.earliest, now_year=now_year)
@@ -345,6 +277,8 @@ def info_view(details: PlaceInfo) -> RenderableType:
         for key in sorted(point.facts):
             facts.add_row(Text(key.replace("_", " ")), Text(str(point.facts[key])))
         parts.append(facts)
+    if point.facts.get("distance_source") == ORBIT_RANGE_MIDPOINT:
+        parts.append(Text(OUT_OF_TABLE_NOTE, style="dim"))
     parts.append(Text(f"See Earth from here: earthlight from {point.id}", style="dim"))
     return Group(*parts)
 

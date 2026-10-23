@@ -188,6 +188,16 @@ def _heliocentric_au(elements: _Elements, centuries: float) -> tuple[float, floa
     return x, y, z
 
 
+def _centuries(moment: DecimalYear, what: str) -> float:
+    """Julian centuries since J2000 for a moment the orbit formulas cover.
+
+    Raises ValueError, saying ``what`` is unavailable, outside 1800 AD to 2050 AD.
+    """
+    if not TABLE_FIRST_MOMENT <= moment < TABLE_END_MOMENT:
+        raise ValueError(f"{what} only available from 1800 to 2050 AD, got {moment:.2f}")
+    return (julian_date(moment) - _JD_J2000) / _DAYS_PER_CENTURY
+
+
 def planet_position_au(planet: Planet, moment: DecimalYear) -> tuple[float, float, float]:
     """Vector from Earth to ``planet`` at ``moment``, in astronomical units.
 
@@ -205,11 +215,7 @@ def planet_position_au(planet: Planet, moment: DecimalYear) -> tuple[float, floa
     """
     if planet not in PLANETS:
         raise ValueError(f"unknown planet {planet!r}; expected one of {', '.join(PLANETS)}")
-    if not TABLE_FIRST_MOMENT <= moment < TABLE_END_MOMENT:
-        raise ValueError(
-            f"planet positions are only available from 1800 to 2050 AD, got {moment:.2f}"
-        )
-    centuries = (julian_date(moment) - _JD_J2000) / _DAYS_PER_CENTURY
+    centuries = _centuries(moment, "planet positions are")
     ex, ey, ez = _heliocentric_au(_ELEMENTS["earth"], centuries)
     px, py, pz = _heliocentric_au(_ELEMENTS[planet], centuries)
     return px - ex, py - ey, pz - ez
@@ -226,10 +232,8 @@ def planet_distance_au(planet: Planet, moment: DecimalYear) -> float:
 
 def _orbit_radii_au(name: str, moment: DecimalYear) -> tuple[float, float]:
     """Nearest and farthest distance from the Sun (perihelion, aphelion) on this date."""
-    if not TABLE_FIRST_MOMENT <= moment < TABLE_END_MOMENT:
-        raise ValueError(f"orbit sizes are only available from 1800 to 2050 AD, got {moment:.2f}")
+    t = _centuries(moment, "orbit sizes are")
     elements = _ELEMENTS[name]
-    t = (julian_date(moment) - _JD_J2000) / _DAYS_PER_CENTURY
     a = elements.a + elements.a_rate * t
     e = elements.e + elements.e_rate * t
     return a * (1 - e), a * (1 + e)
@@ -260,16 +264,15 @@ def earth_sun_distance_au(moment: DecimalYear) -> float:
     The Earth is the Earth-Moon barycenter here, as in the planet positions (see the module
     docstring). Raises ValueError for a moment outside 1800 AD to 2050 AD.
     """
-    if not TABLE_FIRST_MOMENT <= moment < TABLE_END_MOMENT:
-        raise ValueError(
-            f"the Earth-Sun distance is only available from 1800 to 2050 AD, got {moment:.2f}"
-        )
-    centuries = (julian_date(moment) - _JD_J2000) / _DAYS_PER_CENTURY
+    centuries = _centuries(moment, "the Earth-Sun distance is")
     return math.hypot(*_heliocentric_au(_ELEMENTS["earth"], centuries))
 
 
 def earth_sun_distance_bounds_au(moment: DecimalYear) -> tuple[float, float]:
-    """The nearest (perihelion) and farthest (aphelion) the Earth is from the Sun, in au."""
+    """The nearest (perihelion) and farthest (aphelion) the Earth is from the Sun, in au.
+
+    Raises ValueError for a moment outside 1800 AD to 2050 AD.
+    """
     return _orbit_radii_au("earth", moment)
 
 

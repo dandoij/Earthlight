@@ -5,8 +5,9 @@ import pytest
 import earthlight
 from earthlight import UnresolvedNameError, from_vantage, info, search, when
 from earthlight import engine as engine_module
-from earthlight.models import VantageKind
-from earthlight.solar_bodies import PLANET_IDS, matching_solar_bodies
+from earthlight.lookback import LookbackRange
+from earthlight.models import VantageKind, VantagePoint
+from earthlight.solar_bodies import OUT_OF_TABLE_NOTE, PLANET_IDS, matching_solar_bodies
 
 NOW = 2026.0
 SECONDS_PER_YEAR = 365.25 * 86_400
@@ -207,6 +208,100 @@ def test_matching_bodies_prefers_exact_then_prefix() -> None:
     assert [b.id for b in matching_solar_bodies("mer")] == ["mercury"]
     assert [b.id for b in matching_solar_bodies("nep")] == ["neptune"]
     assert [b.id for b in matching_solar_bodies("ear")] == []
+
+
+# --- notes and wording -----------------------------------------------------------------------
+
+ABOUT_NOW = "so from there Earth looks almost exactly as it does now."
+
+
+@pytest.mark.parametrize(
+    ("body_id", "distance"),
+    [("moon", "1.3 light-seconds"), ("sun", "8.2 light-minutes"), ("saturn", "1.3 light-hours")],
+)
+def test_the_about_now_note_reads_correctly_for_each_body(body_id: str, distance: str) -> None:
+    notes = from_vantage(body_id, now_year=NOW).notes
+    assert f"This place is only {distance} away, {ABOUT_NOW}" in notes
+
+
+def a_point_with_lookback(minimum_days: float, best_days: float, maximum_days: float):  # type: ignore[no-untyped-def]
+    """A stand-in for ``solar_body`` that returns a place at the given distances in light-days."""
+
+    def stand_in(body_id: str, now_year: float) -> VantagePoint:
+        return VantagePoint(
+            id=body_id,
+            name="Test body",
+            kind=VantageKind.PLANET,
+            lookback=LookbackRange(
+                minimum_days / 365.25, best_days / 365.25, maximum_days / 365.25
+            ),
+        )
+
+    return stand_in
+
+
+@pytest.mark.parametrize(("days", "expected"), [(0.9, True), (1.1, False)])
+def test_the_about_now_note_turns_on_a_light_day(
+    monkeypatch: pytest.MonkeyPatch, days: float, expected: bool
+) -> None:
+    monkeypatch.setattr(
+        engine_module, "solar_body", a_point_with_lookback(days / 2, days * 0.75, days)
+    )
+    notes = engine_module.from_vantage("saturn", now_year=NOW).notes
+    assert any(ABOUT_NOW in note for note in notes) is expected
+
+
+def test_the_note_uses_the_far_end_not_the_best_estimate(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(engine_module, "solar_body", a_point_with_lookback(0.1, 0.5, 2.0))
+    assert not any(ABOUT_NOW in n for n in engine_module.from_vantage("x", now_year=NOW).notes)
+
+
+def test_a_date_outside_the_orbit_table_says_only_the_range_is_reliable() -> None:
+    assert OUT_OF_TABLE_NOTE in from_vantage("jupiter", now_year=2100.0).notes
+    assert OUT_OF_TABLE_NOTE in from_vantage("sun", now_year=1700.0).notes
+    assert OUT_OF_TABLE_NOTE not in from_vantage("jupiter", now_year=NOW).notes
+    assert OUT_OF_TABLE_NOTE not in from_vantage("moon", now_year=2100.0).notes  # no table
+
+
+def test_the_moon_has_the_same_facts_as_the_other_bodies_and_a_whole_number_of_km() -> None:
+    details = info("moon", now_year=NOW)
+    assert details.vantage_point.facts["distance_au"] == 0.00257
+    assert details.vantage_point.facts["mean_distance_km"] == 384_400
+    assert '"mean_distance_km":384400' in details.model_dump_json()
+    assert "distance_au" in info("saturn", now_year=NOW).vantage_point.facts
+
+
+# --- tolerant names --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("typed", "body_id"),
+    [
+        ("Sun.", "sun"),
+        ("the Sun!", "sun"),
+        ("Säturn", "saturn"),
+        (f"Earth{chr(0x2019)}s Moon", "moon"),
+        ("EARTH'S MOON", "moon"),
+    ],
+)
+def test_punctuation_accents_and_apostrophes_do_not_hide_a_body(typed: str, body_id: str) -> None:
+    assert from_vantage(typed, now_year=NOW).vantage_point.id == body_id
+    assert search(typed).results[0].id == body_id
+
+
+def test_a_typo_for_an_other_name_is_still_offered() -> None:
+    assert search("lunaa").suggestions[0].id == "moon"
+    assert search("soll").suggestions[0].id == "sun"
+
+
+def test_an_exact_only_name_is_not_a_search_prefix() -> None:
+    assert "moon" not in {r.id for r in search("earth").results}
+    assert "moon" not in {r.id for r in search("ear").results}
+
+
+def test_short_prefixes_keep_the_body_first() -> None:
+    assert search("sol").results[0].id == "sun"
+    assert search("mar").results[0].id == "mars"
 
 
 def test_the_top_level_names_are_unchanged() -> None:

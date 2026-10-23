@@ -15,14 +15,14 @@ import earthlight
 from earthlight.cli import app
 from earthlight.cli.render import (
     info_view,
-    light_range,
     match_panel,
     percent_text,
     snapshot_view,
-    time_span,
     zone_panel,
 )
 from earthlight.lookback import MomentRange
+from earthlight.solar_bodies import OUT_OF_TABLE_NOTE
+from earthlight.units import light_range, time_span
 
 NOW = 2026.0
 ANSI_CODES = re.compile(r"\x1b\[[0-9;]*m")
@@ -261,3 +261,22 @@ def test_layouts_do_not_crash_on_names_the_encoding_cannot_hold(arguments: tuple
     done = _earthlight(*arguments)
     assert done.returncode == 0, done.stderr
     assert b"Traceback" not in done.stderr
+
+
+def test_info_for_a_planet_outside_the_orbit_table_carries_the_note() -> None:
+    far = render_text(info_view(earthlight.info("jupiter", now_year=2100.0)))
+    assert OUT_OF_TABLE_NOTE.split(",")[0] in far
+    assert OUT_OF_TABLE_NOTE.split(",")[0] not in render_text(
+        info_view(earthlight.info("jupiter", now_year=NOW))
+    )
+    assert OUT_OF_TABLE_NOTE.split(",")[0] not in render_text(
+        info_view(earthlight.info("moon", now_year=2100.0))
+    )
+
+
+def test_info_shows_a_range_with_one_precision_and_the_moon_facts_cleanly() -> None:
+    mercury = render_text(info_view(earthlight.info("mercury", now_year=NOW)))
+    assert "range 4.3 to 12.3 light-minutes" in mercury
+    moon = render_text(info_view(earthlight.info("moon", now_year=NOW)))
+    assert "distance au" in moon and "0.00257" in moon
+    assert "384400" in moon and "384400.0" not in moon

@@ -29,7 +29,7 @@ from earthlight.models import (
     ZoneInfo,
 )
 from earthlight.repository import Repository, default_repository
-from earthlight.solar_bodies import solar_body
+from earthlight.solar_bodies import ORBIT_RANGE_MIDPOINT, OUT_OF_TABLE_NOTE, solar_body
 from earthlight.solar_system import (
     AU_IN_LIGHT_YEARS,
     PLANETS,
@@ -52,6 +52,7 @@ from earthlight.time import (
     seconds_between,
     subtract_seconds,
 )
+from earthlight.units import is_within_a_day, light_travel
 
 NEAR_MISS_FRACTION = 0.05
 """When no place has a range that contains the moment, the best place whose range comes
@@ -64,9 +65,6 @@ NAKED_EYE_MAGNITUDE = 6.0
 """The faintest star a person with good eyesight and a dark sky can see."""
 
 _PROXIMA_LIGHT_YEARS = au_to_light_years(PROXIMA_CENTAURI_AU)
-
-_ABOUT_NOW_YEARS = 1 / 365.25
-"""A place closer than a light-day sees Earth almost as it is now, and a note says so."""
 
 EARTH_AGE_YEARS = 4.54e9
 """Earth formed about 4.54 billion years ago (the same figure as the ``earth-forms`` history
@@ -253,18 +251,16 @@ def _zone_info(zone: Zone, lookback: float) -> ZoneInfo:
 
 
 def _light_distance_text(lookback: float) -> str:
-    """How far the light has travelled, in the unit people can picture."""
-    seconds = lookback * SECONDS_PER_JULIAN_YEAR
+    """How far the light has travelled, in the unit people can picture, with its distance in au
+    when that is more than a few light-seconds."""
     au = lookback / AU_IN_LIGHT_YEARS
-    if seconds < 120:
-        return f"{seconds:.0f} light-seconds"
-    if seconds < 7200:
-        return f"{seconds / 60:.0f} light-minutes ({au:.1f} au)"
-    if seconds < 172_800:
-        return f"{seconds / 3600:.1f} light-hours ({au:,.0f} au)"
-    if au < 10_000:
-        return f"{seconds / 86_400:.0f} light-days ({au:,.0f} au)"
-    return f"{lookback:.2f} light-years ({au:,.0f} au)"
+    if au < 0.1:
+        return light_travel(lookback)
+    return (
+        f"{light_travel(lookback)} ({au:,.1f} au)"
+        if au < 10
+        else (f"{light_travel(lookback)} ({au:,.0f} au)")
+    )
 
 
 def _solar_system_notes(lookback: float, reference: DecimalYear) -> list[str]:
@@ -363,11 +359,13 @@ def from_vantage(
     moments = _moments_for(point, reference)
     label = _span_label(moments, reference)
     notes: list[str] = []
-    if point.lookback.best < _ABOUT_NOW_YEARS:
+    if is_within_a_day(point.lookback):
         notes.append(
-            f"{point.name} is only {_light_distance_text(point.lookback.best)} away, so from "
-            "there Earth looks almost exactly as it does now."
+            f"This place is only {light_travel(point.lookback.best)} away, so from there Earth "
+            "looks almost exactly as it does now."
         )
+    if point.facts.get("distance_source") == ORBIT_RANGE_MIDPOINT:
+        notes.append(OUT_OF_TABLE_NOTE)
 
     if point.lookback.best > EARTH_AGE_YEARS:
         notes.append(

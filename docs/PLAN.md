@@ -216,7 +216,8 @@ Added after Phase 4 because `earthlight from saturn` found nothing: the plan lis
   - **Done:** `resolve_place` now takes `now_year`; `earthlight.info` gained an optional `now_year` (the Sun lists the seven planets as `planet_ids`); search puts an exact name or a start of at least three letters ahead of database hits and offers "saturm" a guess; a place under a light-day away gets the note "from there Earth looks almost exactly as it does now". The database was rebuilt from the cache: every table and search entry is identical, only the `kind` check now allows `moon`. Two older tests that used `sun` as a partial match now use `sunflower`.
 - [x] **4b.3 Command line and README**: `info` shows ranges in light-minutes and hours, `from` words short spans properly, README example.
   - **Done:** one `_span` rule picks the unit for distances (`light_travel`), ranges (`light_range`, which shares the unit and hides a range that reads as one value), and plain times (`time_span`): seconds and minutes keep a decimal under ten, so the Moon is "1.3 light-seconds" and the Sun "8.2 light-minutes". A place under a day away says "left Earth about 1.3 hours ago". README has `info saturn` and `search sat`, checked by `test_readme.py`.
-- [ ] **4b.4 Phase review**
+- [x] **4b.4 Phase review**
+  - **Done:** code-reviewer over `git diff phase-4-cli...HEAD`; bugs and clear improvements fixed in "fix: address phase 4b review findings". The science was confirmed (bounds, Saturn, Moon, and Sun numbers; no body name shadows a database place). Judgment calls decided with Ian: a note when the date is outside 1800 to 2050 AD, `distance_au` for the Moon too, and bodies stay first in search for short prefixes. Unit words moved to `earthlight/units.py` so the engine and the command line cannot disagree.
 
 ---
 

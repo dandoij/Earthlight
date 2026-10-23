@@ -26,7 +26,12 @@ from difflib import SequenceMatcher
 
 from earthlight.models import SearchResponse, SearchResult, SearchType, Suggestion, VantageKind
 from earthlight.repository import Repository, SearchRow, default_repository
-from earthlight.solar_bodies import SOLAR_BODIES, SolarBody, matching_solar_bodies
+from earthlight.solar_bodies import (
+    SOLAR_BODIES,
+    SolarBody,
+    matching_solar_bodies,
+    solar_name_forms,
+)
 
 DEFAULT_LIMIT = 10
 """How many results a search returns unless asked for another number."""
@@ -182,11 +187,8 @@ def _solar_suggestion(body: SolarBody) -> Suggestion:
 
 
 def _solar_similarity(wanted: str, body: SolarBody) -> float:
-    """How alike ``wanted`` is to a body's name or one of its other names."""
-    return max(
-        SequenceMatcher(None, wanted, _fold(name)).ratio()
-        for name in (body.name, *body.other_names)
-    )
+    """How alike ``wanted`` is to any name of a body, in the plain form names are compared in."""
+    return max(SequenceMatcher(None, wanted, form).ratio() for form in solar_name_forms(body))
 
 
 def _similarity(wanted: str, row: SearchRow) -> float:
