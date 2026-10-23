@@ -3,12 +3,11 @@
 from typing import Annotated
 
 import typer
-from rich.console import Console
 
 import earthlight
 from earthlight.cli.app import app
 from earthlight.cli.errors import friendly_errors
-from earthlight.cli.output import JsonOption, emit_json
+from earthlight.cli.output import JsonOption, emit_json, print_view
 from earthlight.cli.render import info_view, snapshot_view
 from earthlight.time import now
 
@@ -35,7 +34,7 @@ def from_command(place: PlaceArgument, json_output: JsonOption = False) -> None:
     if json_output:
         emit_json(snapshot)
     else:
-        Console().print(snapshot_view(snapshot, reference))
+        print_view(snapshot_view(snapshot, reference))
 
 
 @app.command()
@@ -46,4 +45,4 @@ def info(place: PlaceArgument, json_output: JsonOption = False) -> None:
     if json_output:
         emit_json(details)
     else:
-        Console().print(info_view(details))
+        print_view(info_view(details))

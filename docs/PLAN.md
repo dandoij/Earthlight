@@ -196,7 +196,8 @@ No database yet. Pure, heavily tested functions.
   - **Done:** `earthlight search TEXT [--limit N]` prints a table of type, name, detail, and id; a search with no hits prints "Nothing found" plus guesses and still exits 0 (an empty answer is not a failure). The shared error handler now lists "Did you mean" guesses and a "Partial matches" table (with ids) for every unresolved name, in `from`, `info`, and `when --event`.
 - [x] **4.5 `--json` output** for every command (same shapes as the API), plus CLI tests with Typer's `CliRunner` and JSON snapshot tests.
   - **Done:** `--json` on `when`, `from`, `info`, and `search` prints one document, the same model the Python call returns. With `--json` an error is a JSON document on stdout (exit 1) shaped like an RFC 9457 problem: `title`, `detail`, `suggestions`, `results`. Typer usage errors (exit 2) stay text. `tests/data/cli_json_snapshot.json` holds 11 real outputs; regenerate with `$env:UPDATE_SNAPSHOTS = "1"` when a change is intended. A test fails if a new command lacks `--json`.
-- [ ] **4.6 README update**: CLI usage with example output. Note for Ian on recording a demo GIF.
+- [x] **4.6 README update**: CLI usage with example output. Note for Ian on recording a demo GIF.
+  - **Done:** "Using it from the command line" with six real examples (a year, recent light, a place older than Earth, a typo, an error, JSON). `test_readme.py` runs every `console` block with the clock, width, and box characters fixed, so the README cannot drift from the program. Layouts now print through `cli.output.print_view`, so tests can swap the console.
 - [ ] **4.7 Phase review**
 
 ---

@@ -3,12 +3,11 @@
 from typing import Annotated
 
 import typer
-from rich.console import Console
 
 import earthlight
 from earthlight.cli.app import app
 from earthlight.cli.errors import friendly_errors
-from earthlight.cli.output import JsonOption, emit_json
+from earthlight.cli.output import JsonOption, emit_json, print_view
 from earthlight.cli.render import moment_view
 from earthlight.parse import parse_ago, parse_date, parse_year
 from earthlight.time import now
@@ -78,4 +77,4 @@ def when(
     if json_output:
         emit_json(result)
     else:
-        Console().print(moment_view(result))
+        print_view(moment_view(result))

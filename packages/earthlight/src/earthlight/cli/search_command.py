@@ -3,12 +3,11 @@
 from typing import Annotated
 
 import typer
-from rich.console import Console
 
 import earthlight
 from earthlight.cli.app import app
 from earthlight.cli.errors import friendly_errors
-from earthlight.cli.output import JsonOption, emit_json
+from earthlight.cli.output import JsonOption, emit_json, print_view
 from earthlight.cli.render import search_view
 
 
@@ -36,4 +35,4 @@ def search(
     if json_output:
         emit_json(response)
     else:
-        Console().print(search_view(response))
+        print_view(search_view(response))

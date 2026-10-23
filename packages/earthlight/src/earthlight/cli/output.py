@@ -9,6 +9,7 @@ from typing import Annotated
 
 import typer
 from pydantic import BaseModel
+from rich.console import Console, RenderableType
 
 JsonOption = Annotated[
     bool, typer.Option("--json", help="Print the result as JSON instead of a layout.")
@@ -19,3 +20,13 @@ JsonOption = Annotated[
 def emit_json(model: BaseModel) -> None:
     """Print a result model as an indented JSON document."""
     typer.echo(model.model_dump_json(indent=2))
+
+
+def make_console() -> Console:
+    """The console that layouts are printed to. Tests replace this to fix width and colour."""
+    return Console()
+
+
+def print_view(view: RenderableType) -> None:
+    """Print a layout to standard output."""
+    make_console().print(view)
