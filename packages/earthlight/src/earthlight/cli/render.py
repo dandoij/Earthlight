@@ -11,8 +11,17 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from earthlight.models import Match, MomentResult, ZoneInfo
-from earthlight.time import SECONDS_PER_DAY, SECONDS_PER_JULIAN_YEAR
+from earthlight.models import (
+    EarthSnapshot,
+    ExoplanetDetails,
+    HistoryPeriod,
+    Match,
+    MomentResult,
+    PlaceInfo,
+    VantagePoint,
+    ZoneInfo,
+)
+from earthlight.time import SECONDS_PER_DAY, SECONDS_PER_JULIAN_YEAR, DecimalYear, format_year
 
 GRID_MIN_WIDTH = 100
 """Terminals at least this wide show the four category panels two by two."""
@@ -69,7 +78,7 @@ def match_panel(title: str, match: Match | None) -> Panel:
     lines: list[RenderableType] = [header]
     lines.append(Text(f"{light_travel(point.lookback.best)} away"))
     low, high = point.lookback.minimum, point.lookback.maximum
-    if high > low:
+    if big_number(low) != big_number(high):
         lines.append(Text(f"range {_range_text(low, high)} light-years", style="dim"))
     if point.magnitude is not None:
         lines.append(Text(f"magnitude {round(point.magnitude, 2):g}", style="dim"))
@@ -137,4 +146,150 @@ def moment_view(result: MomentResult) -> RenderableType:
     return Group(*parts)
 
 
-__all__ = ["CategoryGrid", "big_number", "light_travel", "moment_view"]
+def _place_header(point: VantagePoint) -> Text:
+    header = Text()
+    header.append(point.name, style="bold cyan")
+    header.append(f"  {point.kind.value.replace('_', ' ')}", style="dim")
+    if point.constellation:
+        header.append(f", {point.constellation}", style="dim")
+    header.append(f"  id {point.id}", style="dim")
+    return header
+
+
+def _history_table(title: str, shown: int, total: int, columns: tuple[str, ...]) -> Table:
+    count = f"{shown}" if shown == total else f"{shown} of {total}"
+    table = Table(title=f"{title} ({count})", title_justify="left", title_style="bold")
+    for column in columns:
+        table.add_column(column, overflow="fold")
+    return table
+
+
+def _period_end(period: HistoryPeriod, now_year: DecimalYear) -> str:
+    if period.end is None:
+        return "ongoing" if period.ongoing else "unknown"
+    return format_year(period.end, now_year=now_year)
+
+
+def _left_earth(snapshot: EarthSnapshot, now_year: DecimalYear) -> str:
+    earliest = format_year(snapshot.moments.earliest, now_year=now_year)
+    latest = format_year(snapshot.moments.latest, now_year=now_year)
+    if earliest == latest:
+        return f"in {earliest}" if "ago" not in earliest else earliest
+    return f"between {earliest} and {latest}"
+
+
+def snapshot_view(snapshot: EarthSnapshot, now_year: DecimalYear) -> RenderableType:
+    """The answer to ``from``: what Earth looked like in the light arriving at one place."""
+    point = snapshot.vantage_point
+    parts: list[RenderableType] = [_place_header(point)]
+    parts.append(
+        Text(
+            f"{light_travel(point.lookback.best)} away. The light arriving there now left Earth "
+            f"{_left_earth(snapshot, now_year)}."
+        )
+    )
+    if snapshot.events:
+        table = _history_table(
+            "Events", len(snapshot.events), snapshot.event_total, ("When", "Event", "Where")
+        )
+        for event in snapshot.events:
+            table.add_row(format_year(event.year, now_year=now_year), event.name, event.region)
+        parts.append(table)
+    if snapshot.periods:
+        table = _history_table(
+            "Periods", len(snapshot.periods), snapshot.period_total, ("From", "To", "Period")
+        )
+        for period in snapshot.periods:
+            table.add_row(
+                format_year(period.start, now_year=now_year),
+                _period_end(period, now_year),
+                period.name,
+            )
+        parts.append(table)
+    if snapshot.landmarks:
+        table = _history_table(
+            "Landmarks",
+            len(snapshot.landmarks),
+            snapshot.landmark_total,
+            ("Finished", "Landmark", "Status", "Where"),
+        )
+        for landmark in snapshot.landmarks:
+            table.add_row(
+                format_year(landmark.built_end, now_year=now_year),
+                landmark.name,
+                landmark.status.value.replace("_", " "),
+                landmark.region,
+            )
+        parts.append(table)
+    if snapshot.population is not None:
+        when = format_year(snapshot.population.year, now_year=now_year)
+        parts.append(
+            Text(
+                f"World population: about {big_number(snapshot.population.people)} ({when})",
+                style="bold",
+            )
+        )
+    for note in snapshot.notes:
+        parts.append(Text(note, style="dim"))
+    return Group(*parts)
+
+
+def _exoplanet_lines(details: ExoplanetDetails) -> list[RenderableType]:
+    lines: list[RenderableType] = [Text(f"Orbits {details.host_name}")]
+    if details.discovery_year is not None:
+        found = f"Discovered in {details.discovery_year}"
+        if details.discovery_method:
+            found += f" by {details.discovery_method.lower()}"
+        lines.append(Text(found))
+    if details.mass_earth is not None:
+        lines.append(Text(f"Mass {details.mass_earth:g} Earths"))
+    if details.radius_earth is not None:
+        lines.append(Text(f"Radius {details.radius_earth:g} Earths"))
+    if details.orbital_period_days is not None:
+        lines.append(Text(f"Orbit takes {details.orbital_period_days:g} days"))
+    if details.controversial:
+        lines.append(Text("Its existence is disputed.", style="yellow"))
+    return lines
+
+
+def info_view(details: PlaceInfo) -> RenderableType:
+    """The answer to ``info``: the facts about one place."""
+    point = details.vantage_point
+    lookback = point.lookback
+    parts: list[RenderableType] = [_place_header(point)]
+    distance = f"{light_travel(lookback.best)} away"
+    low, high = big_number(lookback.minimum), big_number(lookback.maximum)
+    if low != high:  # a range that rounds to one number tells the reader nothing
+        distance += f" (range {low} to {high} light-years)"
+    parts.append(Text(distance))
+    if point.magnitude is not None:
+        parts.append(Text(f"Magnitude {round(point.magnitude, 2):g}"))
+    if point.ra_deg is not None and point.dec_deg is not None:
+        parts.append(Text(f"RA {point.ra_deg:.2f} deg, Dec {point.dec_deg:+.2f} deg"))
+    if point.wikipedia:
+        parts.append(Text(f"Wikipedia: {point.wikipedia}", style="dim"))
+    if details.exoplanet is not None:
+        parts.extend(_exoplanet_lines(details.exoplanet))
+    if point.host_id:
+        parts.append(Text(f"Host star: {point.host_id}"))
+    if details.planet_ids:
+        parts.append(Text("Planets: " + ", ".join(details.planet_ids)))
+    if point.facts:
+        facts = Table(title="Catalogue facts", title_justify="left", title_style="bold")
+        facts.add_column("Fact", style="dim")
+        facts.add_column("Value", overflow="fold")
+        for key in sorted(point.facts):
+            facts.add_row(key.replace("_", " "), str(point.facts[key]))
+        parts.append(facts)
+    parts.append(Text(f"See Earth from here: earthlight from {point.id}", style="dim"))
+    return Group(*parts)
+
+
+__all__ = [
+    "CategoryGrid",
+    "big_number",
+    "info_view",
+    "light_travel",
+    "moment_view",
+    "snapshot_view",
+]

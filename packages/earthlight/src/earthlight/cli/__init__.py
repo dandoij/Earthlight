@@ -4,9 +4,9 @@ A thin layer over the public Python interface: each command calls one function f
 ``earthlight`` and shows the result.
 """
 
-# Importing a command module registers the command on ``app``.
-from earthlight.cli import when_command  # noqa: F401  # pyright: ignore[reportUnusedImport]
+# Importing a command module registers its commands on ``app``.
+from earthlight.cli import place_commands, when_command
 from earthlight.cli.app import app
 from earthlight.cli.errors import friendly_errors
 
-__all__ = ["app", "friendly_errors"]
+__all__ = ["app", "friendly_errors", "place_commands", "when_command"]
