@@ -36,6 +36,7 @@ from dataclasses import dataclass
 
 from earthlight.errors import EarthlightError
 from earthlight.time import (
+    MAX_CALENDAR_YEAR,
     SECONDS_PER_DAY,
     SECONDS_PER_JULIAN_YEAR,
     DecimalYear,
@@ -123,6 +124,20 @@ def _shown(text: str) -> str:
     return text[: _MAX_ECHOED_CHARS - 3] + "..."
 
 
+def _clean(text: str) -> tuple[str, str]:
+    """The text with spaces tidied, and the same in lower case. Blank input is an error."""
+    cleaned = " ".join(text.split())
+    if not cleaned:
+        raise EmptyInputError("Enter a year, a date, a time ago, or an event name.")
+    return cleaned, cleaned.lower()
+
+
+def _negative_year_error(text: str) -> InvalidMomentError:
+    return InvalidMomentError(
+        f'"{_shown(text)}" is not a calendar year. Write "N BCE" for years before 1 CE.'
+    )
+
+
 def parse(text: str, *, now_year: DecimalYear | None = None) -> ParseResult:
     """Parse ``text`` into a ``MomentQuery`` or an ``EventQuery``.
 
@@ -132,15 +147,10 @@ def parse(text: str, *, now_year: DecimalYear | None = None) -> ParseResult:
     Raises ``EmptyInputError`` for blank input and ``InvalidMomentError`` when the
     text matches a moment format but cannot be a moment.
     """
-    cleaned = " ".join(text.split())
-    if not cleaned:
-        raise EmptyInputError("Enter a year, a date, a time ago, or an event name.")
-    lowered = cleaned.lower()
+    cleaned, lowered = _clean(text)
 
     if _NEGATIVE_BARE_YEAR.fullmatch(lowered):
-        raise InvalidMomentError(
-            f'"{_shown(cleaned)}" is not a calendar year. Write "N BCE" for years before 1 CE.'
-        )
+        raise _negative_year_error(cleaned)
     if _BARE_YEAR.fullmatch(lowered):
         return _parse_bare_year(cleaned)
     if match := _ERA_YEAR.fullmatch(lowered):
@@ -155,16 +165,65 @@ def parse(text: str, *, now_year: DecimalYear | None = None) -> ParseResult:
     return EventQuery(cleaned)
 
 
-def _parse_bare_year(text: str) -> MomentQuery:
+def parse_year(text: str) -> DecimalYear:
+    """Parse text that is known to be a calendar year: ``1492``, ``500 BCE``, ``44 B.C.``.
+
+    This is the entry point for a command line flag that says "this is a year", so no guessing
+    is needed and the guard that stops ``parse`` from reading ``12000`` as a year does not
+    apply: any year up to ``MAX_CALENDAR_YEAR`` is accepted, the same range as ISO dates.
+    Raises ``InvalidMomentError`` for anything that is not a year.
+    """
+    cleaned, lowered = _clean(text)
+    if _NEGATIVE_BARE_YEAR.fullmatch(lowered):
+        raise _negative_year_error(cleaned)
+    if _BARE_YEAR.fullmatch(lowered):
+        return _parse_bare_year(cleaned, limit=MAX_CALENDAR_YEAR).moment
+    if match := _ERA_YEAR.fullmatch(lowered):
+        return _parse_era_year(cleaned, match.group(1), match.group(2)).moment
+    raise InvalidMomentError(
+        f'"{_shown(cleaned)}" is not a year. Write for example "1492" or "500 BCE".'
+    )
+
+
+def parse_date(text: str) -> DecimalYear:
+    """Parse an ISO 8601 date, ``YYYY-MM-DD`` (a sign means an astronomical year).
+
+    Raises ``InvalidMomentError`` if the text is not a real date in that form.
+    """
+    cleaned, lowered = _clean(text)
+    if match := _ISO_DATE.fullmatch(lowered):
+        return _parse_iso_date(cleaned, match.group(1), match.group(2), match.group(3)).moment
+    raise InvalidMomentError(f'"{_shown(cleaned)}" is not a date. Write it as YYYY-MM-DD.')
+
+
+def parse_ago(text: str, *, now_year: DecimalYear | None = None) -> DecimalYear:
+    """Parse an amount of time before ``now_year``: ``3 days``, ``66 million years``, ``66 mya``.
+
+    The word "ago" is optional, so ``3 days`` and ``3 days ago`` mean the same.
+    Raises ``InvalidMomentError`` if the text is not an amount of time.
+    """
+    cleaned, lowered = _clean(text)
+    if match := _ABBREVIATED.fullmatch(lowered):
+        return _parse_relative(cleaned, match.group(1), match.group(2), now_year).moment
+    with_ago = lowered if lowered.endswith(" ago") else f"{lowered} ago"
+    if match := _RELATIVE.fullmatch(with_ago):
+        unit = match.group(2).rstrip("s")
+        return _parse_relative(cleaned, match.group(1), unit, now_year).moment
+    raise InvalidMomentError(
+        f'"{_shown(cleaned)}" is not an amount of time. Try "3 days", "12000 years", or "66 mya".'
+    )
+
+
+def _parse_bare_year(text: str, *, limit: int = MAX_BARE_YEAR) -> MomentQuery:
     value = float(text)
     if value < 1:
         raise InvalidMomentError(
             f'"{_shown(text)}" is not a calendar year: there is no year 0. '
             'Write "1 BCE" for the year before 1 CE.'
         )
-    if value >= MAX_BARE_YEAR + 1:
+    if value >= limit + 1:
         raise InvalidMomentError(
-            f'"{_shown(text)}" is too large for a calendar year (the limit is {MAX_BARE_YEAR}). '
+            f'"{_shown(text)}" is too large for a calendar year (the limit is {limit}). '
             f'For a long time ago, write for example "{_shown(text)} years ago".'
         )
     return MomentQuery(value)

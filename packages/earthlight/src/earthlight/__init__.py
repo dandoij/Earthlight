@@ -42,7 +42,15 @@ from earthlight.models import (
     VantageKind,
     VantagePoint,
 )
-from earthlight.parse import EmptyInputError, InvalidMomentError, MomentQuery, ParseError, parse
+from earthlight.parse import (
+    EmptyInputError,
+    EventQuery,
+    InvalidMomentError,
+    MomentQuery,
+    ParseError,
+    ParseResult,
+    parse,
+)
 from earthlight.repository import Repository, default_repository
 from earthlight.resolve import resolve_history, resolve_place
 from earthlight.search import search as _search
@@ -56,6 +64,7 @@ UnknownVantageError = _engine.UnknownVantageError
 def when(
     moment: str | float | datetime,
     *,
+    as_event: bool = False,
     now_year: DecimalYear | None = None,
     repository: Repository | None = None,
 ) -> MomentResult:
@@ -68,8 +77,10 @@ def when(
     a period's start, or the year a landmark was finished, and a note says which one.
 
     The result has one winner for each of four categories (famous, exoplanet, visible tonight,
-    most precise) and plain-language ``notes``. Pass ``now_year`` to fix the present moment
-    and ``repository`` to use a database other than the bundled one.
+    most precise) and plain-language ``notes``. Pass ``as_event=True`` to treat text as an event
+    name even if it looks like a moment (``"1492"`` would then search for an event called
+    that). Pass ``now_year`` to fix the present moment and ``repository`` to use a database
+    other than the bundled one.
 
     Raises ``FutureMomentError`` for a moment that has not happened yet, ``ParseError`` for
     text that is not a moment, and ``UnresolvedNameError`` for an event name that matches
@@ -86,8 +97,16 @@ def when(
     reference = now() if now_year is None else now_year  # the one and only clock read
     repo = default_repository() if repository is None else repository
     note: str | None = None
+    if as_event and not isinstance(moment, str):
+        raise TypeError("as_event needs the name of an event as text")
     if isinstance(moment, str):
-        parsed = parse(moment, now_year=reference)
+        if as_event:
+            name = " ".join(moment.split())
+            if not name:
+                raise EmptyInputError("Enter the name of an event.")
+            parsed: ParseResult = EventQuery(name)
+        else:
+            parsed = parse(moment, now_year=reference)
         if isinstance(parsed, MomentQuery):
             year = parsed.moment
         else:

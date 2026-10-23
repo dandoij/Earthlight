@@ -321,3 +321,17 @@ def test_a_hit_that_does_not_name_every_word_is_called_the_closest_match(tmp_pat
 
 def test_an_unfinished_word_counts_as_naming_it() -> None:
     assert when("fall of rom", now_year=NOW).notes[0].startswith("Using ")
+
+
+def test_as_event_searches_a_name_even_when_the_text_looks_like_a_year() -> None:
+    forced = when("1492", as_event=True, now_year=2026.0)
+    plain = when("1492", now_year=2026.0)
+    assert any("'1492'" in note for note in forced.notes)
+    assert not any("'1492'" in note for note in plain.notes)
+
+
+def test_as_event_needs_text_that_is_not_blank() -> None:
+    with pytest.raises(EmptyInputError):
+        when("   ", as_event=True, now_year=2026.0)
+    with pytest.raises(TypeError, match="as_event"):
+        when(1492.0, as_event=True, now_year=2026.0)
